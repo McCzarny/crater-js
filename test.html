@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crater - Test Suite</title>
+    <style>
+      body {
+        margin: 20px;
+        font-family: monospace;
+        background-color: #1e1e1e;
+        color: #d4d4d4;
+      }
+      #test-results {
+        background: #252526;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+      }
+      .test {
+        padding: 10px;
+        margin: 5px 0;
+        border-left: 4px solid #666;
+      }
+      .test.pass {
+        border-left-color: #4ec9b0;
+        background: #1e3a2e;
+      }
+      .test.fail {
+        border-left-color: #f48771;
+        background: #3a1e1e;
+      }
+      .test.running {
+        border-left-color: #dcdcaa;
+        background: #3a3a1e;
+      }
+      #game-container {
+        border: 2px solid #444;
+        margin-top: 20px;
+      }
+      button {
+        background: #0e639c;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        margin: 5px;
+        cursor: pointer;
+        border-radius: 3px;
+      }
+      button:hover {
+        background: #1177bb;
+      }
+      .log {
+        background: #1e1e1e;
+        padding: 10px;
+        margin: 10px 0;
+        max-height: 300px;
+        overflow-y: auto;
+        font-size: 12px;
+      }
+      .log-entry {
+        margin: 2px 0;
+        padding: 2px 5px;
+      }
+      .log-entry.error {
+        color: #f48771;
+      }
+      .log-entry.warn {
+        color: #dcdcaa;
+      }
+      .log-entry.info {
+        color: #4ec9b0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Crater Game - Automated Test Suite</h1>
+
+    <div>
+      <button onclick="runAllTests()">Run All Tests</button>
+      <button onclick="testDigDown()">Test: Dig Down</button>
+      <button onclick="testDigRight()">Test: Dig Right</button>
+      <button onclick="testMovement()">Test: Movement</button>
+      <button onclick="clearLogs()">Clear Logs</button>
+    </div>
+
+    <div id="test-results">
+      <h2>Test Results</h2>
+      <div id="tests"></div>
+    </div>
+
+    <div id="console-log" class="log">
+      <h3>Console Output</h3>
+      <div id="log-entries"></div>
+    </div>
+
+    <div id="game-container"></div>
+
+    <script type="module">
+      import Phaser from '/node_modules/phaser/dist/phaser.esm.js';
+      import { CONFIG } from '/src/config.js';
+      import BootScene from '/src/scenes/BootScene.js';
+      import GameScene from '/src/scenes/GameScene.js';
+      import UIScene from '/src/scenes/UIScene.js';
+
+      let game;
+      let testResults = [];
+
+      // Intercept console logs
+      const originalLog = console.log;
+      const originalError = console.error;
+      const originalWarn = console.warn;
+
+      function addLogEntry(type, ...args) {
+        const logDiv = document.getElementById('log-entries');
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${type}`;
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${args.join(' ')}`;
+        logDiv.appendChild(entry);
+        logDiv.scrollTop = logDiv.scrollHeight;
+      }
+
+      console.log = (...args) => {
+        originalLog(...args);
+        addLogEntry('info', ...args);
+      };
+
+      console.error = (...args) => {
+        originalError(...args);
+        addLogEntry('error', ...args);
+      };
+
+      console.warn = (...args) => {
+        originalWarn(...args);
+        addLogEntry('warn', ...args);
+      };
+
+      window.clearLogs = () => {
+        document.getElementById('log-entries').innerHTML = '';
+      };
+
+      // Test framework
+      function addTest(name, status, message) {
+        const testsDiv = document.getElementById('tests');
+        const test = document.createElement('div');
+        test.className = `test ${status}`;
+        test.innerHTML = `<strong>${name}</strong>: ${message}`;
+        testsDiv.appendChild(test);
+      }
+
+      function clearTests() {
+        document.getElementById('tests').innerHTML = '';
+        testResults = [];
+      }
+
+      // Initialize game
+      function initGame() {
+        if (game) {
+          game.destroy(true);
+        }
+
+        const config = {
+          type: Phaser.AUTO,
+          width: 800,
+          height: 600,
+          parent: 'game-container',
+          backgroundColor: '#87CEEB',
+          scene: [BootScene, GameScene, UIScene],
+          pixelArt: true,
+          scale: {
+            mode: Phaser.Scale.FIT,
+            autoCenter: Phaser.Scale.CENTER_BOTH,
+          },
+        };
+
+        game = new Phaser.Game(config);
+        window.testGame = game;
+
+        return new Promise(resolve => {
+          game.events.once('ready', () => {
+            console.log('Game initialized');
+            setTimeout(resolve, 1000); // Wait for scenes to load
+          });
+        });
+      }
+
+      // Test: Dig Down
+      window.testDigDown = async () => {
+        clearTests();
+        addTest('Dig Down', 'running', 'Starting test...');
+
+        try {
+          await initGame();
+
+          const gameScene = game.scene.getScene('GameScene');
+          const player = gameScene.player;
+
+          console.log('=== Dig Down Test ===');
+          console.log('Initial position:', { x: player.gridX, y: player.gridY });
+
+          // Get initial position
+          const startY = player.gridY;
+
+          // Start auto-dig down
+          player.startAutoDig({ dx: 0, dy: 1 });
+          console.log('Started auto-dig down');
+
+          // Wait for 3 seconds and check if character moved
+          await new Promise(resolve => setTimeout(resolve, 3000));
+
+          const endY = player.gridY;
+          const moved = endY > startY;
+
+          console.log('Final position:', { x: player.gridX, y: player.gridY });
+          console.log('Moved down:', moved, `(${startY} -> ${endY})`);
+
+          if (moved) {
+            addTest('Dig Down', 'pass', `✓ Character moved from Y=${startY} to Y=${endY}`);
+          } else {
+            addTest('Dig Down', 'fail', `✗ Character did not move (stayed at Y=${startY})`);
+          }
+        } catch (error) {
+          console.error('Test failed:', error);
+          addTest('Dig Down', 'fail', `✗ Error: ${error.message}`);
+        }
+      };
+
+      // Test: Dig Right
+      window.testDigRight = async () => {
+        clearTests();
+        addTest('Dig Right', 'running', 'Starting test...');
+
+        try {
+          await initGame();
+
+          const gameScene = game.scene.getScene('GameScene');
+          const player = gameScene.player;
+
+          console.log('=== Dig Right Test ===');
+          console.log('Initial position:', { x: player.gridX, y: player.gridY });
+
+          const startX = player.gridX;
+
+          player.startAutoDig({ dx: 1, dy: 0 });
+          console.log('Started auto-dig right');
+
+          await new Promise(resolve => setTimeout(resolve, 3000));
+
+          const endX = player.gridX;
+          const moved = endX > startX;
+
+          console.log('Final position:', { x: player.gridX, y: player.gridY });
+          console.log('Moved right:', moved, `(${startX} -> ${endX})`);
+
+          if (moved) {
+            addTest('Dig Right', 'pass', `✓ Character moved from X=${startX} to X=${endX}`);
+          } else {
+            addTest('Dig Right', 'fail', `✗ Character did not move (stayed at X=${startX})`);
+          }
+        } catch (error) {
+          console.error('Test failed:', error);
+          addTest('Dig Right', 'fail', `✗ Error: ${error.message}`);
+        }
+      };
+
+      // Test: Basic Movement
+      window.testMovement = async () => {
+        clearTests();
+        addTest('Movement', 'running', 'Starting test...');
+
+        try {
+          await initGame();
+
+          const gameScene = game.scene.getScene('GameScene');
+          const player = gameScene.player;
+
+          console.log('=== Movement Test ===');
+          console.log('Initial position:', { x: player.gridX, y: player.gridY });
+
+          const startX = player.gridX;
+
+          // Try to move right
+          player.tryMove(1, 0, false);
+
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          const moved = player.gridX > startX;
+
+          console.log('Final position:', { x: player.gridX, y: player.gridY });
+
+          if (moved) {
+            addTest('Movement', 'pass', `✓ Character can move (${startX} -> ${player.gridX})`);
+          } else {
+            addTest('Movement', 'fail', `✗ Character did not move`);
+          }
+        } catch (error) {
+          console.error('Test failed:', error);
+          addTest('Movement', 'fail', `✗ Error: ${error.message}`);
+        }
+      };
+
+      // Run all tests
+      window.runAllTests = async () => {
+        console.log('=== Running All Tests ===');
+        await testMovement();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await testDigRight();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await testDigDown();
+      };
+
+      // Auto-run tests on load
+      window.addEventListener('load', () => {
+        console.log('Test suite loaded. Click "Run All Tests" to begin.');
+      });
+    </script>
+  </body>
+</html>
