@@ -77,7 +77,9 @@ export default class CharacterInventory {
    * Stop searching
    */
   stopSearch() {
-    if (!this.isSearching) {return;}
+    if (!this.isSearching) {
+      return;
+    }
 
     console.log('Stopping search mode');
     this.isSearching = false;
@@ -95,7 +97,9 @@ export default class CharacterInventory {
     }
 
     // Wait for movement to complete
-    if (isMoving) {return;}
+    if (isMoving) {
+      return;
+    }
 
     const char = this.character;
 

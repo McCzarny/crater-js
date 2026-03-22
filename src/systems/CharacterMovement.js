@@ -160,7 +160,9 @@ export default class CharacterMovement {
    * Update smooth movement to target
    */
   updateSmoothMove(delta) {
-    if (!this.isMoving || !this.moveTarget) {return;}
+    if (!this.isMoving || !this.moveTarget) {
+      return;
+    }
 
     const char = this.character;
     const dx = this.moveTarget.x - char.sprite.x;
@@ -223,10 +225,14 @@ export default class CharacterMovement {
    * Check if character should fall
    */
   shouldFall() {
-    if (this.isMoving || this.isFalling) {return false;}
+    if (this.isMoving || this.isFalling) {
+      return false;
+    }
 
     // Don't fall if on a vine
-    if (this.isCharacterOnVine()) {return false;}
+    if (this.isCharacterOnVine()) {
+      return false;
+    }
 
     const char = this.character;
     const blockBelow = this.terrainSystem.getBlockAt(char.gridX, char.gridY + 1);

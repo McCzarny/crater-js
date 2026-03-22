@@ -29,11 +29,10 @@ export const CONFIG = {
 
   // Resource types
   RESOURCES: {
-    STONE: { color: 0x999999, value: 1 },
-    COAL: { color: 0x1a1a1a, value: 5 },
-    IRON: { color: 0xc0c0c0, value: 10 },
-    GOLD: { color: 0xffd700, value: 50 },
-    DIAMOND: { color: 0x00ffff, value: 100 },
+    COAL: { color: 0x1a1a1a, value: 5, texture: 'coal' },
+    DIAMOND: { color: 0x00ffff, value: 100, texture: 'diamond' },
+    EMERALD: { color: 0x00ff00, value: 75, texture: 'emerald' },
+    SAPPHIRE: { color: 0x0000ff, value: 90, texture: 'sapphire' },
   },
 
   // Race definitions
@@ -43,18 +42,24 @@ export const CONFIG = {
       description: 'Tribal warriors with stamina boost and tool making abilities',
       miningSpeedMultiplier: 1.0, // Base mining speed
       movementSpeedMultiplier: 1.0, // Base movement speed
+      staminaLimit: 300,
+      patienceLimit: 100,
     },
     fungus: {
       name: 'Cult of the Spore',
       description: 'Mole-like creatures with fast digging and climbing abilities',
       miningSpeedMultiplier: 1.5, // 50% faster mining
       movementSpeedMultiplier: 1.0, // Normal movement speed
+      staminaLimit: 200,
+      patienceLimit: 75,
     },
     petal: {
       name: 'Order of the Seed',
       description: 'Plant-based beings with regeneration and vine creation',
       miningSpeedMultiplier: 1.0, // Base mining speed
       movementSpeedMultiplier: 0.85, // 15% slower movement (plant-based)
+      staminaLimit: 160,
+      patienceLimit: 150,
     },
   },
 
@@ -69,6 +74,6 @@ export const CONFIG = {
   GRAVITY: 600,
 
   // UI Colors
-  UI_BACKGROUND: 0x222222,
+  UI_BACKGROUND: 0x3f4949,
   UI_TEXT_COLOR: '#ffffff',
 };

@@ -5,6 +5,7 @@ A 2D side-view mining and exploration game inspired by the classic Diggers (1993
 The game is available here: https://mcczarny.github.io/crater-js/
 
 ## Core Features
+
 - **Mining and Exploration**: Dig through the underground world, discover resources and buy items to upgrade your characters and bases.
 - **Multiple Races**: Play as one of three unique races, each with their own abilities and playstyles.
 - **Abilities**: Use special when exploring and mining to gain advantages or overcome obstacles.
@@ -29,6 +30,6 @@ Mole-like creatures with fungal growths on their bodies. They have a slimy, orga
 
 Plant-like beings, with the ability to manipulate plant life around them. They can create temporary platforms from vines and roots, allowing them to reach otherwise inaccessible areas. They can slowly regenerate health over time.
 
------------
+---
 
-More detailed documentation about the game may be found in the [Clanker Docs](README-clanker.md). 
+More detailed documentation about the game may be found in the [Clanker Docs](README-clanker.md).

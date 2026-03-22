@@ -28,7 +28,7 @@ export default class Character {
     this.sprite = scene.add.sprite(
       this.gridX * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
       this.gridY * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
-      race,
+      race
     );
     this.sprite.setDisplaySize(CONFIG.CHAR_SIZE, CONFIG.CHAR_SIZE);
     this.sprite.setDepth(1000);
@@ -48,6 +48,12 @@ export default class Character {
     this.mining = new CharacterMining(this);
     this.inventory = new CharacterInventory(this);
     this.abilities = new CharacterAbilities(this);
+
+    // Stamina settings
+    this.maxStamina = this.raceConfig.staminaLimit;
+    this.stamina = this.maxStamina;
+    this.staminaDrainPerSecond = 1;
+    this.staminaRegenPerSecond = 10;
   }
 
   /**
@@ -77,6 +83,23 @@ export default class Character {
 
     // Handle smooth movement to target position
     this.movement.updateSmoothMove(delta);
+
+    // Update stamina: drain when digging (manual or auto), otherwise regenerate
+    const deltaSecEarly = delta / 1000;
+    if (this.mining.isMining || this.mining.isAutoDigging) {
+      this.stamina -= this.staminaDrainPerSecond * deltaSecEarly;
+      if (this.stamina <= 0) {
+        this.stamina = 0;
+        // Stop digging and idle
+        this.stopAllActions();
+        return;
+      }
+    } else {
+      this.stamina += this.staminaRegenPerSecond * deltaSecEarly;
+      if (this.stamina > this.maxStamina) {
+        this.stamina = this.maxStamina;
+      }
+    }
 
     // Spacebar to stop all actions
     if (keys.space && keys.space.isDown) {
@@ -113,6 +136,12 @@ export default class Character {
       return;
     }
 
+    // If manually mining, continue mining progress
+    if (this.mining.isMining) {
+      this.mining.continueMining();
+      return;
+    }
+
     // Check if we should fall (only when not moving and not prevented by abilities)
     if (
       !this.movement.isMoving &&
@@ -124,7 +153,9 @@ export default class Character {
     }
 
     // Only process input if this character is controllable
-    if (!cursors || !keys) {return;}
+    if (!cursors || !keys) {
+      return;
+    }
 
     // Ability toggle with 'R' key (first ability)
     if (keys.ability && Phaser.Input.Keyboard.JustDown(keys.ability)) {
@@ -161,7 +192,9 @@ export default class Character {
     }
 
     // Movement input (with cooldown)
-    if (!this.movement.canMove()) {return;}
+    if (!this.movement.canMove()) {
+      return;
+    }
 
     const isSprinting = keys.shift && keys.shift.isDown;
 

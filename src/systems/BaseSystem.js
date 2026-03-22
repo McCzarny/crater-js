@@ -42,7 +42,7 @@ export default class BaseSystem {
       currentX += CONFIG.BASE_SIZE + gap;
 
       console.log(
-        `BaseSystem: Placed ${race.name} base at grid (${currentX - CONFIG.BASE_SIZE - gap}, ${surfaceY})`,
+        `BaseSystem: Placed ${race.name} base at grid (${currentX - CONFIG.BASE_SIZE - gap}, ${surfaceY})`
       );
     }
   }

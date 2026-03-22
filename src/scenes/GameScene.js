@@ -5,6 +5,13 @@ import BaseSystem from '../systems/BaseSystem.js';
 import Character from '../entities/Character.js';
 import DirectionMenu from '../ui/DirectionMenu.js';
 
+const WIND_TEXTURES = ['wind1', 'wind2', 'wind3', 'wind4'];
+const WIND_SPRITE_WIDTH = 32;
+const WIND_SPRITE_HEIGHT = 96;
+const WIND_LAYER_Y = 0; // Y offset for wind layer (top of the world)
+const WIND_LAYER_HEIGHT = 4 * WIND_SPRITE_HEIGHT; // Only top ~4 wind sprites high
+const WIND_SPRITE_COUNT = 12; // Number of wind sprites
+
 /**
  * Main gameplay scene
  */
@@ -28,6 +35,27 @@ export default class GameScene extends Phaser.Scene {
     // Make systems available to other objects
     this.registry.set('terrainSystem', this.terrainSystem);
     this.registry.set('baseSystem', this.baseSystem);
+
+    // --- WIND EFFECT SYSTEM ---
+    this.windSprites = [];
+    const worldPixelWidth = CONFIG.WORLD_WIDTH * CONFIG.BLOCK_SIZE;
+    const windTop = WIND_LAYER_Y;
+    const windBottom = WIND_LAYER_Y + WIND_LAYER_HEIGHT;
+    for (let i = 0; i < WIND_SPRITE_COUNT; i++) {
+      // Randomize initial position and texture
+      const x = Math.random() * worldPixelWidth;
+      const y = windTop + Math.random() * (windBottom - windTop - WIND_SPRITE_HEIGHT);
+      const texture = Phaser.Utils.Array.GetRandom(WIND_TEXTURES);
+      const speed = 500 + Math.random() * 200; // px/sec, strong wind
+      const direction = Math.random() < 0.5 ? 1 : -1; // left or right
+      const sprite = this.add
+        .image(x, y, texture)
+        .setAlpha(0.7 + Math.random() * 0.3)
+        .setDepth(1000)
+        .setScale((1.0 + Math.random() * 0.3) * direction, 1.0 + Math.random() * 0.1);
+      sprite.windSpeed = speed * direction;
+      this.windSprites.push(sprite);
+    }
 
     // Create 3 characters, one for each race
     // Spawn them at their respective bases
@@ -58,7 +86,7 @@ export default class GameScene extends Phaser.Scene {
       0,
       0,
       CONFIG.WORLD_WIDTH * CONFIG.BLOCK_SIZE,
-      CONFIG.WORLD_HEIGHT * CONFIG.BLOCK_SIZE,
+      CONFIG.WORLD_HEIGHT * CONFIG.BLOCK_SIZE
     );
     this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
 
@@ -156,6 +184,20 @@ export default class GameScene extends Phaser.Scene {
     // Update terrain system (for item gravity)
     if (this.terrainSystem) {
       this.terrainSystem.updateItems(time);
+    }
+
+    // --- WIND EFFECT UPDATE ---
+    if (this.windSprites) {
+      const worldPixelWidth = CONFIG.WORLD_WIDTH * CONFIG.BLOCK_SIZE;
+      for (const sprite of this.windSprites) {
+        sprite.x += sprite.windSpeed * (delta / 1000);
+        // Wrap horizontally
+        if (sprite.windSpeed > 0 && sprite.x > worldPixelWidth + WIND_SPRITE_WIDTH / 2) {
+          sprite.x = -WIND_SPRITE_WIDTH / 2;
+        } else if (sprite.windSpeed < 0 && sprite.x < -WIND_SPRITE_WIDTH / 2) {
+          sprite.x = worldPixelWidth + WIND_SPRITE_WIDTH / 2;
+        }
+      }
     }
   }
 }

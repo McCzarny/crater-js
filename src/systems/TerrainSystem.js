@@ -62,27 +62,37 @@ export default class TerrainSystem {
       this.blockSprites.delete(key);
     }
 
-    // Don't render air blocks or blocks without color
-    if (!block.color) {
+    // Don't render air blocks or blocks without color/texture
+    if (!block.color && !block.texture) {
       return;
     }
 
-    // Create a rectangle for the block
     const pixelX = x * CONFIG.BLOCK_SIZE;
     const pixelY = y * CONFIG.BLOCK_SIZE;
 
-    const graphics = this.scene.add.graphics();
-    graphics.fillStyle(block.color, 1);
-    graphics.fillRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
+    let spriteOrGraphics;
+    if (block.texture && this.scene.textures.exists(block.texture)) {
+      // Render as sprite if texture is defined and loaded
+      spriteOrGraphics = this.scene.add.sprite(
+        pixelX + CONFIG.BLOCK_SIZE / 2,
+        pixelY + CONFIG.BLOCK_SIZE / 2,
+        block.texture
+      );
+      spriteOrGraphics.setDisplaySize(CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
+      spriteOrGraphics.setDepth(10); // Ensure tiles are below characters
+    } else {
+      // Fallback: render as colored rectangle
+      spriteOrGraphics = this.scene.add.graphics();
+      spriteOrGraphics.fillStyle(block.color, 1);
+      spriteOrGraphics.fillRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
+      // Add a subtle border for visibility
+      spriteOrGraphics.lineStyle(1, 0x000000, 0.2);
+      spriteOrGraphics.strokeRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
+      spriteOrGraphics.setPosition(pixelX, pixelY);
+    }
 
-    // Add a subtle border for visibility
-    graphics.lineStyle(1, 0x000000, 0.2);
-    graphics.strokeRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
-
-    graphics.setPosition(pixelX, pixelY);
-
-    this.blockSprites.set(key, graphics);
-    this.container.add(graphics);
+    this.blockSprites.set(key, spriteOrGraphics);
+    this.container.add(spriteOrGraphics);
   }
 
   /**

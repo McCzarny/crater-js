@@ -26,37 +26,41 @@ export default class ItemManager {
    * Try to drop an item at the given position based on block type
    */
   tryDropItem(gridX, gridY, blockType) {
-    let dropChance = 0;
-    let possibleItems = [];
+    const possibleItems = {};
 
     // Determine drop chances based on block type
     switch (blockType) {
       case TileType.DIRT:
-        dropChance = 0.02; // 2% chance
-        possibleItems = ['COAL'];
+        possibleItems['COAL'] = 0.02;
         break;
       case TileType.STONE:
-        dropChance = 0.05; // 5% chance
-        possibleItems = ['COAL', 'IRON'];
+        possibleItems['COAL'] = 0.05;
+        possibleItems['EMERALD'] = 0.02;
         break;
       case TileType.IRON_STONE:
-        dropChance = 0.08; // 8% chance
-        possibleItems = ['IRON', 'GOLD'];
+        possibleItems['EMERALD'] = 0.08;
         break;
       case TileType.DEEP_STONE:
-        dropChance = 0.1; // 10% chance
-        possibleItems = ['GOLD', 'DIAMOND'];
+        possibleItems['EMERALD'] = 0.05;
+        possibleItems['SAPPHIRE'] = 0.02;
+        possibleItems['DIAMOND'] = 0.01;
         break;
       case TileType.RARE_ORE:
-        dropChance = 0.15; // 15% chance
-        possibleItems = ['GOLD', 'DIAMOND'];
+        possibleItems['EMERALD'] = 0.06;
+        possibleItems['SAPPHIRE'] = 0.04;
+        possibleItems['DIAMOND'] = 0.02;
         break;
     }
 
     // Roll for drop
-    if (Math.random() < dropChance && possibleItems.length > 0) {
-      const itemType = possibleItems[Math.floor(Math.random() * possibleItems.length)];
-      this.spawnItem(gridX, gridY, itemType);
+    const itemTypes = Object.keys(possibleItems);
+    if (itemTypes.length > 0) {
+      for (const itemType of itemTypes) {
+        if (Math.random() < possibleItems[itemType]) {
+          this.spawnItem(gridX, gridY, itemType);
+          break; // Only drop one item per block
+        }
+      }
     }
   }
 
@@ -82,44 +86,43 @@ export default class ItemManager {
    */
   renderItem(item) {
     const config = CONFIG.RESOURCES[item.type];
-    if (!config) {return;}
+    if (!config) {
+      return;
+    }
 
     const pixelX = item.gridX * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2;
     const pixelY = item.gridY * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2;
 
     // Create a smaller diamond/gem shape
-    const size = CONFIG.BLOCK_SIZE * 0.5;
-    const graphics = this.scene.add.graphics();
-    graphics.fillStyle(config.color, 1);
+    const size = CONFIG.BLOCK_SIZE;
 
-    // Draw a diamond shape
-    graphics.fillTriangle(
-      0,
-      -size / 2, // Top
-      size / 2,
-      0, // Right
-      0,
-      size / 2, // Bottom
-    );
-    graphics.fillTriangle(
-      0,
-      -size / 2, // Top
-      -size / 2,
-      0, // Left
-      0,
-      size / 2, // Bottom
-    );
+    // If a texture is defined for this resource and loaded, use it. Otherwise fallback to color graphic.
+    if (config.texture && this.scene.textures.exists(config.texture)) {
+      const sprite = this.scene.add.sprite(pixelX, pixelY, config.texture);
+      sprite.setDisplaySize(size, size);
+      sprite.setDepth(500);
+      this.itemSprites.set(item.id, sprite);
+      this.itemContainer.add(sprite);
+    } else {
+      const graphics = this.scene.add.graphics();
+      const color = config.color || 0xffffff;
+      graphics.fillStyle(color, 1);
 
-    // Add a bright border
-    graphics.lineStyle(1, 0xffffff, 0.8);
-    graphics.strokeTriangle(0, -size / 2, size / 2, 0, 0, size / 2);
-    graphics.strokeTriangle(0, -size / 2, -size / 2, 0, 0, size / 2);
+      // Draw a diamond shape
+      graphics.fillTriangle(0, -size / 2, size / 2, 0, 0, size / 2);
+      graphics.fillTriangle(0, -size / 2, -size / 2, 0, 0, size / 2);
 
-    graphics.setPosition(pixelX, pixelY);
-    graphics.setDepth(500);
+      // Add a bright border
+      graphics.lineStyle(1, 0xffffff, 0.8);
+      graphics.strokeTriangle(0, -size / 2, size / 2, 0, 0, size / 2);
+      graphics.strokeTriangle(0, -size / 2, -size / 2, 0, 0, size / 2);
 
-    this.itemSprites.set(item.id, graphics);
-    this.itemContainer.add(graphics);
+      graphics.setPosition(pixelX, pixelY);
+      graphics.setDepth(500);
+
+      this.itemSprites.set(item.id, graphics);
+      this.itemContainer.add(graphics);
+    }
   }
 
   /**

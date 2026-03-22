@@ -425,7 +425,9 @@ export default class CharacterAbilities {
    */
   toggleAbility(index) {
     const ability = this.getAbility(index);
-    if (!ability) {return false;}
+    if (!ability) {
+      return false;
+    }
 
     if (ability.isActive()) {
       ability.deactivate();

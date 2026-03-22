@@ -132,6 +132,17 @@ export default class UIScene extends Phaser.Scene {
     // Create character selection buttons at the bottom of the screen
     this.createCharacterButtons();
 
+    // Stamina display
+    this.staminaText = this.add
+      .text(CONFIG.GAME_WIDTH - 10, 50, 'Stamina: 100/100', {
+        fontSize: '12px',
+        color: '#ffffff',
+        fontFamily: 'monospace',
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(101);
+
     // Create ability buttons (initially empty, will be populated on character selection)
     this.abilityButtons = [];
     this.createAbilityButtons();
@@ -239,6 +250,14 @@ export default class UIScene extends Phaser.Scene {
     if (this.abilityButtonElements.length > 0) {
       this.updateAbilityButtonStates();
     }
+
+    // Update stamina display
+    const gameScene = this.scene.get('GameScene');
+    if (gameScene && gameScene.player) {
+      const st = Math.round(gameScene.player.stamina || 0);
+      const max = Math.round(gameScene.player.maxStamina || 100);
+      this.staminaText.setText(`Stamina: ${st}/${max}`);
+    }
   }
 
   /**
@@ -246,13 +265,15 @@ export default class UIScene extends Phaser.Scene {
    */
   updateRaceInfo(race) {
     const raceConfig = CONFIG.RACES[race];
-    if (!raceConfig) {return;}
+    if (!raceConfig) {
+      return;
+    }
 
     const miningSpeed = (raceConfig.miningSpeedMultiplier * 100).toFixed(0);
     const moveSpeed = (raceConfig.movementSpeedMultiplier * 100).toFixed(0);
 
     this.raceInfoText.setText(
-      `${raceConfig.name} | Mining: ${miningSpeed}% | Movement: ${moveSpeed}%`,
+      `${raceConfig.name} | Mining: ${miningSpeed}% | Movement: ${moveSpeed}%`
     );
 
     // Update ability buttons for this character
@@ -281,13 +302,17 @@ export default class UIScene extends Phaser.Scene {
 
     // Get active character from GameScene
     const gameScene = this.scene.get('GameScene');
-    if (!gameScene || !gameScene.player) {return;}
+    if (!gameScene || !gameScene.player) {
+      return;
+    }
 
     const character = gameScene.player;
     const abilities = character.abilities.getAbilities();
 
     // If no abilities, don't create buttons
-    if (abilities.length === 0) {return;}
+    if (abilities.length === 0) {
+      return;
+    }
 
     // Create button for each ability
     const buttonWidth = 100;
@@ -342,7 +367,9 @@ export default class UIScene extends Phaser.Scene {
       // Always add hover and click handlers
       btn.on('pointerover', () => {
         const gameScene = this.scene.get('GameScene');
-        if (!gameScene || !gameScene.player) {return;}
+        if (!gameScene || !gameScene.player) {
+          return;
+        }
         const currentAbility = gameScene.player.abilities.getAbility(index);
         if (!currentAbility || !currentAbility.isActive()) {
           btn.setFillStyle(0x00aaff, 1);
@@ -351,7 +378,9 @@ export default class UIScene extends Phaser.Scene {
 
       btn.on('pointerout', () => {
         const gameScene = this.scene.get('GameScene');
-        if (!gameScene || !gameScene.player) {return;}
+        if (!gameScene || !gameScene.player) {
+          return;
+        }
         const currentAbility = gameScene.player.abilities.getAbility(index);
         const currentCanActivate = currentAbility ? currentAbility.canActivate() : false;
         const currentIsActive = currentAbility ? currentAbility.isActive() : false;
@@ -389,13 +418,17 @@ export default class UIScene extends Phaser.Scene {
    */
   updateAbilityButtonStates() {
     const gameScene = this.scene.get('GameScene');
-    if (!gameScene || !gameScene.player) {return;}
+    if (!gameScene || !gameScene.player) {
+      return;
+    }
 
     const character = gameScene.player;
     const abilities = character.abilities.getAbilities();
 
     this.abilityButtonElements.forEach((elements, index) => {
-      if (index >= abilities.length) {return;}
+      if (index >= abilities.length) {
+        return;
+      }
 
       const ability = abilities[index];
       const canActivate = ability.canActivate();
@@ -421,15 +454,5 @@ export default class UIScene extends Phaser.Scene {
 
     // Use rich text to color each slot differently
     this.inventoryText.setText(`Inventory: ${slot1} ${slot2}`);
-  }
-
-  getResourceColor(resource) {
-    const colors = {
-      COAL: '#1a1a1a',
-      IRON: '#C0C0C0',
-      GOLD: '#FFD700',
-      DIAMOND: '#00FFFF',
-    };
-    return colors[resource] || '#ffffff';
   }
 }

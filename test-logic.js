@@ -142,7 +142,7 @@ async function runTests() {
     }
 
     console.log(
-      `  Tick ${i + 1}: Position (${character.gridX}, ${character.gridY}), Falling: ${character.isFalling}`,
+      `  Tick ${i + 1}: Position (${character.gridX}, ${character.gridY}), Falling: ${character.isFalling}`
     );
 
     if (!character.isFalling && character.gridY > CONFIG.SURFACE_HEIGHT) {
@@ -156,7 +156,7 @@ async function runTests() {
   character.startAutoDig({ dx: 0, dy: 1 });
   console.log(`  Auto-dig state: ${character.isAutoDigging}`);
   console.log(
-    `  Direction: dx=${character.autoDigDirection.dx}, dy=${character.autoDigDirection.dy}`,
+    `  Direction: dx=${character.autoDigDirection.dx}, dy=${character.autoDigDirection.dy}`
   );
   console.log('  ✓ Auto-dig started\n');
 

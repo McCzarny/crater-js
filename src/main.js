@@ -12,7 +12,7 @@ const config = {
   width: CONFIG.GAME_WIDTH / CONFIG.PIXEL_SCALE,
   height: CONFIG.GAME_HEIGHT / CONFIG.PIXEL_SCALE,
   parent: 'game-container',
-  backgroundColor: '#87CEEB',
+  backgroundColor: '#b1b1b1',
   scene: [BootScene, GameScene, UIScene],
   pixelArt: true,
   scale: {

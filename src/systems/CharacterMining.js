@@ -58,7 +58,9 @@ export default class CharacterMining {
    * Continue mining the current block
    */
   continueMining() {
-    if (!this.miningTarget) {return;}
+    if (!this.miningTarget) {
+      return;
+    }
 
     const char = this.character;
 
@@ -72,9 +74,18 @@ export default class CharacterMining {
       }
     }
 
+    // If out of stamina, stop mining
+    if (char.stamina <= 0) {
+      this.stopMining();
+      return;
+    }
+
+    // Slow digging when stamina < 50%
+    const staminaMultiplier = char.stamina < char.maxStamina * 0.5 ? 2.0 : 1.0;
+    const required = char.digInterval * staminaMultiplier;
     const elapsed = Date.now() - this.miningStartTime;
 
-    if (elapsed >= char.digInterval) {
+    if (elapsed >= required) {
       this.terrainSystem.mineBlockAt(this.miningTarget.gridX, this.miningTarget.gridY);
       this.stopMining();
     }
@@ -84,7 +95,9 @@ export default class CharacterMining {
    * Stop mining
    */
   stopMining() {
-    if (!this.isMining) {return;}
+    if (!this.isMining) {
+      return;
+    }
 
     this.isMining = false;
     this.miningTarget = null;
@@ -109,8 +122,9 @@ export default class CharacterMining {
     if (
       !this.isAutoDigging ||
       (direction.dx === this.autoDigDirection.dx && direction.dy === this.autoDigDirection.dy)
-    )
-    {return;}
+    ) {
+      return;
+    }
 
     console.log('Changing auto-dig direction to:', direction);
     this.autoDigDirection = direction;
@@ -122,7 +136,9 @@ export default class CharacterMining {
    * Stop auto-digging
    */
   stopAutoDig() {
-    if (!this.isAutoDigging) {return;}
+    if (!this.isAutoDigging) {
+      return;
+    }
 
     console.log('Stopping auto-dig');
     this.isAutoDigging = false;
@@ -140,6 +156,12 @@ export default class CharacterMining {
       return;
     }
 
+    // If out of stamina, stop auto-digging
+    const char = this.character;
+    if (char.stamina <= 0) {
+      this.stopAutoDig();
+      return;
+    }
     // Initialize dig time on first update
     if (this.needsInitialDigTime) {
       this.lastDigTime = time;
@@ -147,9 +169,9 @@ export default class CharacterMining {
     }
 
     // Wait for movement to complete
-    if (isMoving) {return;}
-
-    const char = this.character;
+    if (isMoving) {
+      return;
+    }
 
     // Check if there's still solid ground below (unless climbing)
     if (!char.abilities || !char.abilities.shouldPreventFalling()) {
@@ -162,8 +184,11 @@ export default class CharacterMining {
       }
     }
 
-    const currentDigInterval =
+    // Adjust interval when stamina is low (slower digging)
+    const baseInterval =
       keys && keys.shift && keys.shift.isDown ? char.fastDigInterval : char.digInterval;
+    const staminaMultiplier = char.stamina < char.maxStamina * 0.5 ? 2.0 : 1.0;
+    const currentDigInterval = baseInterval * staminaMultiplier;
 
     const targetX = char.gridX + this.autoDigDirection.dx;
     const targetY = char.gridY + this.autoDigDirection.dy;
@@ -244,7 +269,7 @@ export default class CharacterMining {
       CONFIG.BLOCK_SIZE,
       CONFIG.BLOCK_SIZE,
       0xffff00,
-      0.6,
+      0.6
     );
     this.miningIndicator.setDepth(999);
     this.miningIndicatorTarget = { x: gridX, y: gridY };

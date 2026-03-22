@@ -5,6 +5,13 @@ import { TileType, TileRegistry } from './TileTypes.js';
  * WorldGenerator - handles world generation logic
  */
 export default class WorldGenerator {
+  static boulderOrTile(tileType, boulderChance) {
+    if (Math.random() < boulderChance) {
+      return TileType.BOULDER;
+    }
+    return tileType;
+  }
+
   /**
    * Generate a single block based on position
    */
@@ -25,15 +32,15 @@ export default class WorldGenerator {
 
     // Determine layer
     if (depth <= CONFIG.LAYERS.DIRT.end) {
-      tileType = TileType.DIRT;
+      tileType = this.boulderOrTile(TileType.DIRT, 0.05); // 5% chance for boulder in dirt
     } else if (depth <= CONFIG.LAYERS.STONE.end) {
-      tileType = TileType.STONE;
+      tileType = this.boulderOrTile(TileType.STONE, 0.1); // 10% chance for boulder in stone
     } else if (depth <= CONFIG.LAYERS.IRON.end) {
-      tileType = TileType.IRON_STONE;
+      tileType = this.boulderOrTile(TileType.IRON_STONE, 0.15); // 15% chance for boulder in iron stone
     } else if (depth <= CONFIG.LAYERS.DEEP_STONE.end) {
-      tileType = TileType.DEEP_STONE;
+      tileType = this.boulderOrTile(TileType.DEEP_STONE, 0.2); // 20% chance for boulder in deep stone
     } else {
-      tileType = TileType.RARE_ORE;
+      tileType = this.boulderOrTile(TileType.RARE_ORE, 0.25); // 25% chance for boulder in rare ore
     }
 
     return TileRegistry.createTile(tileType);
