@@ -273,7 +273,7 @@ export default class UIScene extends Phaser.Scene {
     const moveSpeed = (raceConfig.movementSpeedMultiplier * 100).toFixed(0);
 
     this.raceInfoText.setText(
-      `${raceConfig.name} | Mining: ${miningSpeed}% | Movement: ${moveSpeed}%`
+      `${raceConfig.name} | Mining: ${miningSpeed}% | Movement: ${moveSpeed}%`,
     );
 
     // Update ability buttons for this character

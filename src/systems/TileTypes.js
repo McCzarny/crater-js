@@ -42,7 +42,7 @@ export class Tile {
       this.color,
       this.breakable,
       this.minedType,
-      this.texture
+      this.texture,
     );
   }
 
@@ -85,7 +85,7 @@ export class TileRegistry {
 
     // Dirt - solid, breakable, has mined version
     this.register(
-      new Tile(TileType.DIRT, true, CONFIG.LAYERS.DIRT.color, true, TileType.MINED_DIRT, 'dirt')
+      new Tile(TileType.DIRT, true, CONFIG.LAYERS.DIRT.color, true, TileType.MINED_DIRT, 'dirt'),
     );
 
     // Mined Dirt - not solid, not breakable (already mined)
@@ -96,13 +96,20 @@ export class TileRegistry {
         darkenColor(CONFIG.LAYERS.DIRT.color),
         false,
         null,
-        'mined_dirt'
-      )
+        'mined_dirt',
+      ),
     );
 
     // Stone - solid, breakable, has mined version
     this.register(
-      new Tile(TileType.STONE, true, CONFIG.LAYERS.STONE.color, true, TileType.MINED_STONE, 'stone')
+      new Tile(
+        TileType.STONE,
+        true,
+        CONFIG.LAYERS.STONE.color,
+        true,
+        TileType.MINED_STONE,
+        'stone',
+      ),
     );
 
     // Mined Stone - not solid, not breakable
@@ -113,8 +120,8 @@ export class TileRegistry {
         darkenColor(CONFIG.LAYERS.STONE.color),
         false,
         null,
-        'mined_stone'
-      )
+        'mined_stone',
+      ),
     );
 
     // Iron Stone - solid, breakable, has mined version
@@ -125,8 +132,8 @@ export class TileRegistry {
         CONFIG.LAYERS.IRON.color,
         true,
         TileType.MINED_IRON_STONE,
-        'iron_stone'
-      )
+        'iron_stone',
+      ),
     );
 
     // Mined Iron Stone - not solid, not breakable
@@ -137,8 +144,8 @@ export class TileRegistry {
         darkenColor(CONFIG.LAYERS.IRON.color),
         false,
         null,
-        'mined_iron_stone'
-      )
+        'mined_iron_stone',
+      ),
     );
 
     // Deep Stone - solid, breakable, has mined version
@@ -149,8 +156,8 @@ export class TileRegistry {
         CONFIG.LAYERS.DEEP_STONE.color,
         true,
         TileType.MINED_DEEP_STONE,
-        'deep_stone'
-      )
+        'deep_stone',
+      ),
     );
 
     // Mined Deep Stone - not solid, not breakable
@@ -161,8 +168,8 @@ export class TileRegistry {
         darkenColor(CONFIG.LAYERS.DEEP_STONE.color),
         false,
         null,
-        'mined_deep_stone'
-      )
+        'mined_deep_stone',
+      ),
     );
 
     // Rare Ore - solid, breakable, has mined version
@@ -173,8 +180,8 @@ export class TileRegistry {
         CONFIG.LAYERS.RARE_ORE.color,
         true,
         TileType.MINED_RARE_ORE,
-        'rare_ore'
-      )
+        'rare_ore',
+      ),
     );
 
     // Mined Rare Ore - not solid, not breakable
@@ -185,8 +192,8 @@ export class TileRegistry {
         darkenColor(CONFIG.LAYERS.RARE_ORE.color),
         false,
         null,
-        'mined_rare_ore'
-      )
+        'mined_rare_ore',
+      ),
     );
 
     // Boulder - solid, not breakable

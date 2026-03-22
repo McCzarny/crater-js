@@ -269,7 +269,7 @@ export default class CharacterMining {
       CONFIG.BLOCK_SIZE,
       CONFIG.BLOCK_SIZE,
       0xffff00,
-      0.6
+      0.6,
     );
     this.miningIndicator.setDepth(999);
     this.miningIndicatorTarget = { x: gridX, y: gridY };

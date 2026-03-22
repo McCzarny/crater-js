@@ -25,6 +25,12 @@ export default class TerrainSystem {
 
     // Initialize tile registry
     TileRegistry.initialize();
+
+    // Environment reaction handlers (for flexible future reactions)
+    // Handlers are called with (changedX, changedY)
+    this.reactionHandlers = [];
+    // Register built-in boulder reaction
+    this.reactionHandlers.push(this._boulderReaction.bind(this));
   }
 
   /**
@@ -76,7 +82,7 @@ export default class TerrainSystem {
       spriteOrGraphics = this.scene.add.sprite(
         pixelX + CONFIG.BLOCK_SIZE / 2,
         pixelY + CONFIG.BLOCK_SIZE / 2,
-        block.texture
+        block.texture,
       );
       spriteOrGraphics.setDisplaySize(CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
       spriteOrGraphics.setDepth(10); // Ensure tiles are below characters
@@ -134,8 +140,90 @@ export default class TerrainSystem {
 
     // Try to drop an item based on the original block type
     this.itemManager.tryDropItem(gridX, gridY, originalType);
+    // Notify environment reaction handlers so things like boulders can react
+    this.handleEnvironmentAfterChange(gridX, gridY);
 
     return true;
+  }
+
+  /**
+   * Call registered reaction handlers when a block at (x,y) changed.
+   * Handlers may perform changes to blocks; they should call renderBlock
+   * for any coordinates they modify.
+   */
+  handleEnvironmentAfterChange(changedX, changedY) {
+    for (const handler of this.reactionHandlers) {
+      try {
+        handler(changedX, changedY);
+      } catch (err) {
+        console.error('Error in reaction handler:', err);
+      }
+    }
+  }
+
+  /**
+   * Built-in reaction: if a block above a changed cell is a boulder and the
+   * changed cell is not solid, make the boulder fall one tile down.
+   */
+  _boulderReaction(changedX, changedY) {
+    const aboveY = changedY - 1;
+    if (aboveY < 0) {
+      return;
+    }
+
+    const aboveBlock = this.getBlockAt(changedX, aboveY);
+    const targetBlock = this.getBlockAt(changedX, changedY);
+
+    if (!aboveBlock || !targetBlock) {
+      return;
+    }
+
+    // If above is a boulder and the current block is not solid, let the boulder fall
+    // until it lands on a solid block or reaches the bottom.
+    const BOULDER_KEY = 'boulder';
+    if (aboveBlock.type === TileRegistry.getTile(BOULDER_KEY).type && !targetBlock.solid) {
+      const fallFromY = aboveY;
+      let landingY = fallFromY;
+
+      // Search downward for landing position
+      while (landingY + 1 < CONFIG.WORLD_HEIGHT) {
+        const below = this.getBlockAt(changedX, landingY + 1);
+        if (!below || !below.solid) {
+          landingY++;
+        } else {
+          break;
+        }
+      }
+
+      // If landing position is same as origin, nothing to do
+      if (landingY === fallFromY) {
+        return;
+      }
+
+      // Move boulder to landingY and clear original position
+      const boulderTile = TileRegistry.createTile(BOULDER_KEY);
+      boulderTile.minedType = this.getBlockAt(changedX, fallFromY).minedType; // Preserve minedType for boulder
+      const removedBoulderTile = TileRegistry.createTile(aboveBlock.minedType || 'air');
+
+      this.blocks[landingY][changedX] = boulderTile;
+      this.blocks[fallFromY][changedX] = removedBoulderTile;
+
+      // Re-render the column area affected (from original above down to landing)
+      for (let y = fallFromY; y <= landingY; y++) {
+        this.renderBlock(changedX, y);
+      }
+
+      // Notify other reaction handlers about the new boulder position (chained reactions)
+      for (const handler of this.reactionHandlers) {
+        if (handler !== this._boulderReaction) {
+          try {
+            handler(changedX, landingY);
+          } catch (err) {
+            console.error('Error in chained reaction handler:', err);
+          }
+        }
+      }
+    }
   }
 
   /**

@@ -29,21 +29,33 @@ export default class WorldGenerator {
     // Underground layers
     const depth = y - CONFIG.SURFACE_HEIGHT;
     let tileType = TileType.STONE;
+    let layerTileType = TileType.STONE;
 
     // Determine layer
-    if (depth <= CONFIG.LAYERS.DIRT.end) {
-      tileType = this.boulderOrTile(TileType.DIRT, 0.05); // 5% chance for boulder in dirt
+    if (depth <= 3) {
+      tileType = TileType.DIRT; // Top layers are dirt, no boulders
+      layerTileType = TileType.DIRT;
+    } else if (depth <= CONFIG.LAYERS.DIRT.end) {
+      tileType = this.boulderOrTile(TileType.DIRT, 0.05);
+      layerTileType = TileType.DIRT;
     } else if (depth <= CONFIG.LAYERS.STONE.end) {
-      tileType = this.boulderOrTile(TileType.STONE, 0.1); // 10% chance for boulder in stone
+      tileType = this.boulderOrTile(TileType.STONE, 0.1);
+      layerTileType = TileType.STONE;
     } else if (depth <= CONFIG.LAYERS.IRON.end) {
-      tileType = this.boulderOrTile(TileType.IRON_STONE, 0.15); // 15% chance for boulder in iron stone
+      tileType = this.boulderOrTile(TileType.IRON_STONE, 0.15);
+      layerTileType = TileType.IRON_STONE;
     } else if (depth <= CONFIG.LAYERS.DEEP_STONE.end) {
-      tileType = this.boulderOrTile(TileType.DEEP_STONE, 0.2); // 20% chance for boulder in deep stone
+      tileType = this.boulderOrTile(TileType.DEEP_STONE, 0.2);
+      layerTileType = TileType.DEEP_STONE;
     } else {
-      tileType = this.boulderOrTile(TileType.RARE_ORE, 0.25); // 25% chance for boulder in rare ore
+      tileType = this.boulderOrTile(TileType.RARE_ORE, 0.25);
+      layerTileType = TileType.RARE_ORE;
     }
 
-    return TileRegistry.createTile(tileType);
+    // In case it's a boulder, we want to set the minedType.
+    const tile = TileRegistry.createTile(tileType);
+    tile.minedType = TileRegistry.createTile(layerTileType).minedType;
+    return tile;
   }
 
   /**

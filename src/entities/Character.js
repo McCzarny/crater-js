@@ -28,7 +28,7 @@ export default class Character {
     this.sprite = scene.add.sprite(
       this.gridX * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
       this.gridY * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
-      race
+      race,
     );
     this.sprite.setDisplaySize(CONFIG.CHAR_SIZE, CONFIG.CHAR_SIZE);
     this.sprite.setDepth(1000);

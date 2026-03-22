@@ -86,7 +86,7 @@ export default class GameScene extends Phaser.Scene {
       0,
       0,
       CONFIG.WORLD_WIDTH * CONFIG.BLOCK_SIZE,
-      CONFIG.WORLD_HEIGHT * CONFIG.BLOCK_SIZE
+      CONFIG.WORLD_HEIGHT * CONFIG.BLOCK_SIZE,
     );
     this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
 
