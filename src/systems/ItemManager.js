@@ -42,12 +42,12 @@ export default class ItemManager {
         break;
       case TileType.DEEP_STONE:
         possibleItems['EMERALD'] = 0.05;
-        possibleItems['SAPPHIRE'] = 0.02;
+        possibleItems['AMETHYST'] = 0.02;
         possibleItems['DIAMOND'] = 0.01;
         break;
       case TileType.RARE_ORE:
         possibleItems['EMERALD'] = 0.06;
-        possibleItems['SAPPHIRE'] = 0.04;
+        possibleItems['AMETHYST'] = 0.04;
         possibleItems['DIAMOND'] = 0.02;
         break;
     }

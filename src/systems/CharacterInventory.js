@@ -10,8 +10,9 @@ export default class CharacterInventory {
     this.scene = character.scene;
     this.terrainSystem = character.terrainSystem;
 
+    const numberOfSlots = CONFIG.MAX_ITEMS || 4;
     // Inventory - 2 slots
-    this.inventory = [null, null];
+    this.inventory = new Array(numberOfSlots).fill(null);
 
     // Search state
     this.isSearching = false;
@@ -27,7 +28,7 @@ export default class CharacterInventory {
     const char = this.character;
 
     // Check if inventory is full
-    if (this.inventory[0] !== null && this.inventory[1] !== null) {
+    if (this.inventory.every(slot => slot !== null)) {
       console.log('Inventory is full!');
       return false;
     }
@@ -45,11 +46,11 @@ export default class CharacterInventory {
     const removed = this.terrainSystem.removeItem(item.id);
 
     if (removed) {
-      // Add to first empty slot
-      if (this.inventory[0] === null) {
-        this.inventory[0] = removed.type;
-      } else {
-        this.inventory[1] = removed.type;
+      for (let i = 0; i < this.inventory.length; i++) {
+        if (this.inventory[i] === null) {
+          this.inventory[i] = removed.type;
+          break;
+        }
       }
 
       console.log('Picked up:', removed.type);
@@ -90,7 +91,7 @@ export default class CharacterInventory {
    */
   updateSearch(time, isMoving) {
     // Check if inventory is full
-    if (this.inventory[0] !== null && this.inventory[1] !== null) {
+    if (this.inventory.every(slot => slot !== null)) {
       console.log('Search stopped: inventory full');
       this.stopSearch();
       return;
@@ -159,13 +160,13 @@ export default class CharacterInventory {
    * Check if inventory has space
    */
   hasSpace() {
-    return this.inventory[0] === null || this.inventory[1] === null;
+    return this.inventory.some(slot => slot === null);
   }
 
   /**
    * Check if inventory is full
    */
   isFull() {
-    return this.inventory[0] !== null && this.inventory[1] !== null;
+    return this.inventory.every(slot => slot !== null);
   }
 }

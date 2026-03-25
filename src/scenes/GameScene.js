@@ -166,6 +166,10 @@ export default class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
 
     console.log('Switched to character:', this.player.race);
+    // Notify UI that active character changed
+    if (this.game && this.game.events && this.player) {
+      this.game.events.emit('characterSwitched', this.player);
+    }
   }
 
   update(time, delta) {

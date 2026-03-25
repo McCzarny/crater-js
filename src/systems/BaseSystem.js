@@ -74,15 +74,15 @@ export default class BaseSystem {
       }
     }
 
-    // Place non-breakable grass under the base for visual consistency
+    // Place non-breakable surface under the base for visual consistency
     for (let dx = 0; dx < CONFIG.BASE_SIZE; dx++) {
       const x = gridX + dx;
       const y = gridY + CONFIG.BASE_SIZE; // Row just below the base
 
       if (x >= 0 && x < CONFIG.WORLD_WIDTH && y >= 0 && y < CONFIG.WORLD_HEIGHT) {
-        // Create a non-breakable grass tile
-        const grassTile = TileRegistry.createTile(TileType.GRASS);
-        this.terrainSystem.blocks[y][x] = grassTile;
+        // Create a non-breakable surface tile
+        const surfaceTile = TileRegistry.createTile(TileType.SURFACE);
+        this.terrainSystem.blocks[y][x] = surfaceTile;
         this.terrainSystem.renderBlock(x, y);
       }
     }

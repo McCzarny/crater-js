@@ -49,7 +49,7 @@ class MockTerrainSystem {
         if (y < CONFIG.SURFACE_HEIGHT) {
           this.blocks[y][x] = { type: 'air', solid: false };
         } else if (y === CONFIG.SURFACE_HEIGHT) {
-          this.blocks[y][x] = { type: 'grass', solid: true };
+          this.blocks[y][x] = { type: 'surface', solid: true };
         } else {
           this.blocks[y][x] = { type: 'dirt', solid: true };
         }
@@ -58,11 +58,11 @@ class MockTerrainSystem {
 
     // Create starting hole (3 blocks wide at center)
     const centerX = Math.floor(CONFIG.WORLD_WIDTH / 2);
-    const grassY = CONFIG.SURFACE_HEIGHT;
+    const surfaceY = CONFIG.SURFACE_HEIGHT;
     for (let dx = -1; dx <= 1; dx++) {
       const x = centerX + dx;
       if (x >= 0 && x < CONFIG.WORLD_WIDTH) {
-        this.blocks[grassY][x] = { type: 'air', solid: false };
+        this.blocks[surfaceY][x] = { type: 'air', solid: false };
       }
     }
   }
@@ -106,11 +106,11 @@ async function runTests() {
   scene.registry.set('terrainSystem', terrain);
 
   const spawnX = Math.floor(CONFIG.WORLD_WIDTH / 2);
-  const spawnY = CONFIG.SURFACE_HEIGHT - 2; // Above grass
+  const spawnY = CONFIG.SURFACE_HEIGHT - 2; // Above surface
   const character = new Character(scene, spawnX, spawnY);
 
   console.log(`  Initial position: (${character.gridX}, ${character.gridY})`);
-  console.log('  Expected to fall to grass hole and then dig down');
+  console.log('  Expected to fall to surface hole and then dig down');
   console.log('  ✓ Character created\n');
 
   // Test 2: Let character fall first

@@ -32,7 +32,7 @@ export const CONFIG = {
     COAL: { color: 0x1a1a1a, value: 5, texture: 'coal' },
     DIAMOND: { color: 0x00ffff, value: 100, texture: 'diamond' },
     EMERALD: { color: 0x00ff00, value: 75, texture: 'emerald' },
-    SAPPHIRE: { color: 0x0000ff, value: 90, texture: 'sapphire' },
+    AMETHYST: { color: 0x0000ff, value: 90, texture: 'amethyst' },
   },
 
   // Race definitions
@@ -69,6 +69,8 @@ export const CONFIG = {
   CHAR_SIZE: 28,
   MINING_RANGE: 40,
   MINING_TIME: 5000, // ms to mine one block (base time)
+  MAX_HEALTH: 100,
+  MAX_ITEMS: 4,
 
   // Physics
   GRAVITY: 600,

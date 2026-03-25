@@ -29,24 +29,46 @@ export default class BootScene extends Phaser.Scene {
 
     // Resource icons
     this.load.image('coal', 'resources/tile-decals/coal.png');
-    this.load.image('gold', 'resources/tile-decals/gold.png');
     this.load.image('diamond', 'resources/tile-decals/diamond.png');
     this.load.image('emerald', 'resources/tile-decals/emerald.png');
-    this.load.image('sapphire', 'resources/tile-decals/sapphire.png');
+    this.load.image('amethyst', 'resources/tile-decals/amethyst.png');
 
     // Tile textures (add your own as needed)
-    this.load.image('dirt', 'resources/tiles/dirt.png');
-    this.load.image('mined_dirt', 'resources/tiles/mined_dirt.png');
-    this.load.image('stone', 'resources/tiles/stone.png');
-    this.load.image('mined_stone', 'resources/tiles/mined_stone.png');
-    this.load.image('iron_stone', 'resources/tiles/iron_stone.png');
-    this.load.image('mined_iron_stone', 'resources/tiles/mined_iron_stone.png');
-    this.load.image('deep_stone', 'resources/tiles/deep_stone.png');
-    this.load.image('mined_deep_stone', 'resources/tiles/mined_deep_stone.png');
-    this.load.image('rare_ore', 'resources/tiles/rare_ore.png');
-    this.load.image('mined_rare_ore', 'resources/tiles/mined_rare_ore.png');
+    this.load.image('surface_1', 'resources/tiles/surface_1.png');
+    this.load.image('surface_2', 'resources/tiles/surface_2.png');
+    this.load.image('surface_3', 'resources/tiles/surface_3.png');
+    this.load.image('surface_4', 'resources/tiles/surface_4.png');
 
-    // NOTE: If a texture file does not exist, the tile will fall back to color rendering.
+    this.load.image('dirt_1', 'resources/tiles/dirt_1.png');
+    this.load.image('dirt_2', 'resources/tiles/dirt_2.png');
+    this.load.image('dirt_3', 'resources/tiles/dirt_3.png');
+    this.load.image('dirt_4', 'resources/tiles/dirt_4.png');
+
+    // UI
+    this.load.image('hud', 'resources/ui/hud.png');
+    this.load.image('hud_icon', 'resources/ui/hud_icon.png');
+    this.load.image('hud_icon_error', 'resources/ui/hud_icon_error.png');
+
+    this.load.image('hud_standard_action_MoveLeft', 'resources/ui/move_left.png');
+    this.load.image('hud_standard_action_MoveRight', 'resources/ui/move_right.png');
+    this.load.image('hud_standard_action_MoveDown', 'resources/ui/move_down.png');
+    this.load.image('hud_standard_action_MoveUp', 'resources/ui/move_up.png');
+
+    this.load.image('hud_standard_action_DigLeft', 'resources/ui/dig_left.png');
+    this.load.image('hud_standard_action_DigRight', 'resources/ui/dig_right.png');
+    this.load.image('hud_standard_action_DigDown', 'resources/ui/dig_down.png');
+
+    this.load.image('hud_standard_action_Search', 'resources/ui/search.png');
+    this.load.image('hud_standard_action_Stop', 'resources/ui/stop.png');
+    this.load.image('hud_standard_action_PickUp', 'resources/ui/pickup.png');
+
+    this.load.image('hud_portrait_tribe', 'resources/ui/hud_portrait_tribe.png');
+    this.load.image('hud_portrait_fungus', 'resources/ui/hud_portrait_fungus.png');
+    this.load.image('hud_portrait_petal', 'resources/ui/hud_portrait_petal.png');
+
+    this.load.image('hud_climb', 'resources/ui/hud_climb.png');
+    this.load.image('hud_seed_planting', 'resources/ui/hud_seed_planting.png');
+    this.load.image('hud_teleport', 'resources/ui/hud_teleport.png');
 
     console.log('BootScene: Loading race icons and tile textures...');
   }

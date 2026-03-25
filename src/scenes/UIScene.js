@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config.js';
+import CharacterIcons from '../ui/CharacterIcons.js';
+import PointsUI from '../ui/PointsUI.js';
+import HUD from '../ui/HUD.js';
 
 /**
  * UI overlay scene - displays HUD, inventory, resources, etc.
@@ -12,154 +15,63 @@ export default class UIScene extends Phaser.Scene {
   create() {
     console.log('UIScene: Initializing...');
 
-    // Create semi-transparent background for UI
-    this.add
-      .rectangle(0, 0, CONFIG.GAME_WIDTH, 60, CONFIG.UI_BACKGROUND, 0.8)
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(100);
+    // Compose modular UI components (mocks/dummies)
+    this.characterIcons = new CharacterIcons(this, { races: ['tribe', 'fungus', 'petal'] });
+    this.characterIcons.create(40, 40, 60);
 
-    // Create text displays
-    this.inventoryText = this.add
-      .text(10, 10, 'Inventory: [Empty] [Empty]', {
-        fontSize: '16px',
-        color: CONFIG.UI_TEXT_COLOR,
-        fontFamily: 'monospace',
-        fontStyle: 'bold',
-      })
-      .setScrollFactor(0)
-      .setDepth(101);
+    this.pointsUI = new PointsUI(this, { points: 0 });
+    this.pointsUI.create(CONFIG.GAME_WIDTH - 90, 24);
 
-    // Race info display
-    this.raceInfoText = this.add
-      .text(10, 35, '', {
-        fontSize: '12px',
-        color: '#aaaaaa',
-        fontFamily: 'monospace',
-      })
-      .setScrollFactor(0)
-      .setDepth(101);
+    this.hud = new HUD(this);
+    this.hud.create();
 
-    this.instructionsText = this.add
-      .text(CONFIG.GAME_WIDTH - 10, 10, 'E: Pickup | Q: Search | Space: Stop', {
-        fontSize: '12px',
-        color: CONFIG.UI_TEXT_COLOR,
-        fontFamily: 'monospace',
-      })
-      .setOrigin(1, 0)
-      .setScrollFactor(0)
-      .setDepth(101);
-
-    this.instructionsText2 = this.add
-      .text(CONFIG.GAME_WIDTH - 10, 25, 'Arrows: Move | Shift: Sprint', {
-        fontSize: '12px',
-        color: CONFIG.UI_TEXT_COLOR,
-        fontFamily: 'monospace',
-      })
-      .setOrigin(1, 0)
-      .setScrollFactor(0)
-      .setDepth(101);
-
-    // Create Dig Menu button
-    const digButtonX = CONFIG.GAME_WIDTH / 2 - 70;
-    const buttonY = 20;
-
-    this.digMenuButton = this.add
-      .rectangle(digButtonX, buttonY, 120, 30, 0x00aa00, 0.8)
-      .setScrollFactor(0)
-      .setDepth(101)
-      .setInteractive({ useHandCursor: true });
-
-    this.digMenuButtonText = this.add
-      .text(digButtonX, buttonY, 'DIG MENU', {
-        fontSize: '14px',
-        color: '#ffffff',
-        fontFamily: 'monospace',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(102);
-
-    // Create Stop button
-    const stopButtonX = CONFIG.GAME_WIDTH / 2 + 70;
-
-    this.stopButton = this.add
-      .rectangle(stopButtonX, buttonY, 120, 30, 0xcc0000, 0.8)
-      .setScrollFactor(0)
-      .setDepth(101)
-      .setInteractive({ useHandCursor: true });
-
-    this.stopButtonText = this.add
-      .text(stopButtonX, buttonY, 'STOP', {
-        fontSize: '14px',
-        color: '#ffffff',
-        fontFamily: 'monospace',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(102);
-
-    // Dig Menu button hover effects
-    this.digMenuButton.on('pointerover', () => {
-      this.digMenuButton.setFillStyle(0x00ff00, 1);
-    });
-
-    this.digMenuButton.on('pointerout', () => {
-      this.digMenuButton.setFillStyle(0x00aa00, 0.8);
-    });
-
-    // Dig Menu button click - emit event to GameScene
-    this.digMenuButton.on('pointerdown', () => {
-      this.scene.get('GameScene').events.emit('showDigMenu');
-    });
-
-    // Stop button hover effects
-    this.stopButton.on('pointerover', () => {
-      this.stopButton.setFillStyle(0xff0000, 1);
-    });
-
-    this.stopButton.on('pointerout', () => {
-      this.stopButton.setFillStyle(0xcc0000, 0.8);
-    });
-
-    // Stop button click - emit event to GameScene
-    this.stopButton.on('pointerdown', () => {
-      this.scene.get('GameScene').events.emit('stopCharacter');
-    });
-
-    // Create character selection buttons at the bottom of the screen
-    this.createCharacterButtons();
-
-    // Stamina display
-    this.staminaText = this.add
-      .text(CONFIG.GAME_WIDTH - 10, 50, 'Stamina: 100/100', {
-        fontSize: '12px',
-        color: '#ffffff',
-        fontFamily: 'monospace',
-      })
-      .setOrigin(1, 0)
-      .setScrollFactor(0)
-      .setDepth(101);
-
-    // Create ability buttons (initially empty, will be populated on character selection)
-    this.abilityButtons = [];
+    // Initialize ability buttons container (may be populated later)
     this.createAbilityButtons();
-
-    // Listen for game events
+    // Listen for game events (legacy hooks)
     this.game.events.on('inventoryChanged', this.updateInventory, this);
-
-    // Listen for ability state changes from GameScene
     this.game.events.on('abilityStateChanged', this.updateAbilityButtons, this);
+    // Update HUD portrait when active character changes in GameScene
+    this.game.events.on(
+      'characterSwitched',
+      player => {
+        if (this.hud && this.hud.updateCharacter) {
+          this.hud.updateCharacter(player);
+        }
+        if (this.hud && this.hud.updateAbilities) {
+          this.hud.updateAbilities(player);
+        }
+      },
+      this,
+    );
 
-    // Track active character
-    this.activeCharacterIndex = 0;
+    // Trigger initial HUD update if GameScene already has a player
+    try {
+      const gameScene = this.scene.get('GameScene');
+      if (gameScene && gameScene.player && this.hud && this.hud.updateCharacter) {
+        this.hud.updateCharacter(gameScene.player);
+        if (this.hud.updateAbilities) {
+          this.hud.updateAbilities(gameScene.player);
+        }
+      }
+    } catch (e) {
+      // ignore if GameScene not available yet
+    }
 
-    // Update initial race info
-    this.updateRaceInfo('tribe');
+    // Clean up components on scene shutdown
+    this.events.on('shutdown', this.onShutdown, this);
   }
 
+  onShutdown() {
+    if (this.characterIcons && this.characterIcons.destroy) {
+      this.characterIcons.destroy();
+    }
+    if (this.pointsUI && this.pointsUI.destroy) {
+      this.pointsUI.destroy();
+    }
+    if (this.hud && this.hud.destroy) {
+      this.hud.destroy();
+    }
+  }
   /**
    * Create character selection buttons
    */
@@ -247,16 +159,8 @@ export default class UIScene extends Phaser.Scene {
   update() {
     // Only update button visual states, not recreate them
     // (buttons are recreated when character switches)
-    if (this.abilityButtonElements.length > 0) {
+    if (this.abilityButtonElements && this.abilityButtonElements.length > 0) {
       this.updateAbilityButtonStates();
-    }
-
-    // Update stamina display
-    const gameScene = this.scene.get('GameScene');
-    if (gameScene && gameScene.player) {
-      const st = Math.round(gameScene.player.stamina || 0);
-      const max = Math.round(gameScene.player.maxStamina || 100);
-      this.staminaText.setText(`Stamina: ${st}/${max}`);
     }
   }
 
@@ -402,6 +306,10 @@ export default class UIScene extends Phaser.Scene {
 
       this.abilityButtonElements.push({ btn, text, hint });
     });
+    // Update HUD ability icons for this character (if HUD present)
+    if (this.hud && this.hud.updateAbilities) {
+      this.hud.updateAbilities(character);
+    }
   }
 
   /**
@@ -449,10 +357,10 @@ export default class UIScene extends Phaser.Scene {
   }
 
   updateInventory(inventory) {
-    const slot1 = inventory[0] ? `[${inventory[0]}]` : '[Empty]';
-    const slot2 = inventory[1] ? `[${inventory[1]}]` : '[Empty]';
-
-    // Use rich text to color each slot differently
-    this.inventoryText.setText(`Inventory: ${slot1} ${slot2}`);
+    if (this.hud && this.hud.updateInventory) {
+      this.hud.updateInventory(inventory);
+    } else {
+      console.log('Inventory updated:', inventory);
+    }
   }
 }

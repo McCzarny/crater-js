@@ -61,7 +61,7 @@ Click the character icons at the bottom of the screen to switch between them!
 4. **Select a direction** (↑ ↓ ← →) to start continuous digging
 5. The character will automatically dig and move in that direction (time varies by race)
 6. **Hold Shift while auto-digging** to speed up to 500ms per block (fast testing mode)
-7. Auto-dig stops when hitting an unbreakable block (like grass) or the edge
+7. Auto-dig stops when hitting an unbreakable block (like surface) or the edge
 8. Press **ESC** to cancel any active action at any time
 9. **Only one action can be active at a time** - starting a new action (move, dig, search, mine) will cancel the previous one
 10. When mining blocks, there's a **chance items will drop** (gems, crystals, gold)

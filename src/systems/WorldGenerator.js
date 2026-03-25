@@ -23,7 +23,7 @@ export default class WorldGenerator {
 
     // Surface layer
     if (y === CONFIG.SURFACE_HEIGHT) {
-      return TileRegistry.createTile(TileType.GRASS);
+      return TileRegistry.createTile(TileType.SURFACE);
     }
 
     // Underground layers
@@ -74,15 +74,15 @@ export default class WorldGenerator {
       }
     }
 
-    // Create a starting hole in the grass at the center
+    // Create a starting hole in the surface at the center
     const centerX = Math.floor(CONFIG.WORLD_WIDTH / 2);
-    const grassY = CONFIG.SURFACE_HEIGHT;
+    const surfaceY = CONFIG.SURFACE_HEIGHT;
 
-    // Make a 3-block wide hole in the grass
+    // Make a 3-block wide hole in the surface
     for (let dx = -1; dx <= 1; dx++) {
       const x = centerX + dx;
       if (x >= 0 && x < CONFIG.WORLD_WIDTH) {
-        blocks[grassY][x] = TileRegistry.createTile(TileType.MINED_DIRT);
+        blocks[surfaceY][x] = TileRegistry.createTile(TileType.MINED_DIRT);
       }
     }
 

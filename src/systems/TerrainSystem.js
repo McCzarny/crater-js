@@ -68,8 +68,8 @@ export default class TerrainSystem {
       this.blockSprites.delete(key);
     }
 
-    // Don't render air blocks or blocks without color/texture
-    if (!block.color && !block.texture) {
+    // Don't render air blocks or blocks without color/textureVariants
+    if (!block.color && !(block.textureVariants && block.textureVariants.length)) {
       return;
     }
 
@@ -77,21 +77,35 @@ export default class TerrainSystem {
     const pixelY = y * CONFIG.BLOCK_SIZE;
 
     let spriteOrGraphics;
-    if (block.texture && this.scene.textures.exists(block.texture)) {
-      // Render as sprite if texture is defined and loaded
-      spriteOrGraphics = this.scene.add.sprite(
-        pixelX + CONFIG.BLOCK_SIZE / 2,
-        pixelY + CONFIG.BLOCK_SIZE / 2,
-        block.texture,
-      );
-      spriteOrGraphics.setDisplaySize(CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
-      spriteOrGraphics.setDepth(10); // Ensure tiles are below characters
+    // If tile has texture variants, pick one randomly (and cache it on the block instance)
+    if (block.textureVariants && block.textureVariants.length) {
+      if (!block.chosenTexture) {
+        const idx = Math.floor(Math.random() * block.textureVariants.length);
+        block.chosenTexture = block.textureVariants[idx];
+      }
+      const texKey = block.chosenTexture;
+      if (texKey && this.scene.textures.exists(texKey)) {
+        spriteOrGraphics = this.scene.add.sprite(
+          pixelX + CONFIG.BLOCK_SIZE / 2,
+          pixelY + CONFIG.BLOCK_SIZE / 2,
+          texKey,
+        );
+        spriteOrGraphics.setDisplaySize(CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
+        spriteOrGraphics.setDepth(10);
+      } else if (block.color) {
+        // Fallback to color if texture missing
+        spriteOrGraphics = this.scene.add.graphics();
+        spriteOrGraphics.fillStyle(block.color, 1);
+        spriteOrGraphics.fillRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
+        spriteOrGraphics.lineStyle(1, 0x000000, 0.2);
+        spriteOrGraphics.strokeRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
+        spriteOrGraphics.setPosition(pixelX, pixelY);
+      }
     } else {
-      // Fallback: render as colored rectangle
+      // No texture variants: render as colored rectangle
       spriteOrGraphics = this.scene.add.graphics();
       spriteOrGraphics.fillStyle(block.color, 1);
       spriteOrGraphics.fillRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
-      // Add a subtle border for visibility
       spriteOrGraphics.lineStyle(1, 0x000000, 0.2);
       spriteOrGraphics.strokeRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
       spriteOrGraphics.setPosition(pixelX, pixelY);

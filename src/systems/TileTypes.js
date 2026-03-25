@@ -5,7 +5,7 @@ import { CONFIG } from '../config.js';
  */
 export const TileType = {
   AIR: 'air',
-  GRASS: 'grass',
+  SURFACE: 'surface',
   DIRT: 'dirt',
   MINED_DIRT: 'minedDirt',
   STONE: 'stone',
@@ -23,13 +23,16 @@ export const TileType = {
  * Tile Class - represents a single tile with all its properties
  */
 export class Tile {
-  constructor(type, solid, color, breakable = true, minedType = null, texture = null) {
+  constructor(type, solid, color, breakable = true, minedType = null, textureVariants = null) {
     this.type = type;
     this.solid = solid;
     this.color = color;
     this.breakable = breakable;
     this.minedType = minedType;
-    this.texture = texture;
+    // textureVariants: array of texture keys (e.g. ['dirt_1','dirt_2']) or null
+    this.textureVariants = textureVariants;
+    // chosenTexture caches a selected variant for this tile instance
+    this.chosenTexture = null;
   }
 
   /**
@@ -42,7 +45,8 @@ export class Tile {
       this.color,
       this.breakable,
       this.minedType,
-      this.texture,
+      // clone variants array if present
+      this.textureVariants ? Array.from(this.textureVariants) : null,
     );
   }
 
@@ -80,48 +84,45 @@ export class TileRegistry {
     // Air - not solid, not breakable
     this.register(new Tile(TileType.AIR, false, null, false, null));
 
-    // Grass - solid, not breakable
-    this.register(new Tile(TileType.GRASS, true, 0x3a7d3a, false, null));
-
-    // Dirt - solid, breakable, has mined version
+    // Surface - solid, not breakable
     this.register(
-      new Tile(TileType.DIRT, true, CONFIG.LAYERS.DIRT.color, true, TileType.MINED_DIRT, 'dirt'),
+      new Tile(TileType.SURFACE, true, 0x3a7d3a, false, null, [
+        'surface_1',
+        'surface_2',
+        'surface_3',
+        'surface_4',
+      ]),
+    );
+
+    // Dirt - solid, breakable, has mined version (use variants)
+    this.register(
+      new Tile(TileType.DIRT, true, CONFIG.LAYERS.DIRT.color, true, TileType.MINED_DIRT, [
+        'dirt_1',
+        'dirt_2',
+        'dirt_3',
+        'dirt_4',
+      ]),
     );
 
     // Mined Dirt - not solid, not breakable (already mined)
     this.register(
-      new Tile(
-        TileType.MINED_DIRT,
-        false,
-        darkenColor(CONFIG.LAYERS.DIRT.color),
-        false,
-        null,
+      new Tile(TileType.MINED_DIRT, false, darkenColor(CONFIG.LAYERS.DIRT.color), false, null, [
         'mined_dirt',
-      ),
+      ]),
     );
 
     // Stone - solid, breakable, has mined version
     this.register(
-      new Tile(
-        TileType.STONE,
-        true,
-        CONFIG.LAYERS.STONE.color,
-        true,
-        TileType.MINED_STONE,
+      new Tile(TileType.STONE, true, CONFIG.LAYERS.STONE.color, true, TileType.MINED_STONE, [
         'stone',
-      ),
+      ]),
     );
 
     // Mined Stone - not solid, not breakable
     this.register(
-      new Tile(
-        TileType.MINED_STONE,
-        false,
-        darkenColor(CONFIG.LAYERS.STONE.color),
-        false,
-        null,
+      new Tile(TileType.MINED_STONE, false, darkenColor(CONFIG.LAYERS.STONE.color), false, null, [
         'mined_stone',
-      ),
+      ]),
     );
 
     // Iron Stone - solid, breakable, has mined version
@@ -132,7 +133,7 @@ export class TileRegistry {
         CONFIG.LAYERS.IRON.color,
         true,
         TileType.MINED_IRON_STONE,
-        'iron_stone',
+        ['iron_stone'],
       ),
     );
 
@@ -144,7 +145,7 @@ export class TileRegistry {
         darkenColor(CONFIG.LAYERS.IRON.color),
         false,
         null,
-        'mined_iron_stone',
+        ['mined_iron_stone'],
       ),
     );
 
@@ -156,7 +157,7 @@ export class TileRegistry {
         CONFIG.LAYERS.DEEP_STONE.color,
         true,
         TileType.MINED_DEEP_STONE,
-        'deep_stone',
+        ['deep_stone'],
       ),
     );
 
@@ -168,7 +169,7 @@ export class TileRegistry {
         darkenColor(CONFIG.LAYERS.DEEP_STONE.color),
         false,
         null,
-        'mined_deep_stone',
+        ['mined_deep_stone'],
       ),
     );
 
@@ -180,7 +181,7 @@ export class TileRegistry {
         CONFIG.LAYERS.RARE_ORE.color,
         true,
         TileType.MINED_RARE_ORE,
-        'rare_ore',
+        ['rare_ore'],
       ),
     );
 
@@ -192,12 +193,12 @@ export class TileRegistry {
         darkenColor(CONFIG.LAYERS.RARE_ORE.color),
         false,
         null,
-        'mined_rare_ore',
+        ['mined_rare_ore'],
       ),
     );
 
     // Boulder - solid, not breakable
-    this.register(new Tile(TileType.BOULDER, true, 0x616262, false, null, 'boulder'));
+    this.register(new Tile(TileType.BOULDER, true, 0x616262, false, null, ['boulder']));
 
     // NOTE: To add a texture for a tile, add the texture file to resources/tiles/ and reference its key here.
     // The texture key should match the name used in BootScene preload (e.g., 'stone', 'dirt', etc.).
