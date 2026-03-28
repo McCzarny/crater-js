@@ -168,6 +168,9 @@ export default class UIScene extends Phaser.Scene {
         const gameScene = this.scene.get('GameScene');
         if (gameScene && gameScene.player) {
           this.hud.updateAbilityIndicators(gameScene.player);
+          if (this.hud.updateBars) {
+            this.hud.updateBars(gameScene.player);
+          }
         }
       } catch (e) {
         // GameScene may not be available yet

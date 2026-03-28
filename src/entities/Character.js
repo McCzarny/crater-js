@@ -54,6 +54,10 @@ export default class Character {
     this.stamina = this.maxStamina;
     this.staminaDrainPerSecond = 1;
     this.staminaRegenPerSecond = 10;
+
+    // Health settings
+    this.maxHealth = this.raceConfig.healthLimit;
+    this.health = this.maxHealth;
   }
 
   /**

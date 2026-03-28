@@ -53,7 +53,7 @@ export default class HUD {
     for (let i = 0; i < 4; i++) {
       const x = itemsX + (i % 2) * (48 + itemsSpacing);
       const y = itemsY + (i >= 2 ? 48 + itemsSpacing : 0); // Move to second row for last 2 items
-      const icon = makeItemIcon(this.scene, x, y, 'hud_icon');
+      const icon = makeItemIcon(this.scene, x, y);
       icon.image.setVisible(false); // Start hidden until inventory is updated
       this.sections.items.push(icon);
     }
@@ -70,7 +70,7 @@ export default class HUD {
     const passY = barsY + 64; // Adjust this value as needed
     for (let i = 0; i < 4; i++) {
       const x = passX + (i - 1.5) * 30;
-      const icon = makeIcon(this.scene, x, passY, 24, `P${i + 1}`);
+      const icon = makeIcon(this.scene, x, passY, 24, null);
       this.sections.passives.push(icon);
     }
 
@@ -317,9 +317,7 @@ export default class HUD {
 
       if (slot) {
         icon.image.setTexture(slot);
-        if (icon.image.setDisplaySize) {
-          icon.image.setDisplaySize(32, 32);
-        }
+        icon.image.setVisible(true);
       } else {
         // Show empty slot texture
         icon.image.setVisible(false);
@@ -352,7 +350,9 @@ export default class HUD {
 
     abilities.forEach((ability, index) => {
       const slot = this.sections.characterActions[index];
-      if (!slot) {return;}
+      if (!slot) {
+        return;
+      }
 
       // Determine texture key by constructor name mapping
       slot.icon.setTexture(ability.texture());
@@ -361,7 +361,9 @@ export default class HUD {
       // Click handler: toggle ability via GameScene event
       const clickHandler = () => {
         const gameScene = this.scene.scene.get('GameScene');
-        if (!gameScene) {return;}
+        if (!gameScene) {
+          return;
+        }
         gameScene.events.emit('toggleAbility', index);
       };
       slot.icon.setInteractive({ useHandCursor: true });
@@ -374,12 +376,18 @@ export default class HUD {
    * @param {Character} character
    */
   updateAbilityIndicators(character) {
-    if (!this.sections || !this.sections.characterActions) {return;}
-    if (!character || !character.abilities) {return;}
+    if (!this.sections || !this.sections.characterActions) {
+      return;
+    }
+    if (!character || !character.abilities) {
+      return;
+    }
     const abilities = character.abilities.getAbilities();
     abilities.forEach((ability, index) => {
       const slot = this.sections.characterActions[index];
-      if (!slot || !slot.icon || !slot.progressOverlay) {return;}
+      if (!slot || !slot.icon || !slot.progressOverlay) {
+        return;
+      }
       // Progress overlay
       const prog = ability.progress();
       const h = slot.icon.displayHeight;
@@ -392,5 +400,37 @@ export default class HUD {
         slot.progressOverlay.setVisible(false);
       }
     });
+  }
+
+  /**
+   * Update health, stamina, and patience bars every frame.
+   * @param {Character} character
+   */
+  updateBars(character) {
+    if (!this.sections || !this.sections.bars) {
+      return;
+    }
+    if (!character) {
+      return;
+    }
+    // Assume: bars[0]=HP, bars[1]=STA, bars[2]=PAT
+    const bars = this.sections.bars;
+    // Health
+    if (bars[0] && character.health !== undefined && character.maxHealth) {
+      const frac = Math.max(0, Math.min(1, character.health / character.maxHealth));
+      bars[0].fg.setScale(frac, 1);
+    }
+    // Stamina
+    if (bars[1] && character.stamina !== undefined && character.maxStamina) {
+      const frac = Math.max(0, Math.min(1, character.stamina / character.maxStamina));
+      bars[1].fg.setScale(frac, 1);
+    }
+    // Patience (optional, fallback to 1 if not present)
+    if (bars[2]) {
+      const patience = character.patience !== undefined ? character.patience : 1;
+      const maxPatience = character.maxPatience !== undefined ? character.maxPatience : 1;
+      const frac = maxPatience ? Math.max(0, Math.min(1, patience / maxPatience)) : 1;
+      bars[2].fg.setScale(frac, 1);
+    }
   }
 }

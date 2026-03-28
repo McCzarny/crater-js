@@ -44,6 +44,7 @@ export const CONFIG = {
       movementSpeedMultiplier: 1.0, // Base movement speed
       staminaLimit: 300,
       patienceLimit: 100,
+      healthLimit: 100,
     },
     fungus: {
       name: 'Cult of the Spore',
@@ -52,6 +53,7 @@ export const CONFIG = {
       movementSpeedMultiplier: 1.0, // Normal movement speed
       staminaLimit: 200,
       patienceLimit: 75,
+      healthLimit: 120,
     },
     petal: {
       name: 'Order of the Seed',
@@ -60,6 +62,7 @@ export const CONFIG = {
       movementSpeedMultiplier: 0.85, // 15% slower movement (plant-based)
       staminaLimit: 160,
       patienceLimit: 150,
+      healthLimit: 80,
     },
   },
 
