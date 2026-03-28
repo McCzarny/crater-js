@@ -16,6 +16,10 @@ class Ability {
     return 'Unknown Ability';
   }
 
+  texture() {
+    return null; // Override in subclasses if they have an icon
+  }
+
   /**
    * Get the ability description
    */
@@ -83,6 +87,14 @@ class Ability {
   update(_time, _delta) {
     // Override in subclasses if needed
   }
+
+  /**
+   * Get progress of the ability (0-1). Override in subclasses if needed.
+   * Used for showing progress overlays in UI.
+   */
+  progress() {
+    return 0;
+  }
 }
 
 /**
@@ -97,6 +109,19 @@ class TeleportationAbility extends Ability {
 
   name() {
     return 'Teleportation';
+  }
+
+  texture() {
+    return 'hud_teleport';
+  }
+
+  progress() {
+    const currentTime = Date.now();
+    const timeSinceLastUse = currentTime - this.lastUseTime;
+    if (timeSinceLastUse >= this.cooldownTime) {
+      return 0;
+    }
+    return timeSinceLastUse / this.cooldownTime;
   }
 
   description() {
@@ -170,6 +195,10 @@ class ClimbingAbility extends Ability {
     return 'Climbing';
   }
 
+  texture() {
+    return 'hud_climb';
+  }
+
   description() {
     return 'Climb walls and prevent falling in tunnels';
   }
@@ -211,8 +240,21 @@ class SeedPlantingAbility extends Ability {
     this.lastGrowthTime = 0;
   }
 
+  progress() {
+    if (!this.isGrowing) {
+      return 0;
+    }
+    const currentTime = Date.now();
+    const elapsed = currentTime - this.lastGrowthTime;
+    return Math.min(elapsed / this.growthInterval, 1);
+  }
+
   name() {
     return 'Seed Planting';
+  }
+
+  texture() {
+    return 'hud_seed_planting';
   }
 
   description() {

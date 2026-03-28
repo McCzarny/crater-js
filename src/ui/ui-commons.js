@@ -6,6 +6,12 @@ export function createButton(scene, x, y, opts = {}) {
     .setDepth(opts.depth ?? 200)
     .setInteractive({ useHandCursor: !!opts.useHandCursor });
 
+  const progressOverlay = scene.add
+    .rectangle(x, y, rect.width, rect.height, 0x00FF00, 0.25)
+    .setScrollFactor(0)
+    .setDepth((opts.depth ?? 201) + 1)
+    .setVisible(false);
+
   const label = opts.text
     ? scene.add.text(x, y, opts.text, {
       fontSize: opts.fontSize ?? '12px',
@@ -18,15 +24,15 @@ export function createButton(scene, x, y, opts = {}) {
     label
       .setOrigin(0.5)
       .setScrollFactor(0)
-      .setDepth((opts.depth ?? 200) + 1);
+      .setDepth((opts.depth ?? 202) + 1);
   }
 
   const icon = scene.add
     .sprite(x, y, opts.icon)
     .setScrollFactor(0)
-    .setDepth((opts.depth ?? 200) + 1);
+    .setDepth((opts.depth ?? 203) + 1);
 
-  return { rect, label, icon };
+  return { rect, label, icon, progressOverlay };
 }
 
 export function createPanel(

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config.js';
 import CharacterIcons from '../ui/CharacterIcons.js';
-import PointsUI from '../ui/PointsUI.js';
+import EssenceUI from '../ui/EssenceUI.js';
 import HUD from '../ui/HUD.js';
 
 /**
@@ -19,8 +19,8 @@ export default class UIScene extends Phaser.Scene {
     this.characterIcons = new CharacterIcons(this, { races: ['tribe', 'fungus', 'petal'] });
     this.characterIcons.create(40, 40, 60);
 
-    this.pointsUI = new PointsUI(this, { points: 0 });
-    this.pointsUI.create(CONFIG.GAME_WIDTH - 90, 24);
+    this.essenceUI = new EssenceUI(this, { points: 0 });
+    this.essenceUI.create(CONFIG.GAME_WIDTH - 90, 24);
 
     this.hud = new HUD(this);
     this.hud.create();
@@ -65,8 +65,8 @@ export default class UIScene extends Phaser.Scene {
     if (this.characterIcons && this.characterIcons.destroy) {
       this.characterIcons.destroy();
     }
-    if (this.pointsUI && this.pointsUI.destroy) {
-      this.pointsUI.destroy();
+    if (this.essenceUI && this.essenceUI.destroy) {
+      this.essenceUI.destroy();
     }
     if (this.hud && this.hud.destroy) {
       this.hud.destroy();
@@ -161,6 +161,17 @@ export default class UIScene extends Phaser.Scene {
     // (buttons are recreated when character switches)
     if (this.abilityButtonElements && this.abilityButtonElements.length > 0) {
       this.updateAbilityButtonStates();
+    }
+
+    if (this.hud && this.hud.updateAbilityIndicators) {
+      try {
+        const gameScene = this.scene.get('GameScene');
+        if (gameScene && gameScene.player) {
+          this.hud.updateAbilityIndicators(gameScene.player);
+        }
+      } catch (e) {
+        // GameScene may not be available yet
+      }
     }
   }
 

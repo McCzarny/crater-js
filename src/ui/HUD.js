@@ -352,45 +352,45 @@ export default class HUD {
 
     abilities.forEach((ability, index) => {
       const slot = this.sections.characterActions[index];
-      if (!slot) {
-        return;
-      }
+      if (!slot) {return;}
 
       // Determine texture key by constructor name mapping
-      const ctor = ability.constructor && ability.constructor.name;
-      let tex = 'hud_icon';
-      if (ctor === 'ClimbingAbility') {
-        tex = 'hud_climb';
-      } else if (ctor === 'SeedPlantingAbility') {
-        tex = 'hud_seed_planting';
-      } else if (ctor === 'TeleportationAbility') {
-        tex = 'hud_teleport';
-      }
-
-      if (this.scene.textures && this.scene.textures.exists && this.scene.textures.exists(tex)) {
-        slot.icon.setTexture(tex);
-      } else {
-        slot.icon.setTexture('hud_icon');
-      }
-
+      slot.icon.setTexture(ability.texture());
       slot.icon.setVisible(true);
-
-      // Visual state: dim if cannot activate, highlight if active
-      // const can = ability.canActivate ? ability.canActivate() : true;
-      // const active = ability.isActive ? ability.isActive() : false;
-      // slot.bg.setFillStyle(active ? 0x00aaff : can ? 0x335577 : 0x444444, 1);
 
       // Click handler: toggle ability via GameScene event
       const clickHandler = () => {
         const gameScene = this.scene.scene.get('GameScene');
-        if (!gameScene) {
-          return;
-        }
+        if (!gameScene) {return;}
         gameScene.events.emit('toggleAbility', index);
       };
-
       slot.icon.setInteractive({ useHandCursor: true });
       slot.icon.on('pointerdown', clickHandler);
+    });
+  }
+
+  /**
+   * Update ability usability and progress indicators. Call this every frame.
+   * @param {Character} character
+   */
+  updateAbilityIndicators(character) {
+    if (!this.sections || !this.sections.characterActions) {return;}
+    if (!character || !character.abilities) {return;}
+    const abilities = character.abilities.getAbilities();
+    abilities.forEach((ability, index) => {
+      const slot = this.sections.characterActions[index];
+      if (!slot || !slot.icon || !slot.progressOverlay) {return;}
+      // Progress overlay
+      const prog = ability.progress();
+      const h = slot.icon.displayHeight;
+      const w = slot.icon.displayWidth;
+      if (prog > 0) {
+        slot.progressOverlay.setVisible(true);
+        slot.progressOverlay.setDisplaySize(w, h * prog);
+        slot.progressOverlay.setY(slot.icon.y + (h * (1 - prog)) / 2);
+      } else {
+        slot.progressOverlay.setVisible(false);
+      }
     });
   }
 }
