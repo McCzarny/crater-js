@@ -13,6 +13,7 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('tribe', 'resources/icons/races/tribe.png');
     this.load.image('fungus', 'resources/icons/races/fungus.png');
     this.load.image('petal', 'resources/icons/races/petal.png');
+    this.load.image('skull', 'resources/icons/races/skull.png');
     // Bases
     this.load.image('vine', 'resources/tile-decals/vine.png');
     this.load.image('tribe-base', 'resources/structures/tribe_base.png');

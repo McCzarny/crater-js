@@ -10,6 +10,7 @@ import CharacterAbilities from '../systems/CharacterAbilities.js';
  */
 export default class Character {
   constructor(scene, x, y, race) {
+    this.isDead = false;
     this.scene = scene;
     this.race = race;
 
@@ -271,5 +272,36 @@ export default class Character {
     // Reset movement state
     this.movement.isMoving = false;
     this.movement.moveTarget = null;
+  }
+
+  /**
+   * Inflict damage to the character. If health <= 0, kill the character.
+   * @param {number} amount
+   */
+  takeDamage(amount) {
+    if (this.isDead) {
+      return;
+    }
+    this.health -= amount;
+    if (this.health <= 0) {
+      this.health = 0;
+      this.kill();
+    }
+  }
+
+  /**
+   * Kill the character (set isDead, stop actions, update sprite, etc.)
+   */
+  kill() {
+    if (this.isDead) {
+      return;
+    }
+    this.isDead = true;
+    this.stopAllActions();
+    if (this.sprite) {
+      this.sprite.setTint(0x222222);
+      this.sprite.setAlpha(0.5);
+    }
+    // Optionally: play death animation, sound, etc.
   }
 }

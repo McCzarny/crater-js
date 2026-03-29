@@ -29,21 +29,25 @@ export default class CharacterIcons {
     for (let i = 0; i < characters.length; i++) {
       const char = characters[i];
       const y = startY + i * spacing;
-      const icon = makeIcon(this.scene, x, y, 48, char.race);
-      icon.bg.setInteractive({ useHandCursor: true });
-
-      icon.bg.on('pointerdown', () => {
-        this.select(i);
-      });
-      icon.bg.on('pointerover', () => icon.bg.setScale(1.05));
-      icon.bg.on('pointerout', () => icon.bg.setScale(1));
-
+      // Use skull icon if dead, else race
+      const iconKey = char.isDead ? 'skull' : char.race;
+      const icon = makeIcon(this.scene, x, y, 48, iconKey);
+      if (char.isDead) {
+        icon.bg.disableInteractive();
+        icon.bg.setAlpha(0.5);
+      } else {
+        icon.bg.setInteractive({ useHandCursor: true });
+        icon.bg.on('pointerdown', () => {
+          this.select(i);
+        });
+        icon.bg.on('pointerover', () => icon.bg.setScale(1.05));
+        icon.bg.on('pointerout', () => icon.bg.setScale(1));
+      }
       const border = this.scene.add
         .rectangle(x, y, 56, 56, 0xffff00, 0.4)
         .setScrollFactor(0)
         .setDepth(199)
         .setVisible(i === this.activeIndex);
-
       this.icons.push(icon);
       this.borders.push(border);
     }
