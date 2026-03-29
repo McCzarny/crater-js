@@ -9,18 +9,32 @@ export default class CharacterIcons {
     this.activeIndex = 0;
   }
 
-  create(x = 30, startY = 30, spacing = 60) {
-    const races = this.options.races || ['C1', 'C2', 'C3'];
+  /**
+   * Create or update icons for the given character list.
+   * @param {Array<Character>} characters
+   * @param {number} x
+   * @param {number} startY
+   * @param {number} spacing
+   */
+  update(characters, x = 30, startY = 30, spacing = 60) {
+    // Remove old icons and borders
+    this.icons.forEach(ic => {
+      ic.bg.destroy();
+      ic.label && ic.label.destroy();
+    });
+    this.borders.forEach(b => b.destroy());
+    this.icons = [];
+    this.borders = [];
 
-    for (let i = 0; i < races.length; i++) {
+    for (let i = 0; i < characters.length; i++) {
+      const char = characters[i];
       const y = startY + i * spacing;
-      const icon = makeIcon(this.scene, x, y, 48, races[i]);
+      const icon = makeIcon(this.scene, x, y, 48, char.race);
       icon.bg.setInteractive({ useHandCursor: true });
 
       icon.bg.on('pointerdown', () => {
         this.select(i);
       });
-
       icon.bg.on('pointerover', () => icon.bg.setScale(1.05));
       icon.bg.on('pointerout', () => icon.bg.setScale(1));
 
@@ -28,7 +42,7 @@ export default class CharacterIcons {
         .rectangle(x, y, 56, 56, 0xffff00, 0.4)
         .setScrollFactor(0)
         .setDepth(199)
-        .setVisible(i === 0);
+        .setVisible(i === this.activeIndex);
 
       this.icons.push(icon);
       this.borders.push(border);

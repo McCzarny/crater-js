@@ -213,11 +213,25 @@ export default class CharacterMining {
 
     const block = this.terrainSystem.getBlockAt(targetX, targetY);
 
-    // Stop if no block, not solid, or unbreakable
-    if (!block || !block.solid || !block.breakable) {
+    // Stop if no block or unbreakable
+    if (!block || (block.solid && !block.breakable)) {
       console.log('Auto-dig stopped: hit non-mineable block', block?.type || 'empty', block);
       this.stopAutoDig();
       return;
+    }
+
+    // If the block is not solid, move into the direction instead of mining
+    if (!block.solid) {
+      console.log('Auto-dig moving into non-solid block at:', targetX, targetY);
+      char.gridX = targetX;
+      char.gridY = targetY;
+      this.hideMiningIndicator();
+      return {
+        shouldMove: true,
+        targetX: targetX,
+        targetY: targetY,
+        speed: char.moveSpeed,
+      };
     }
 
     // Show mining indicator
@@ -292,6 +306,38 @@ export default class CharacterMining {
       this.miningIndicator.destroy();
       this.miningIndicator = null;
       this.miningIndicatorTarget = null;
+    }
+  }
+
+  /**
+   * Scan in a direction until a solid, breakable block is found, then start auto-digging.
+   * If no diggable block is found, do nothing.
+   * @param {{dx:number,dy:number}} direction
+   * @param {number} [maxSteps=10]
+   */
+  findAndStartAutoDig(direction, maxSteps = 10) {
+    const char = this.character;
+    let x = char.gridX;
+    let y = char.gridY;
+    for (let step = 1; step <= maxSteps; step++) {
+      x += direction.dx;
+      y += direction.dy;
+      const block = this.terrainSystem.getBlockAt(x, y);
+      if (block && block.solid) {
+        if (block.breakable) {
+          // Move character to just before the block if possible
+          const prevX = x - direction.dx;
+          const prevY = y - direction.dy;
+          if (char.movement && char.movement.tryMove) {
+            char.movement.tryMove(prevX - char.gridX, prevY - char.gridY, false);
+          } else {
+            char.gridX = prevX;
+            char.gridY = prevY;
+          }
+          this.startAutoDig(direction);
+        }
+        break;
+      }
     }
   }
 }

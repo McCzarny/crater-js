@@ -21,6 +21,8 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
+    // Notify UIScene to update character icons after all characters are created
+    this.scene.get('UIScene').events.emit('updateCharacterIcons');
     console.log('GameScene: Initializing...');
 
     // Initialize systems
@@ -57,24 +59,15 @@ export default class GameScene extends Phaser.Scene {
       this.windSprites.push(sprite);
     }
 
-    // Create 3 characters, one for each race
-    // Spawn them at their respective bases
+    // Create 6 characters: 2 for each race, at/near their bases
     const races = ['tribe', 'fungus', 'petal'];
     this.characters = [];
-
     for (const race of races) {
       const base = this.baseSystem.getBaseCenter(race);
-      if (base) {
-        // Spawn character at the base center, slightly above
-        this.characters.push(new Character(this, base.gridX, base.gridY - 1, race));
-        console.log(`Spawned ${race} character at base (${base.gridX}, ${base.gridY - 1})`);
-      } else {
-        // Fallback to center if base not found
-        console.warn(`Base not found for ${race}, using fallback position`);
-        const spawnX = Math.floor(CONFIG.WORLD_WIDTH / 2);
-        const spawnY = CONFIG.SURFACE_HEIGHT - 2;
-        this.characters.push(new Character(this, spawnX, spawnY, race));
-      }
+      // First character at base center, slightly above
+      this.addCharacter(race, base.gridX, base.gridY - 1);
+      // Second character offset by +2 x
+      this.addCharacter(race, base.gridX + 1, base.gridY - 1);
     }
 
     // Set first character as active
@@ -203,5 +196,18 @@ export default class GameScene extends Phaser.Scene {
         }
       }
     }
+  }
+
+  /**
+   * Add a new character of a given race at (x, y)
+   * @param {string} race
+   * @param {number} x
+   * @param {number} y
+   * @returns {Character}
+   */
+  addCharacter(race, x, y) {
+    const character = new Character(this, x, y, race);
+    this.characters.push(character);
+    return character;
   }
 }

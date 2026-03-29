@@ -16,8 +16,15 @@ export default class UIScene extends Phaser.Scene {
     console.log('UIScene: Initializing...');
 
     // Compose modular UI components (mocks/dummies)
-    this.characterIcons = new CharacterIcons(this, { races: ['tribe', 'fungus', 'petal'] });
-    this.characterIcons.create(40, 40, 60);
+    this.characterIcons = new CharacterIcons(this);
+
+    // Wait for GameScene to be ready, then update icons with actual characters
+    this.events.once('updateCharacterIcons', () => {
+      const gameScene = this.scene.get('GameScene');
+      if (gameScene && gameScene.characters) {
+        this.characterIcons.update(gameScene.characters, 40, 40, 60);
+      }
+    });
 
     this.essenceUI = new EssenceUI(this, { points: 0 });
     this.essenceUI.create(CONFIG.GAME_WIDTH - 90, 24);
@@ -44,7 +51,7 @@ export default class UIScene extends Phaser.Scene {
       this,
     );
 
-    // Trigger initial HUD update if GameScene already has a player
+    // Trigger initial HUD update if GameScene already has a player and update character icons
     try {
       const gameScene = this.scene.get('GameScene');
       if (gameScene && gameScene.player && this.hud && this.hud.updateCharacter) {
@@ -52,6 +59,8 @@ export default class UIScene extends Phaser.Scene {
         if (this.hud.updateAbilities) {
           this.hud.updateAbilities(gameScene.player);
         }
+        // Update character icons
+        this.characterIcons.update(gameScene.characters, 40, 40, 60);
       }
     } catch (e) {
       // ignore if GameScene not available yet
@@ -186,13 +195,6 @@ export default class UIScene extends Phaser.Scene {
     if (!raceConfig) {
       return;
     }
-
-    const miningSpeed = (raceConfig.miningSpeedMultiplier * 100).toFixed(0);
-    const moveSpeed = (raceConfig.movementSpeedMultiplier * 100).toFixed(0);
-
-    this.raceInfoText.setText(
-      `${raceConfig.name} | Mining: ${miningSpeed}% | Movement: ${moveSpeed}%`,
-    );
 
     // Update ability buttons for this character
     this.updateAbilityButtonsForCharacter();
