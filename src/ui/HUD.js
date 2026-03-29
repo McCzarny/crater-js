@@ -133,36 +133,37 @@ export default class HUD {
 
             switch (actionName) {
               case 'MoveUp':
-                if (player.movement && player.movement.tryMove) {
-                  player.movement.tryMove(0, -1, false);
-                }
-                break;
-              case 'MoveDown':
+                player.stopAllActions();
                 if (player.movement && player.movement.tryMove) {
                   player.movement.tryMove(0, 1, false);
                 }
                 break;
               case 'MoveLeft':
+                player.stopAllActions();
                 if (player.movement && player.movement.tryMove) {
                   player.movement.tryMove(-1, 0, false);
                 }
                 break;
               case 'MoveRight':
+                player.stopAllActions();
                 if (player.movement && player.movement.tryMove) {
                   player.movement.tryMove(1, 0, false);
                 }
                 break;
               case 'DigLeft':
+                player.stopAllActions();
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: -1, dy: 0 });
                 }
                 break;
               case 'DigDown':
+                player.stopAllActions();
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: 0, dy: 1 });
                 }
                 break;
               case 'DigRight':
+                player.stopAllActions();
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: 1, dy: 0 });
                 }
@@ -173,11 +174,13 @@ export default class HUD {
                 }
                 break;
               case 'PickUp':
+                player.stopAllActions();
                 if (player.inventory && player.inventory.tryPickup) {
                   player.inventory.tryPickup();
                 }
                 break;
               case 'Search':
+                player.stopAllActions();
                 if (player.inventory) {
                   if (player.inventory.isSearching) {
                     if (player.inventory.stopSearch) {
