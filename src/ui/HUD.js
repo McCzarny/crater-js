@@ -89,22 +89,22 @@ export default class HUD {
     const stdY = hudTop + 26 + 32;
     const standardActions = [];
     standardActions[0] = [];
-    standardActions[0][0] = null;
+    standardActions[0][0] = 'Search';
     standardActions[0][1] = 'MoveUp';
-    standardActions[0][2] = null;
+    standardActions[0][2] = 'PickUp';
 
-    standardActions[0][3] = 'Stop';
-    standardActions[0][4] = 'PickUp';
-    standardActions[0][5] = 'Search';
+    standardActions[0][3] = 'DigLeft';
+    standardActions[0][4] = 'Stop';
+    standardActions[0][5] = 'DigRight';
 
     standardActions[1] = [];
     standardActions[1][0] = 'MoveLeft';
     standardActions[1][1] = 'MoveDown';
     standardActions[1][2] = 'MoveRight';
 
-    standardActions[1][3] = 'DigLeft';
+    standardActions[1][3] = 'DigLeftDown';
     standardActions[1][4] = 'DigDown';
-    standardActions[1][5] = 'DigRight';
+    standardActions[1][5] = 'DigRightDown';
 
     for (let r = 0; r < 2; r++) {
       for (let c = 0; c < 6; c++) {
@@ -177,6 +177,18 @@ export default class HUD {
                 player.stopAllActions();
                 if (player.inventory && player.inventory.tryPickup) {
                   player.inventory.tryPickup();
+                }
+                break;
+              case 'DigLeftDown':
+                player.stopAllActions();
+                if (player.mining && player.mining.startAutoDig) {
+                  player.mining.startAutoDig({ dx: -1, dy: 1 });
+                }
+                break;
+              case 'DigRightDown':
+                player.stopAllActions();
+                if (player.mining && player.mining.startAutoDig) {
+                  player.mining.startAutoDig({ dx: 1, dy: 1 });
                 }
                 break;
               case 'Search':

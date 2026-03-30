@@ -227,16 +227,8 @@ export default class TerrainSystem {
         this.renderBlock(changedX, y);
       }
 
-      // Notify other reaction handlers about the new boulder position (chained reactions)
-      for (const handler of this.reactionHandlers) {
-        if (handler !== this._boulderReaction) {
-          try {
-            handler(changedX, landingY);
-          } catch (err) {
-            console.error('Error in chained reaction handler:', err);
-          }
-        }
-      }
+      // Notify further reactions after boulder has moved
+      this.handleEnvironmentAfterChange(changedX, aboveY);
     }
   }
 

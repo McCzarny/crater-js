@@ -190,11 +190,27 @@ export default class CharacterMining {
     const staminaMultiplier = char.stamina < char.maxStamina * 0.5 ? 2.0 : 1.0;
     const currentDigInterval = baseInterval * staminaMultiplier;
 
-    const targetX = char.gridX + this.autoDigDirection.dx;
-    const targetY = char.gridY + this.autoDigDirection.dy;
+    // Support diagonal auto-dig directions by translating into a concrete
+    // horizontal or vertical action based on the tile above the character.
+    // Semantics: For diagonal requests (dx != 0 && dy != 0):
+    // - if there is a solid block behind the character, dig horizontally in the requested direction
+    // - otherwise, dig downwards
+    let dirToUse = this.autoDigDirection;
+    if (dirToUse && dirToUse.dx !== 0 && dirToUse.dy !== 0) {
+      const blockBehind = this.terrainSystem.getBlockAt(char.gridX - dirToUse.dx, char.gridY);
+      if (blockBehind && blockBehind.solid) {
+        dirToUse = { dx: dirToUse.dx, dy: 0 };
+      } else {
+        dirToUse = { dx: 0, dy: 1 };
+      }
+    }
+
+    const targetX = char.gridX + dirToUse.dx;
+    const targetY = char.gridY + dirToUse.dy;
 
     console.log('Auto-dig attempting:', {
-      direction: this.autoDigDirection,
+      requestedDirection: this.autoDigDirection,
+      effectiveDirection: dirToUse,
       currentPos: { x: char.gridX, y: char.gridY },
       targetPos: { x: targetX, y: targetY },
     });
