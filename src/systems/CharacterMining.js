@@ -1,4 +1,5 @@
 import { CONFIG } from '../config.js';
+import { TileRegistry } from './TileTypes.js';
 
 /**
  * CharacterMining - handles all mining-related logic for characters
@@ -270,6 +271,18 @@ export default class CharacterMining {
     this.terrainSystem.mineBlockAt(targetX, targetY);
     this.hideMiningIndicator();
     this.lastDigTime = time;
+
+    // Re-check the target tile after environment reactions (e.g. boulders)
+    const postBlock = this.terrainSystem.getBlockAt(targetX, targetY);
+    if (postBlock && postBlock.solid) {
+      console.log(
+        'Auto-dig aborted: tile occupied after mining (likely boulder):',
+        targetX,
+        targetY,
+      );
+      this.stopAutoDig();
+      return;
+    }
 
     // Update character position to move into the mined space
     char.gridX = targetX;
