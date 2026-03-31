@@ -1,5 +1,4 @@
 import { CONFIG } from '../config.js';
-import { TileRegistry } from './TileTypes.js';
 
 /**
  * CharacterMining - handles all mining-related logic for characters
