@@ -222,6 +222,9 @@ export default class TerrainSystem {
       this.blocks[landingY][changedX] = boulderTile;
       this.blocks[fallFromY][changedX] = removedBoulderTile;
 
+      // Destroy all items at the landing tile
+      this.itemManager.removeAllItemsAt(changedX, landingY);
+
       // Re-render the column area affected (from original above down to landing)
       for (let y = fallFromY; y <= landingY; y++) {
         this.renderBlock(changedX, y);

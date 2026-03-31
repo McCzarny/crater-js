@@ -22,6 +22,18 @@ export default class ItemManager {
     this.itemGravityInterval = 100; // Check gravity every 100ms
   }
 
+  /**
+   * Remove all items at a specific grid position
+   */
+
+  removeAllItemsAt(gridX, gridY) {
+    // Collect IDs of items at the given position
+    const itemsToRemove = this.items.filter(item => item.gridX === gridX && item.gridY === gridY);
+    for (const item of itemsToRemove) {
+      this.removeItem(item.id);
+    }
+  }
+
   getEssenceTypeForAmount(amount) {
     if (amount <= CONFIG.ESSENCE.ESSENCE_GRAIN.max_value) {
       return 'ESSENCE_GRAIN';
