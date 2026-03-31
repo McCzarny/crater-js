@@ -22,6 +22,18 @@ export default class ItemManager {
     this.itemGravityInterval = 100; // Check gravity every 100ms
   }
 
+  getEssenceTypeForAmount(amount) {
+    if (amount <= CONFIG.ESSENCE.ESSENCE_GRAIN.max_value) {
+      return 'ESSENCE_GRAIN';
+    } else if (amount <= CONFIG.ESSENCE.ESSENCE_LUMP.max_value) {
+      return 'ESSENCE_LUMP';
+    } else if (amount <= CONFIG.ESSENCE.ESSENCE_CHUNK.max_value) {
+      return 'ESSENCE_CHUNK';
+    } else {
+      return 'ESSENCE_CORE';
+    }
+  }
+
   /**
    * Try to drop an item at the given position based on block type
    */
@@ -58,7 +70,21 @@ export default class ItemManager {
       for (const itemType of itemTypes) {
         if (Math.random() < possibleItems[itemType]) {
           this.spawnItem(gridX, gridY, itemType);
-          break; // Only drop one item per block
+          return; // Only drop one item per block
+        }
+      }
+    }
+
+    // Additionally, drop essence based on depth
+    const essenceChance = Math.min(Math.pow(gridY / CONFIG.WORLD_HEIGHT, 2), 0.1);
+
+    if (Math.random() < essenceChance) {
+      const essenceAmount = essenceChance * CONFIG.MAX_ESSENCE_DROP;
+      if (essenceAmount > 0) {
+        const essenceType = this.getEssenceTypeForAmount(essenceAmount);
+        if (essenceType) {
+          this.spawnItem(gridX, gridY, essenceType);
+          return;
         }
       }
     }
@@ -85,7 +111,7 @@ export default class ItemManager {
    * Render an item sprite
    */
   renderItem(item) {
-    const config = CONFIG.RESOURCES[item.type];
+    const config = CONFIG.RESOURCES[item.type] || CONFIG.ESSENCE[item.type];
     if (!config) {
       return;
     }

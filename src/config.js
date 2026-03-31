@@ -34,7 +34,13 @@ export const CONFIG = {
     EMERALD: { color: 0x00ff00, value: 75, texture: 'emerald' },
     AMETHYST: { color: 0x0000ff, value: 90, texture: 'amethyst' },
   },
-
+  ESSENCE: {
+    ESSENCE_GRAIN: { color: 0xffff00, max_value: 10, texture: 'essence_grain' },
+    ESSENCE_LUMP: { color: 0xffa500, max_value: 25, texture: 'essence_lump' },
+    ESSENCE_CHUNK: { color: 0xff4500, max_value: 50, texture: 'essence_chunk' },
+    ESSENCE_CORE: { color: 0xff0000, max_value: 9999, texture: 'essence_core' },
+  },
+  MAX_ESSENCE_DROP: 100, // Max essence that can drop from a single block
   // Race definitions
   RACES: {
     tribe: {

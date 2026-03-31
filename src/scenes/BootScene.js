@@ -34,6 +34,12 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('emerald', 'resources/tile-decals/emerald.png');
     this.load.image('amethyst', 'resources/tile-decals/amethyst.png');
 
+    // Essence icons
+    this.load.image('essence_grain', 'resources/tile-decals/essence_grain.png');
+    this.load.image('essence_lump', 'resources/tile-decals/essence_lump.png');
+    this.load.image('essence_chunk', 'resources/tile-decals/essence_chunk.png');
+    this.load.image('essence_core', 'resources/tile-decals/essence_core.png');
+
     // Tile textures (add your own as needed)
     this.load.image('surface_1', 'resources/tiles/surface_1.png');
     this.load.image('surface_2', 'resources/tiles/surface_2.png');
