@@ -48,10 +48,6 @@ module.exports = {
         // Disable JS rule in favor of TS rule
         'no-unused-vars': 'off',
         '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-
-        // Allow implicit any during migration
-        '@typescript-eslint/no-explicit-any': 'off',
-        '@typescript-eslint/no-non-null-assertion': 'warn',
       },
     },
   ],

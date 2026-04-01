@@ -4,6 +4,7 @@ import CharacterIcons from '../ui/CharacterIcons';
 import EssenceUI from '../ui/EssenceUI';
 import HUD from '../ui/HUD';
 import GameScene from './GameScene';
+import type Character from '../entities/Character';
 
 interface AbilityButtonElements {
   btn: Phaser.GameObjects.Rectangle;
@@ -55,7 +56,7 @@ export default class UIScene extends Phaser.Scene {
     // Update HUD portrait when active character changes in GameScene
     this.game.events.on(
       'characterSwitched',
-      (player: any) => {
+      (player: Character) => {
         if (this.hud && this.hud.updateCharacter) {
           this.hud.updateCharacter(player);
         }
@@ -77,7 +78,7 @@ export default class UIScene extends Phaser.Scene {
         // Update character icons
         this.characterIcons.update(gameScene.characters, 40, 40, 60);
       }
-    } catch (e) {
+    } catch {
       // ignore if GameScene not available yet
     }
 
@@ -197,7 +198,7 @@ export default class UIScene extends Phaser.Scene {
             this.hud.updateBars(gameScene.player);
           }
         }
-      } catch (e) {
+      } catch {
         // GameScene may not be available yet
       }
     }
@@ -243,7 +244,14 @@ export default class UIScene extends Phaser.Scene {
     }
 
     const character = gameScene.player;
-    const abilities = character.abilities.getAbilities();
+    interface Ability {
+      name: () => string;
+      canActivate: () => boolean;
+      isActive: () => boolean;
+      texture: () => string;
+      progress: () => number;
+    }
+    const abilities = character.abilities.getAbilities() as Ability[];
 
     // If no abilities, don't create buttons
     if (abilities.length === 0) {
@@ -258,7 +266,7 @@ export default class UIScene extends Phaser.Scene {
     const totalWidth = abilities.length * buttonWidth + (abilities.length - 1) * buttonSpacing;
     const startX = (CONFIG.GAME_WIDTH - totalWidth) / 2;
 
-    abilities.forEach((ability: any, index: number) => {
+    abilities.forEach((ability, index) => {
       const x = startX + index * (buttonWidth + buttonSpacing) + buttonWidth / 2;
       const y = startY;
 
@@ -388,7 +396,7 @@ export default class UIScene extends Phaser.Scene {
     });
   }
 
-  updateInventory(inventory: any): void {
+  updateInventory(inventory: (string | null)[]): void {
     if (this.hud && this.hud.updateInventory) {
       this.hud.updateInventory(inventory);
     } else {

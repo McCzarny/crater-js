@@ -54,7 +54,10 @@ export function createButton(
     : null;
 
   if (label) {
-    label.setOrigin(0.5).setScrollFactor(0).setDepth((opts.depth ?? 202) + 1);
+    label
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth((opts.depth ?? 202) + 1);
   }
 
   const icon = scene.add
@@ -116,10 +119,7 @@ export function makeIcon(
   size: number,
   iconId: string = '',
 ): IconReturn {
-  const bg = scene.add
-    .rectangle(x, y, size, size, 0x666666, 1)
-    .setScrollFactor(0)
-    .setDepth(201);
+  const bg = scene.add.rectangle(x, y, size, size, 0x666666, 1).setScrollFactor(0).setDepth(201);
 
   const image = scene.add.sprite(x, y, iconId).setScrollFactor(0).setDepth(202);
   if (!iconId) {

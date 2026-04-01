@@ -20,7 +20,7 @@ export const TileType = {
 } as const;
 
 // Type for tile type values
-export type TileTypeValue = typeof TileType[keyof typeof TileType];
+export type TileTypeValue = (typeof TileType)[keyof typeof TileType];
 
 /**
  * Tile Class - represents a single tile with all its properties

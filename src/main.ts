@@ -25,4 +25,9 @@ const config: Phaser.Types.Core.GameConfig = {
 const game = new Phaser.Game(config);
 
 // Make it accessible for debugging
-(window as any).game = game;
+declare global {
+  interface Window {
+    game: Phaser.Game;
+  }
+}
+window.game = game;

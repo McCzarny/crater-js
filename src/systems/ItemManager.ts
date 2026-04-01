@@ -150,8 +150,9 @@ export default class ItemManager {
    * Render an item sprite
    */
   renderItem(item: Item): void {
-    const config = CONFIG.RESOURCES[item.type as keyof typeof CONFIG.RESOURCES] || 
-                   CONFIG.ESSENCE[item.type as keyof typeof CONFIG.ESSENCE];
+    const config =
+      CONFIG.RESOURCES[item.type as keyof typeof CONFIG.RESOURCES] ||
+      CONFIG.ESSENCE[item.type as keyof typeof CONFIG.ESSENCE];
     if (!config) {
       return;
     }

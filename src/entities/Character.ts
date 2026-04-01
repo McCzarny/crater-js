@@ -19,29 +19,29 @@ export default class Character {
   gridY: number;
   terrainSystem: TerrainSystem;
   sprite: Phaser.GameObjects.Sprite;
-  
+
   // Movement settings
   baseSpeed: number;
   moveSpeed: number;
   sprintMultiplier: number;
-  
+
   // Mining settings
   baseMiningTime: number;
   digInterval: number;
   fastDigInterval: number;
-  
+
   // Subsystems
   movement: CharacterMovement;
   mining: CharacterMining;
   inventory: CharacterInventory;
   abilities: CharacterAbilities;
-  
+
   // Stamina settings
   maxStamina: number;
   stamina: number;
   staminaDrainPerSecond: number;
   staminaRegenPerSecond: number;
-  
+
   // Health settings
   maxHealth: number;
   health: number;
@@ -114,7 +114,7 @@ export default class Character {
    */
   update(
     cursors: Phaser.Types.Input.Keyboard.CursorKeys | null,
-    keys: any,
+    keys: Record<string, Phaser.Input.Keyboard.Key> | Record<string, never>,
     time: number,
     delta: number,
   ): void {
@@ -275,7 +275,7 @@ export default class Character {
   /**
    * Update auto-digging behavior
    */
-  updateAutoDig(time: number, keys: any): void {
+  updateAutoDig(time: number, keys: Record<string, Phaser.Input.Keyboard.Key>): void {
     const moveRequest = this.mining.updateAutoDig(time, keys, this.movement.isMoving);
 
     if (moveRequest && moveRequest.shouldMove) {

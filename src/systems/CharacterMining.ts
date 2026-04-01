@@ -5,9 +5,9 @@ import type TerrainSystem from './TerrainSystem';
  * Forward declaration for Character interface
  */
 interface Character {
-  scene: any; // Phaser.Scene
+  scene: Phaser.Scene;
   terrainSystem: TerrainSystem;
-  sprite: any; // Phaser.GameObjects.Sprite
+  sprite: Phaser.GameObjects.Sprite;
   gridX: number;
   gridY: number;
   digInterval: number;
@@ -17,6 +17,9 @@ interface Character {
   maxStamina: number;
   abilities?: {
     shouldPreventFalling(): boolean;
+  };
+  movement?: {
+    tryMove(dx: number, dy: number, isSprinting: boolean): boolean;
   };
 }
 
@@ -52,7 +55,7 @@ interface MovementResult {
  */
 export default class CharacterMining {
   character: Character;
-  scene: any; // Phaser.Scene
+  scene: Phaser.Scene;
   terrainSystem: TerrainSystem;
 
   // Mining state
@@ -67,7 +70,7 @@ export default class CharacterMining {
   needsInitialDigTime: boolean;
 
   // Mining indicator
-  miningIndicator: any | null; // Phaser.GameObjects.Rectangle
+  miningIndicator: Phaser.GameObjects.Rectangle | null;
   miningIndicatorTarget: { x: number; y: number } | null;
 
   constructor(character: Character) {
@@ -215,7 +218,11 @@ export default class CharacterMining {
   /**
    * Update auto-digging behavior
    */
-  updateAutoDig(time: number, keys: any, isMoving: boolean): MovementResult | null | void {
+  updateAutoDig(
+    time: number,
+    keys: Record<string, Phaser.Input.Keyboard.Key>,
+    isMoving: boolean,
+  ): MovementResult | null | void {
     if (!this.autoDigDirection) {
       this.stopAutoDig();
       return;
@@ -419,8 +426,8 @@ export default class CharacterMining {
           // Move character to just before the block if possible
           const prevX = x - direction.dx;
           const prevY = y - direction.dy;
-          if ((char as any).movement && (char as any).movement.tryMove) {
-            (char as any).movement.tryMove(prevX - char.gridX, prevY - char.gridY, false);
+          if (char.movement && char.movement.tryMove) {
+            char.movement.tryMove(prevX - char.gridX, prevY - char.gridY, false);
           } else {
             char.gridX = prevX;
             char.gridY = prevY;

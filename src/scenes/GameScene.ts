@@ -21,6 +21,7 @@ interface GameKeys {
   pickup: Phaser.Input.Keyboard.Key;
   search: Phaser.Input.Keyboard.Key;
   ability: Phaser.Input.Keyboard.Key;
+  [key: string]: Phaser.Input.Keyboard.Key;
 }
 
 /**

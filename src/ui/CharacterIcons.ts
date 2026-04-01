@@ -14,12 +14,12 @@ interface IconReturn {
 
 export default class CharacterIcons {
   scene: Phaser.Scene;
-  options: any;
+  options: Record<string, unknown>;
   icons: IconReturn[];
   borders: Phaser.GameObjects.Rectangle[];
   activeIndex: number;
 
-  constructor(scene: Phaser.Scene, options: any = {}) {
+  constructor(scene: Phaser.Scene, options: Record<string, unknown> = {}) {
     this.scene = scene;
     this.options = options;
     this.icons = [];
@@ -38,7 +38,9 @@ export default class CharacterIcons {
     // Remove old icons and borders
     this.icons.forEach(ic => {
       ic.bg.destroy();
-      ic.label && ic.label.destroy();
+      if (ic.label) {
+        ic.label.destroy();
+      }
     });
     this.borders.forEach(b => b.destroy());
     this.icons = [];
@@ -84,7 +86,9 @@ export default class CharacterIcons {
   destroy(): void {
     this.icons.forEach(ic => {
       ic.bg.destroy();
-      ic.label && ic.label.destroy();
+      if (ic.label) {
+        ic.label.destroy();
+      }
     });
     this.borders.forEach(b => b.destroy());
     this.icons = [];

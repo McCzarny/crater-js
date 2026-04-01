@@ -9,6 +9,10 @@ import {
   ItemIconReturn,
 } from './ui-commons';
 
+interface GameSceneType extends Phaser.Scene {
+  player: Character;
+}
+
 interface Character {
   race: string;
   health: number;
@@ -18,11 +22,24 @@ interface Character {
   patience?: number;
   maxPatience?: number;
   stopAllActions?: () => void;
-  abilities?: any;
-  inventory?: any;
-  mining?: any;
-  movement?: any;
-  sprite?: any;
+  abilities?: {
+    getAbilities: () => unknown[];
+  };
+  inventory?: {
+    tryPickup?: () => void;
+    isSearching?: boolean;
+    stopSearch?: () => void;
+    startSearch?: () => void;
+  };
+  mining?: {
+    startAutoDig?: (direction: { dx: number; dy: number }) => void;
+  };
+  movement?: {
+    tryMove?: (dx: number, dy: number, isSprinting: boolean) => void;
+  };
+  sprite?: {
+    clearTint?: () => void;
+  };
 }
 
 interface BarElement {
@@ -34,14 +51,14 @@ interface BarElement {
 interface HUDSections {
   items: ItemIconReturn[];
   bars: BarElement[];
-  passives: any[];
+  passives: unknown[];
   portrait: Phaser.GameObjects.Sprite;
   standardActions: ButtonElements[];
   characterActions: ButtonElements[];
 }
 
 interface HUDOptions {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export default class HUD {
@@ -81,7 +98,7 @@ export default class HUD {
         } else {
           this.bg.setDisplaySize(w, h);
         }
-      } catch (e) {
+      } catch {
         this.bg.setDisplaySize(w, h);
       }
     } else {
@@ -173,46 +190,58 @@ export default class HUD {
         try {
           btn.rect.on('pointerdown', () => {
             const gameScene = this.scene.scene.get('GameScene');
-            if (!gameScene || !(gameScene as any).player) {
+            if (!gameScene || !(gameScene as GameSceneType).player) {
               console.warn('HUD action: GameScene or player not available');
               return;
             }
 
-            const player = (gameScene as any).player as Character;
+            const player = (gameScene as GameSceneType).player as Character;
 
             switch (actionName) {
               case 'MoveUp':
-                player.stopAllActions && player.stopAllActions();
+                if (player.stopAllActions) {
+                  player.stopAllActions();
+                }
                 if (player.movement && player.movement.tryMove) {
                   player.movement.tryMove(0, 1, false);
                 }
                 break;
               case 'MoveLeft':
-                player.stopAllActions && player.stopAllActions();
+                if (player.stopAllActions) {
+                  player.stopAllActions();
+                }
                 if (player.movement && player.movement.tryMove) {
                   player.movement.tryMove(-1, 0, false);
                 }
                 break;
               case 'MoveRight':
-                player.stopAllActions && player.stopAllActions();
+                if (player.stopAllActions) {
+                  player.stopAllActions();
+                }
                 if (player.movement && player.movement.tryMove) {
                   player.movement.tryMove(1, 0, false);
                 }
                 break;
               case 'DigLeft':
-                player.stopAllActions && player.stopAllActions();
+                if (player.stopAllActions) {
+                  player.stopAllActions();
+                }
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: -1, dy: 0 });
                 }
                 break;
               case 'DigDown':
-                player.stopAllActions && player.stopAllActions();
+                if (player.stopAllActions) {
+                  player.stopAllActions();
+                }
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: 0, dy: 1 });
                 }
                 break;
               case 'DigRight':
-                player.stopAllActions && player.stopAllActions();
+                if (player.stopAllActions) {
+                  player.stopAllActions();
+                }
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: 1, dy: 0 });
                 }
@@ -223,25 +252,33 @@ export default class HUD {
                 }
                 break;
               case 'PickUp':
-                player.stopAllActions && player.stopAllActions();
+                if (player.stopAllActions) {
+                  player.stopAllActions();
+                }
                 if (player.inventory && player.inventory.tryPickup) {
                   player.inventory.tryPickup();
                 }
                 break;
               case 'DigLeftDown':
-                player.stopAllActions && player.stopAllActions();
+                if (player.stopAllActions) {
+                  player.stopAllActions();
+                }
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: -1, dy: 1 });
                 }
                 break;
               case 'DigRightDown':
-                player.stopAllActions && player.stopAllActions();
+                if (player.stopAllActions) {
+                  player.stopAllActions();
+                }
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: 1, dy: 1 });
                 }
                 break;
               case 'Search':
-                player.stopAllActions && player.stopAllActions();
+                if (player.stopAllActions) {
+                  player.stopAllActions();
+                }
                 if (player.inventory) {
                   if (player.inventory.isSearching) {
                     if (player.inventory.stopSearch) {
@@ -324,26 +361,29 @@ export default class HUD {
     if (this.bg) {
       this.bg.destroy();
     }
-    Object.values(this.sections).forEach((arr: any) => {
-      if (!Array.isArray(arr)) return;
-      arr.forEach((item: any) => {
-        if (!item) {
+    Object.values(this.sections).forEach(arr => {
+      if (!Array.isArray(arr)) {
+        return;
+      }
+      arr.forEach((item: unknown) => {
+        if (!item || typeof item !== 'object') {
           return;
         }
-        if (item.rect) {
-          item.rect.destroy();
+        const obj = item as Record<string, unknown>;
+        if (obj.rect && typeof obj.rect === 'object' && 'destroy' in obj.rect) {
+          (obj.rect as Phaser.GameObjects.GameObject).destroy();
         }
-        if (item.label) {
-          item.label.destroy();
+        if (obj.label && typeof obj.label === 'object' && 'destroy' in obj.label) {
+          (obj.label as Phaser.GameObjects.GameObject).destroy();
         }
-        if (item.bg) {
-          item.bg.destroy();
+        if (obj.bg && typeof obj.bg === 'object' && 'destroy' in obj.bg) {
+          (obj.bg as Phaser.GameObjects.GameObject).destroy();
         }
-        if (item.fg) {
-          item.fg.destroy();
+        if (obj.fg && typeof obj.fg === 'object' && 'destroy' in obj.fg) {
+          (obj.fg as Phaser.GameObjects.GameObject).destroy();
         }
-        if (item.image) {
-          item.image.destroy();
+        if (obj.image && typeof obj.image === 'object' && 'destroy' in obj.image) {
+          (obj.image as Phaser.GameObjects.GameObject).destroy();
         }
       });
     });
@@ -403,7 +443,9 @@ export default class HUD {
     this.sections.characterActions.forEach(slot => {
       if (slot.icon) {
         slot.icon.setVisible(false);
-        slot.icon.removeAllListeners && slot.icon.removeAllListeners();
+        if (slot.icon.removeAllListeners) {
+          slot.icon.removeAllListeners();
+        }
       }
     });
 
@@ -411,9 +453,12 @@ export default class HUD {
       return;
     }
 
-    const abilities = character.abilities.getAbilities();
+    interface Ability {
+      texture: () => string;
+    }
+    const abilities = character.abilities.getAbilities() as Ability[];
 
-    abilities.forEach((ability: any, index: number) => {
+    abilities.forEach((ability, index) => {
       const slot = this.sections.characterActions![index];
       if (!slot) {
         return;
@@ -447,8 +492,11 @@ export default class HUD {
     if (!character || !character.abilities) {
       return;
     }
-    const abilities = character.abilities.getAbilities();
-    abilities.forEach((ability: any, index: number) => {
+    interface Ability {
+      progress: () => number;
+    }
+    const abilities = character.abilities.getAbilities() as Ability[];
+    abilities.forEach((ability, index) => {
       const slot = this.sections.characterActions![index];
       if (!slot || !slot.icon || !slot.progressOverlay) {
         return;

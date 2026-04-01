@@ -5,9 +5,9 @@ import type TerrainSystem from './TerrainSystem';
  * Forward declaration for Character interface
  */
 interface Character {
-  scene: any; // Phaser.Scene
+  scene: Phaser.Scene;
   terrainSystem: TerrainSystem;
-  sprite: any; // Phaser.GameObjects.Sprite
+  sprite: Phaser.GameObjects.Sprite;
   gridX: number;
   gridY: number;
   race: string;
