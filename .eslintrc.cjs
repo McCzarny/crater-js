@@ -31,4 +31,28 @@ module.exports = {
   globals: {
     Phaser: 'readonly',
   },
+  overrides: [
+    {
+      // TypeScript files
+      files: ['*.ts', '*.tsx'],
+      parser: '@typescript-eslint/parser',
+      parserOptions: {
+        project: './tsconfig.json',
+      },
+      plugins: ['@typescript-eslint'],
+      extends: [
+        'eslint:recommended',
+        'plugin:@typescript-eslint/recommended',
+      ],
+      rules: {
+        // Disable JS rule in favor of TS rule
+        'no-unused-vars': 'off',
+        '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+
+        // Allow implicit any during migration
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-non-null-assertion': 'warn',
+      },
+    },
+  ],
 };
