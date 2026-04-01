@@ -1,4 +1,4 @@
-import { CONFIG } from '../config.js';
+import { CONFIG } from '../config';
 
 /**
  * Tile Type Enum - centralized tile type definitions
@@ -17,13 +17,31 @@ export const TileType = {
   RARE_ORE: 'rareOre',
   MINED_RARE_ORE: 'minedRareOre',
   BOULDER: 'boulder',
-};
+} as const;
+
+// Type for tile type values
+export type TileTypeValue = typeof TileType[keyof typeof TileType];
 
 /**
  * Tile Class - represents a single tile with all its properties
  */
 export class Tile {
-  constructor(type, solid, color, breakable = true, minedType = null, textureVariants = null) {
+  type: TileTypeValue;
+  solid: boolean;
+  color: number | null;
+  breakable: boolean;
+  minedType: TileTypeValue | null;
+  textureVariants: string[] | null;
+  chosenTexture: string | null;
+
+  constructor(
+    type: TileTypeValue,
+    solid: boolean,
+    color: number | null,
+    breakable: boolean = true,
+    minedType: TileTypeValue | null = null,
+    textureVariants: string[] | null = null,
+  ) {
     this.type = type;
     this.solid = solid;
     this.color = color;
@@ -38,7 +56,7 @@ export class Tile {
   /**
    * Create a copy of this tile
    */
-  clone() {
+  clone(): Tile {
     return new Tile(
       this.type,
       this.solid,
@@ -53,7 +71,7 @@ export class Tile {
   /**
    * Get the mined version of this tile
    */
-  getMinedTile() {
+  getMinedTile(): Tile {
     if (!this.minedType) {
       return TileRegistry.getTile(TileType.AIR);
     }
@@ -64,7 +82,7 @@ export class Tile {
 /**
  * Helper function to darken a color
  */
-function darkenColor(color, factor = 0.6) {
+function darkenColor(color: number, factor: number = 0.6): number {
   const r = ((color >> 16) & 0xff) * factor;
   const g = ((color >> 8) & 0xff) * factor;
   const b = (color & 0xff) * factor;
@@ -75,12 +93,12 @@ function darkenColor(color, factor = 0.6) {
  * Tile Registry - centralized tile definitions and lookup
  */
 export class TileRegistry {
-  static tiles = new Map();
+  private static tiles: Map<TileTypeValue, Tile> = new Map();
 
   /**
    * Initialize all tile definitions
    */
-  static initialize() {
+  static initialize(): void {
     // Air - not solid, not breakable
     this.register(new Tile(TileType.AIR, false, null, false, null));
 
@@ -209,18 +227,18 @@ export class TileRegistry {
   /**
    * Register a tile type
    */
-  static register(tile) {
+  static register(tile: Tile): void {
     this.tiles.set(tile.type, tile);
   }
 
   /**
    * Get a tile definition by type
    */
-  static getTile(type) {
+  static getTile(type: TileTypeValue): Tile {
     const tile = this.tiles.get(type);
     if (!tile) {
       console.warn(`TileRegistry: Tile type '${type}' not found, returning air`);
-      return this.tiles.get(TileType.AIR);
+      return this.tiles.get(TileType.AIR)!;
     }
     return tile;
   }
@@ -228,14 +246,14 @@ export class TileRegistry {
   /**
    * Create a new tile instance (clone) by type
    */
-  static createTile(type) {
+  static createTile(type: TileTypeValue): Tile {
     return this.getTile(type).clone();
   }
 
   /**
    * Check if a tile type exists
    */
-  static hasTile(type) {
+  static hasTile(type: TileTypeValue): boolean {
     return this.tiles.has(type);
   }
 }

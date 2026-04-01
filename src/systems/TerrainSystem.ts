@@ -1,14 +1,36 @@
-import { CONFIG } from '../config.js';
-import WorldGenerator from './WorldGenerator.js';
-import ItemManager from './ItemManager.js';
-import { TileRegistry } from './TileTypes.js';
+import Phaser from 'phaser';
+import { CONFIG } from '../config';
+import WorldGenerator from './WorldGenerator';
+import ItemManager from './ItemManager';
+import { TileRegistry, type Tile } from './TileTypes';
+
+/**
+ * Interface for vine data
+ */
+interface VineData {
+  createdBy: string | null;
+}
+
+/**
+ * Type for environment reaction handlers
+ */
+type ReactionHandler = (changedX: number, changedY: number) => void;
 
 /**
  * TerrainSystem - manages world terrain, rendering, and modification
  * Now uses composition with WorldGenerator and ItemManager for better separation of concerns
  */
 export default class TerrainSystem {
-  constructor(scene) {
+  scene: Phaser.Scene;
+  blocks: Tile[][];
+  blockSprites: Map<string, Phaser.GameObjects.Graphics | Phaser.GameObjects.Sprite>;
+  vines: Map<string, VineData>;
+  vineSprites: Map<string, Phaser.GameObjects.Graphics | Phaser.GameObjects.Sprite>;
+  container: Phaser.GameObjects.Container;
+  itemManager: ItemManager;
+  reactionHandlers: ReactionHandler[];
+
+  constructor(scene: Phaser.Scene) {
     this.scene = scene;
     this.blocks = [];
     this.blockSprites = new Map();
@@ -36,7 +58,7 @@ export default class TerrainSystem {
   /**
    * Generate the game world
    */
-  generateWorld() {
+  generateWorld(): void {
     // Use WorldGenerator to create the block data
     this.blocks = WorldGenerator.generateWorld();
 
@@ -47,7 +69,7 @@ export default class TerrainSystem {
   /**
    * Render the entire world
    */
-  renderWorld() {
+  renderWorld(): void {
     for (let y = 0; y < CONFIG.WORLD_HEIGHT; y++) {
       for (let x = 0; x < CONFIG.WORLD_WIDTH; x++) {
         this.renderBlock(x, y);
@@ -58,13 +80,13 @@ export default class TerrainSystem {
   /**
    * Render a single block
    */
-  renderBlock(x, y) {
+  renderBlock(x: number, y: number): void {
     const block = this.blocks[y][x];
     const key = `${x},${y}`;
 
     // Remove existing sprite if any
     if (this.blockSprites.has(key)) {
-      this.blockSprites.get(key).destroy();
+      this.blockSprites.get(key)!.destroy();
       this.blockSprites.delete(key);
     }
 
@@ -76,7 +98,7 @@ export default class TerrainSystem {
     const pixelX = x * CONFIG.BLOCK_SIZE;
     const pixelY = y * CONFIG.BLOCK_SIZE;
 
-    let spriteOrGraphics;
+    let spriteOrGraphics: Phaser.GameObjects.Graphics | Phaser.GameObjects.Sprite;
     // If tile has texture variants, pick one randomly (and cache it on the block instance)
     if (block.textureVariants && block.textureVariants.length) {
       if (!block.chosenTexture) {
@@ -100,11 +122,13 @@ export default class TerrainSystem {
         spriteOrGraphics.lineStyle(1, 0x000000, 0.2);
         spriteOrGraphics.strokeRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
         spriteOrGraphics.setPosition(pixelX, pixelY);
+      } else {
+        return; // No texture and no color fallback
       }
     } else {
       // No texture variants: render as colored rectangle
       spriteOrGraphics = this.scene.add.graphics();
-      spriteOrGraphics.fillStyle(block.color, 1);
+      spriteOrGraphics.fillStyle(block.color!, 1);
       spriteOrGraphics.fillRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
       spriteOrGraphics.lineStyle(1, 0x000000, 0.2);
       spriteOrGraphics.strokeRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
@@ -118,7 +142,7 @@ export default class TerrainSystem {
   /**
    * Get the block at the given grid position
    */
-  getBlockAt(gridX, gridY) {
+  getBlockAt(gridX: number, gridY: number): Tile | null {
     if (gridX < 0 || gridX >= CONFIG.WORLD_WIDTH || gridY < 0 || gridY >= CONFIG.WORLD_HEIGHT) {
       return null;
     }
@@ -129,7 +153,7 @@ export default class TerrainSystem {
   /**
    * Mine/remove a block at the given grid position
    */
-  mineBlockAt(gridX, gridY) {
+  mineBlockAt(gridX: number, gridY: number): boolean | null {
     // Check bounds
     if (gridX < 0 || gridX >= CONFIG.WORLD_WIDTH || gridY < 0 || gridY >= CONFIG.WORLD_HEIGHT) {
       return null;
@@ -165,7 +189,7 @@ export default class TerrainSystem {
    * Handlers may perform changes to blocks; they should call renderBlock
    * for any coordinates they modify.
    */
-  handleEnvironmentAfterChange(changedX, changedY) {
+  handleEnvironmentAfterChange(changedX: number, changedY: number): void {
     for (const handler of this.reactionHandlers) {
       try {
         handler(changedX, changedY);
@@ -179,7 +203,7 @@ export default class TerrainSystem {
    * Built-in reaction: if a block above a changed cell is a boulder and the
    * changed cell is not solid, make the boulder fall one tile down.
    */
-  _boulderReaction(changedX, changedY) {
+  _boulderReaction(changedX: number, changedY: number): void {
     const aboveY = changedY - 1;
     if (aboveY < 0) {
       return;
@@ -216,7 +240,7 @@ export default class TerrainSystem {
 
       // Move boulder to landingY and clear original position
       const boulderTile = TileRegistry.createTile(BOULDER_KEY);
-      boulderTile.minedType = this.getBlockAt(changedX, fallFromY).minedType; // Preserve minedType for boulder
+      boulderTile.minedType = this.getBlockAt(changedX, fallFromY)!.minedType; // Preserve minedType for boulder
       const removedBoulderTile = TileRegistry.createTile(aboveBlock.minedType || 'air');
 
       this.blocks[landingY][changedX] = boulderTile;
@@ -238,28 +262,28 @@ export default class TerrainSystem {
   /**
    * Get items at a specific grid position
    */
-  getItemsAt(gridX, gridY) {
+  getItemsAt(gridX: number, gridY: number) {
     return this.itemManager.getItemsAt(gridX, gridY);
   }
 
   /**
    * Remove an item from the ground
    */
-  removeItem(itemId) {
+  removeItem(itemId: string) {
     return this.itemManager.removeItem(itemId);
   }
 
   /**
    * Update items (apply gravity)
    */
-  updateItems(time) {
+  updateItems(time: number): void {
     this.itemManager.updateItems(time);
   }
 
   /**
    * Check if a vine exists at the given position
    */
-  hasVine(gridX, gridY) {
+  hasVine(gridX: number, gridY: number): boolean {
     const key = `${gridX},${gridY}`;
     const exists = this.vines.has(key);
     // Only log when checking for movement
@@ -270,7 +294,7 @@ export default class TerrainSystem {
   /**
    * Add a vine at the given position
    */
-  addVine(gridX, gridY, createdBy = null) {
+  addVine(gridX: number, gridY: number, createdBy: string | null = null): boolean {
     const key = `${gridX},${gridY}`;
 
     // Don't add if already exists
@@ -306,7 +330,7 @@ export default class TerrainSystem {
   /**
    * Remove a vine at the given position
    */
-  removeVine(gridX, gridY) {
+  removeVine(gridX: number, gridY: number): boolean {
     const key = `${gridX},${gridY}`;
 
     if (!this.vines.has(key)) {
@@ -318,7 +342,7 @@ export default class TerrainSystem {
 
     // Remove vine sprite
     if (this.vineSprites.has(key)) {
-      this.vineSprites.get(key).destroy();
+      this.vineSprites.get(key)!.destroy();
       this.vineSprites.delete(key);
     }
 
@@ -328,12 +352,12 @@ export default class TerrainSystem {
   /**
    * Render a vine sprite at the given position
    */
-  renderVine(gridX, gridY) {
+  renderVine(gridX: number, gridY: number): void {
     const key = `${gridX},${gridY}`;
 
     // Remove existing sprite if any
     if (this.vineSprites.has(key)) {
-      this.vineSprites.get(key).destroy();
+      this.vineSprites.get(key)!.destroy();
     }
 
     const pixelX = gridX * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2;
@@ -365,7 +389,7 @@ export default class TerrainSystem {
   /**
    * Get vine at the given position
    */
-  getVine(gridX, gridY) {
+  getVine(gridX: number, gridY: number): VineData | null {
     const key = `${gridX},${gridY}`;
     return this.vines.get(key) || null;
   }
@@ -373,7 +397,7 @@ export default class TerrainSystem {
   /**
    * Check if a block is solid at the given world position (legacy method)
    */
-  isSolid(worldX, worldY) {
+  isSolid(worldX: number, worldY: number): boolean {
     const blockX = Math.floor(worldX / CONFIG.BLOCK_SIZE);
     const blockY = Math.floor(worldY / CONFIG.BLOCK_SIZE);
 
@@ -387,7 +411,7 @@ export default class TerrainSystem {
   /**
    * Get the block at the given world position (legacy method)
    */
-  getBlock(worldX, worldY) {
+  getBlock(worldX: number, worldY: number): Tile | null {
     const blockX = Math.floor(worldX / CONFIG.BLOCK_SIZE);
     const blockY = Math.floor(worldY / CONFIG.BLOCK_SIZE);
 
@@ -401,7 +425,7 @@ export default class TerrainSystem {
   /**
    * Mine/remove a block at the given world position (legacy method)
    */
-  mineBlock(worldX, worldY) {
+  mineBlock(worldX: number, worldY: number): boolean | null {
     const blockX = Math.floor(worldX / CONFIG.BLOCK_SIZE);
     const blockY = Math.floor(worldY / CONFIG.BLOCK_SIZE);
     return this.mineBlockAt(blockX, blockY);

@@ -1,7 +1,25 @@
-import { makeIcon } from './ui-commons.js';
+import Phaser from 'phaser';
+import { makeIcon } from './ui-commons';
+
+interface Character {
+  isDead: boolean;
+  race: string;
+}
+
+interface IconReturn {
+  bg: Phaser.GameObjects.Rectangle;
+  image: Phaser.GameObjects.Sprite;
+  label?: Phaser.GameObjects.Text;
+}
 
 export default class CharacterIcons {
-  constructor(scene, options = {}) {
+  scene: Phaser.Scene;
+  options: any;
+  icons: IconReturn[];
+  borders: Phaser.GameObjects.Rectangle[];
+  activeIndex: number;
+
+  constructor(scene: Phaser.Scene, options: any = {}) {
     this.scene = scene;
     this.options = options;
     this.icons = [];
@@ -11,12 +29,12 @@ export default class CharacterIcons {
 
   /**
    * Create or update icons for the given character list.
-   * @param {Array<Character>} characters
-   * @param {number} x
-   * @param {number} startY
-   * @param {number} spacing
+   * @param characters - Array of characters
+   * @param x - X position
+   * @param startY - Starting Y position
+   * @param spacing - Spacing between icons
    */
-  update(characters, x = 30, startY = 30, spacing = 60) {
+  update(characters: Character[], x: number = 30, startY: number = 30, spacing: number = 60): void {
     // Remove old icons and borders
     this.icons.forEach(ic => {
       ic.bg.destroy();
@@ -53,7 +71,7 @@ export default class CharacterIcons {
     }
   }
 
-  select(index) {
+  select(index: number): void {
     this.activeIndex = index;
     this.borders.forEach((b, i) => b.setVisible(i === index));
 
@@ -63,10 +81,10 @@ export default class CharacterIcons {
     }
   }
 
-  destroy() {
+  destroy(): void {
     this.icons.forEach(ic => {
       ic.bg.destroy();
-      ic.label.destroy();
+      ic.label && ic.label.destroy();
     });
     this.borders.forEach(b => b.destroy());
     this.icons = [];

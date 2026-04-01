@@ -1,9 +1,8 @@
 import Phaser from 'phaser';
-import { CONFIG } from '../config.js';
-import TerrainSystem from '../systems/TerrainSystem.js';
-import BaseSystem from '../systems/BaseSystem.js';
-import Character from '../entities/Character.js';
-import DirectionMenu from '../ui/DirectionMenu.js';
+import { CONFIG } from '../config';
+import TerrainSystem from '../systems/TerrainSystem';
+import BaseSystem from '../systems/BaseSystem';
+import Character from '../entities/Character';
 
 const WIND_TEXTURES = ['wind1', 'wind2', 'wind3', 'wind4'];
 const WIND_SPRITE_WIDTH = 32;
@@ -12,15 +11,36 @@ const WIND_LAYER_Y = 0; // Y offset for wind layer (top of the world)
 const WIND_LAYER_HEIGHT = 4 * WIND_SPRITE_HEIGHT; // Only top ~4 wind sprites high
 const WIND_SPRITE_COUNT = 12; // Number of wind sprites
 
+interface WindSprite extends Phaser.GameObjects.Image {
+  windSpeed: number;
+}
+
+interface GameKeys {
+  space: Phaser.Input.Keyboard.Key;
+  shift: Phaser.Input.Keyboard.Key;
+  pickup: Phaser.Input.Keyboard.Key;
+  search: Phaser.Input.Keyboard.Key;
+  ability: Phaser.Input.Keyboard.Key;
+}
+
 /**
  * Main gameplay scene
  */
 export default class GameScene extends Phaser.Scene {
+  terrainSystem!: TerrainSystem;
+  baseSystem!: BaseSystem;
+  characters!: Character[];
+  activeCharacterIndex!: number;
+  player!: Character;
+  cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  keys!: GameKeys;
+  windSprites!: WindSprite[];
+
   constructor() {
     super({ key: 'GameScene' });
   }
 
-  create() {
+  create(): void {
     // Notify UIScene to update character icons after all characters are created
     this.scene.get('UIScene').events.emit('updateCharacterIcons');
     console.log('GameScene: Initializing...');
@@ -54,7 +74,7 @@ export default class GameScene extends Phaser.Scene {
         .image(x, y, texture)
         .setAlpha(0.7 + Math.random() * 0.3)
         .setDepth(1000)
-        .setScale((1.0 + Math.random() * 0.3) * direction, 1.0 + Math.random() * 0.1);
+        .setScale((1.0 + Math.random() * 0.3) * direction, 1.0 + Math.random() * 0.1) as WindSprite;
       sprite.windSpeed = speed * direction;
       this.windSprites.push(sprite);
     }
@@ -84,51 +104,37 @@ export default class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
 
     // Set up input
-    this.cursors = this.input.keyboard.createCursorKeys();
+    this.cursors = this.input.keyboard!.createCursorKeys();
     this.keys = {
-      space: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
-      shift: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT),
-      pickup: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E),
-      search: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q),
-      ability: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R),
+      space: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
+      shift: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT),
+      pickup: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E),
+      search: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q),
+      ability: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.R),
     };
-
-    // Create direction menu
-    this.directionMenu = new DirectionMenu(this);
-
-    // Listen for dig menu button click from UIScene
-    this.events.on('showDigMenu', () => {
-      if (!this.directionMenu.isVisible) {
-        this.directionMenu.show();
-      } else {
-        this.directionMenu.hide();
-      }
-    });
 
     // Listen for stop button click from UIScene
     this.events.on('stopCharacter', () => {
       this.player.stopAllActions();
-      this.directionMenu.hide();
     });
 
     // Listen for direction selection
-    this.events.on('directionSelected', direction => {
+    this.events.on('directionSelected', (direction: { dx: number; dy: number }) => {
       this.player.startAutoDig(direction);
     });
 
     // ESC key to cancel all actions
-    this.input.keyboard.on('keydown-ESC', () => {
+    this.input.keyboard!.on('keydown-ESC', () => {
       this.player.stopAllActions();
-      this.directionMenu.hide();
     });
 
     // Listen for character switch events from UIScene
-    this.events.on('switchCharacter', index => {
+    this.events.on('switchCharacter', (index: number) => {
       this.switchCharacter(index);
     });
 
     // Listen for ability toggle events from UIScene
-    this.events.on('toggleAbility', abilityIndex => {
+    this.events.on('toggleAbility', (abilityIndex: number) => {
       const toggled = this.player.abilities.toggleAbility(abilityIndex);
       if (!toggled) {
         console.log('Cannot activate ability right now');
@@ -143,13 +149,10 @@ export default class GameScene extends Phaser.Scene {
   /**
    * Switch to a different character
    */
-  switchCharacter(index) {
+  switchCharacter(index: number): void {
     if (index < 0 || index >= this.characters.length) {
       return;
     }
-
-    // Hide direction menu when switching
-    this.directionMenu.hide();
 
     // Switch to new character
     this.activeCharacterIndex = index;
@@ -165,7 +168,7 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  update(time, delta) {
+  update(time: number, delta: number): void {
     // Update all characters for physics (falling, movement)
     for (let i = 0; i < this.characters.length; i++) {
       const character = this.characters[i];
@@ -200,12 +203,12 @@ export default class GameScene extends Phaser.Scene {
 
   /**
    * Add a new character of a given race at (x, y)
-   * @param {string} race
-   * @param {number} x
-   * @param {number} y
-   * @returns {Character}
+   * @param race - The race of the character
+   * @param x - Grid x position
+   * @param y - Grid y position
+   * @returns The created character
    */
-  addCharacter(race, x, y) {
+  addCharacter(race: string, x: number, y: number): Character {
     const character = new Character(this, x, y, race);
     this.characters.push(character);
     return character;

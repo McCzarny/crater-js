@@ -1,11 +1,76 @@
-import { CONFIG } from '../config.js';
+import { CONFIG } from '../config';
+import type TerrainSystem from './TerrainSystem';
+
+/**
+ * Forward declaration for Character interface
+ */
+interface Character {
+  scene: any; // Phaser.Scene
+  terrainSystem: TerrainSystem;
+  sprite: any; // Phaser.GameObjects.Sprite
+  gridX: number;
+  gridY: number;
+  digInterval: number;
+  fastDigInterval: number;
+  moveSpeed: number;
+  stamina: number;
+  maxStamina: number;
+  abilities?: {
+    shouldPreventFalling(): boolean;
+  };
+}
+
+/**
+ * Interface for mining target position
+ */
+interface MiningTarget {
+  gridX: number;
+  gridY: number;
+}
+
+/**
+ * Interface for auto-dig direction
+ */
+interface Direction {
+  dx: number;
+  dy: number;
+}
+
+/**
+ * Interface for movement result
+ */
+interface MovementResult {
+  shouldMove: boolean;
+  targetX: number;
+  targetY: number;
+  speed: number;
+}
 
 /**
  * CharacterMining - handles all mining-related logic for characters
  * Includes: manual mining, auto-digging, mining indicators
  */
 export default class CharacterMining {
-  constructor(character) {
+  character: Character;
+  scene: any; // Phaser.Scene
+  terrainSystem: TerrainSystem;
+
+  // Mining state
+  isMining: boolean;
+  miningStartTime: number;
+  miningTarget: MiningTarget | null;
+
+  // Auto-dig state
+  isAutoDigging: boolean;
+  autoDigDirection: Direction | null;
+  lastDigTime: number;
+  needsInitialDigTime: boolean;
+
+  // Mining indicator
+  miningIndicator: any | null; // Phaser.GameObjects.Rectangle
+  miningIndicatorTarget: { x: number; y: number } | null;
+
+  constructor(character: Character) {
     this.character = character;
     this.scene = character.scene;
     this.terrainSystem = character.terrainSystem;
@@ -29,10 +94,10 @@ export default class CharacterMining {
   /**
    * Start manual mining operation
    */
-  startMining() {
+  startMining(): void {
     const char = this.character;
 
-    const directions = [
+    const directions: Direction[] = [
       { dx: 0, dy: 1 }, // Below
       { dx: 1, dy: 0 }, // Right
       { dx: -1, dy: 0 }, // Left
@@ -57,7 +122,7 @@ export default class CharacterMining {
   /**
    * Continue mining the current block
    */
-  continueMining() {
+  continueMining(): void {
     if (!this.miningTarget) {
       return;
     }
@@ -94,7 +159,7 @@ export default class CharacterMining {
   /**
    * Stop mining
    */
-  stopMining() {
+  stopMining(): void {
     if (!this.isMining) {
       return;
     }
@@ -106,7 +171,7 @@ export default class CharacterMining {
   /**
    * Start auto-digging in a direction
    */
-  startAutoDig(direction) {
+  startAutoDig(direction: Direction): void {
     console.log('Starting auto-dig in direction:', direction);
 
     this.isAutoDigging = true;
@@ -118,10 +183,10 @@ export default class CharacterMining {
   /**
    * Change auto-dig direction while it's active
    */
-  setAutoDigDirection(direction) {
+  setAutoDigDirection(direction: Direction): void {
     if (
       !this.isAutoDigging ||
-      (direction.dx === this.autoDigDirection.dx && direction.dy === this.autoDigDirection.dy)
+      (direction.dx === this.autoDigDirection!.dx && direction.dy === this.autoDigDirection!.dy)
     ) {
       return;
     }
@@ -135,7 +200,7 @@ export default class CharacterMining {
   /**
    * Stop auto-digging
    */
-  stopAutoDig() {
+  stopAutoDig(): void {
     if (!this.isAutoDigging) {
       return;
     }
@@ -150,7 +215,7 @@ export default class CharacterMining {
   /**
    * Update auto-digging behavior
    */
-  updateAutoDig(time, keys, isMoving) {
+  updateAutoDig(time: number, keys: any, isMoving: boolean): MovementResult | null | void {
     if (!this.autoDigDirection) {
       this.stopAutoDig();
       return;
@@ -299,7 +364,7 @@ export default class CharacterMining {
   /**
    * Show mining indicator on target block
    */
-  showMiningIndicator(gridX, gridY) {
+  showMiningIndicator(gridX: number, gridY: number): void {
     this.hideMiningIndicator();
 
     const worldX = gridX * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2;
@@ -329,7 +394,7 @@ export default class CharacterMining {
   /**
    * Hide mining indicator
    */
-  hideMiningIndicator() {
+  hideMiningIndicator(): void {
     if (this.miningIndicator) {
       this.miningIndicator.destroy();
       this.miningIndicator = null;
@@ -340,10 +405,8 @@ export default class CharacterMining {
   /**
    * Scan in a direction until a solid, breakable block is found, then start auto-digging.
    * If no diggable block is found, do nothing.
-   * @param {{dx:number,dy:number}} direction
-   * @param {number} [maxSteps=10]
    */
-  findAndStartAutoDig(direction, maxSteps = 10) {
+  findAndStartAutoDig(direction: Direction, maxSteps: number = 10): void {
     const char = this.character;
     let x = char.gridX;
     let y = char.gridY;
@@ -356,8 +419,8 @@ export default class CharacterMining {
           // Move character to just before the block if possible
           const prevX = x - direction.dx;
           const prevY = y - direction.dy;
-          if (char.movement && char.movement.tryMove) {
-            char.movement.tryMove(prevX - char.gridX, prevY - char.gridY, false);
+          if ((char as any).movement && (char as any).movement.tryMove) {
+            (char as any).movement.tryMove(prevX - char.gridX, prevY - char.gridY, false);
           } else {
             char.gridX = prevX;
             char.gridY = prevY;

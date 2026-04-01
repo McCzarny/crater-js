@@ -1,15 +1,48 @@
-import { CONFIG } from '../config.js';
-import { TileType, TileRegistry } from './TileTypes.js';
+import Phaser from 'phaser';
+import { CONFIG } from '../config';
+import { TileType, TileRegistry } from './TileTypes';
+import type TerrainSystem from './TerrainSystem';
+
+/**
+ * Interface for base data
+ */
+interface BaseData {
+  gridX: number;
+  gridY: number;
+  centerGridX: number;
+  centerGridY: number;
+  sprite: Phaser.GameObjects.Sprite | null;
+}
+
+/**
+ * Interface for base center position
+ */
+interface BaseCenter {
+  gridX: number;
+  gridY: number;
+  pixelX: number;
+  pixelY: number;
+}
+
+/**
+ * Type for race keys
+ */
+type RaceKey = keyof typeof CONFIG.RACES;
 
 /**
  * BaseSystem - manages race bases throughout the world
  * Each race has a 3x3 base on the surface that serves as their home
  */
 export default class BaseSystem {
-  constructor(scene, terrainSystem) {
+  scene: Phaser.Scene;
+  terrainSystem: TerrainSystem;
+  bases: Map<string, BaseData>;
+  baseSprites: Phaser.GameObjects.Sprite[];
+
+  constructor(scene: Phaser.Scene, terrainSystem: TerrainSystem) {
     this.scene = scene;
     this.terrainSystem = terrainSystem;
-    this.bases = new Map(); // key: race name, value: { gridX, gridY, sprite }
+    this.bases = new Map();
     this.baseSprites = [];
 
     // Calculate base positions and place them
@@ -19,8 +52,8 @@ export default class BaseSystem {
   /**
    * Place all race bases on the surface
    */
-  placeAllBases() {
-    const races = Object.keys(CONFIG.RACES);
+  placeAllBases(): void {
+    const races = Object.keys(CONFIG.RACES) as RaceKey[];
     const surfaceY = CONFIG.SURFACE_HEIGHT - 3;
 
     // Calculate spacing between bases
@@ -49,11 +82,8 @@ export default class BaseSystem {
 
   /**
    * Place a base for a specific race
-   * @param {string} race - Race key (tribe, fungus, petal)
-   * @param {number} gridX - Top-left X position in grid coordinates
-   * @param {number} gridY - Top-left Y position in grid coordinates
    */
-  placeBase(race, gridX, gridY) {
+  placeBase(race: string, gridX: number, gridY: number): void {
     // Clear the area for the base (make it air)
     for (let dy = 0; dy < CONFIG.BASE_SIZE; dy++) {
       for (let dx = 0; dx < CONFIG.BASE_SIZE; dx++) {
@@ -67,7 +97,7 @@ export default class BaseSystem {
           // Remove any existing sprite
           const key = `${x},${y}`;
           if (this.terrainSystem.blockSprites.has(key)) {
-            this.terrainSystem.blockSprites.get(key).destroy();
+            this.terrainSystem.blockSprites.get(key)!.destroy();
             this.terrainSystem.blockSprites.delete(key);
           }
         }
@@ -101,12 +131,8 @@ export default class BaseSystem {
 
   /**
    * Create a sprite for a base
-   * @param {string} race - Race key
-   * @param {number} gridX - Grid X position
-   * @param {number} gridY - Grid Y position
-   * @returns {Phaser.GameObjects.Sprite} The created sprite
    */
-  createBaseSprite(race, gridX, gridY) {
+  createBaseSprite(race: string, gridX: number, gridY: number): Phaser.GameObjects.Sprite | null {
     const pixelX = gridX * CONFIG.BLOCK_SIZE;
     const pixelY = gridY * CONFIG.BLOCK_SIZE;
 
@@ -137,19 +163,15 @@ export default class BaseSystem {
 
   /**
    * Get the base data for a specific race
-   * @param {string} race - Race key
-   * @returns {object|null} Base data or null if not found
    */
-  getBase(race) {
+  getBase(race: string): BaseData | null {
     return this.bases.get(race) || null;
   }
 
   /**
    * Get the center position of a race's base (useful for teleportation)
-   * @param {string} race - Race key
-   * @returns {object|null} Object with centerGridX and centerGridY, or null
    */
-  getBaseCenter(race) {
+  getBaseCenter(race: string): BaseCenter | null {
     const base = this.bases.get(race);
     if (!base) {
       return null;
@@ -165,11 +187,8 @@ export default class BaseSystem {
 
   /**
    * Check if a position is inside any base
-   * @param {number} gridX - Grid X position
-   * @param {number} gridY - Grid Y position
-   * @returns {string|null} Race key if inside a base, null otherwise
    */
-  isInsideBase(gridX, gridY) {
+  isInsideBase(gridX: number, gridY: number): string | null {
     for (const [race, base] of this.bases.entries()) {
       if (
         gridX >= base.gridX &&
@@ -185,9 +204,8 @@ export default class BaseSystem {
 
   /**
    * Get all bases
-   * @returns {Map} Map of all bases
    */
-  getAllBases() {
+  getAllBases(): Map<string, BaseData> {
     return this.bases;
   }
 }

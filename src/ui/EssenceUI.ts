@@ -1,12 +1,25 @@
-import { createPanel } from './ui-commons.js';
+import Phaser from 'phaser';
+import { createPanel } from './ui-commons';
+
+interface EssenceUIOptions {
+  essence?: number;
+  points?: number;
+  width?: number;
+  height?: number;
+}
 
 export default class EssenceUI {
-  constructor(scene, options = {}) {
+  scene: Phaser.Scene;
+  options: EssenceUIOptions;
+  panel!: Phaser.GameObjects.Rectangle;
+  label!: Phaser.GameObjects.Text;
+
+  constructor(scene: Phaser.Scene, options: EssenceUIOptions = {}) {
     this.scene = scene;
     this.options = options;
   }
 
-  create(x, y) {
+  create(x: number, y: number): void {
     const width = this.options.width || 180;
     const height = this.options.height || 48;
 
@@ -23,13 +36,13 @@ export default class EssenceUI {
       .setDepth(206);
   }
 
-  setEssence(val) {
+  setEssence(val: number): void {
     if (this.label) {
       this.label.setText(`Essence: ${val}`);
     }
   }
 
-  destroy() {
+  destroy(): void {
     if (this.panel) {
       this.panel.destroy();
     }

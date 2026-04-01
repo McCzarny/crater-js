@@ -1,7 +1,108 @@
 /**
- * Game configuration constants
+ * Game configuration constants with TypeScript types
  */
-export const CONFIG = {
+
+// Layer configuration
+interface LayerConfig {
+  start: number;
+  end: number;
+  color: number;
+}
+
+// Resource types
+interface ResourceConfig {
+  color: number;
+  value: number;
+  texture: string;
+}
+
+// Essence types
+interface EssenceConfig {
+  color: number;
+  max_value: number;
+  texture: string;
+}
+
+// Race configuration
+interface RaceConfig {
+  name: string;
+  description: string;
+  miningSpeedMultiplier: number;
+  movementSpeedMultiplier: number;
+  staminaLimit: number;
+  patienceLimit: number;
+  healthLimit: number;
+}
+
+// Main configuration interface
+interface GameConfig {
+  // Display settings
+  GAME_WIDTH: number;
+  GAME_HEIGHT: number;
+  PIXEL_SCALE: number;
+
+  // World settings
+  WORLD_WIDTH: number;
+  WORLD_HEIGHT: number;
+  BLOCK_SIZE: number;
+
+  // Surface settings
+  SURFACE_HEIGHT: number;
+
+  // Base settings
+  BASE_SIZE: number;
+
+  // Layer depths
+  LAYERS: {
+    DIRT: LayerConfig;
+    STONE: LayerConfig;
+    IRON: LayerConfig;
+    DEEP_STONE: LayerConfig;
+    RARE_ORE: LayerConfig;
+  };
+
+  // Resource types
+  RESOURCES: {
+    COAL: ResourceConfig;
+    DIAMOND: ResourceConfig;
+    EMERALD: ResourceConfig;
+    AMETHYST: ResourceConfig;
+  };
+
+  ESSENCE: {
+    ESSENCE_GRAIN: EssenceConfig;
+    ESSENCE_LUMP: EssenceConfig;
+    ESSENCE_CHUNK: EssenceConfig;
+    ESSENCE_CORE: EssenceConfig;
+  };
+
+  MAX_ESSENCE_DROP: number;
+
+  // Race definitions
+  RACES: {
+    tribe: RaceConfig;
+    fungus: RaceConfig;
+    petal: RaceConfig;
+  };
+
+  // Character settings (base stats)
+  CHAR_SPEED: number;
+  CHAR_JUMP_VELOCITY: number;
+  CHAR_SIZE: number;
+  MINING_RANGE: number;
+  MINING_TIME: number;
+  MAX_HEALTH: number;
+  MAX_ITEMS: number;
+
+  // Physics
+  GRAVITY: number;
+
+  // UI Colors
+  UI_BACKGROUND: number;
+  UI_TEXT_COLOR: string;
+}
+
+export const CONFIG: GameConfig = {
   // Display settings
   GAME_WIDTH: 1024,
   GAME_HEIGHT: 768,
@@ -88,3 +189,6 @@ export const CONFIG = {
   UI_BACKGROUND: 0x3f4949,
   UI_TEXT_COLOR: '#ffffff',
 };
+
+// Export types for use in other files
+export type { GameConfig, RaceConfig, ResourceConfig, EssenceConfig, LayerConfig };

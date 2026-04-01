@@ -1,11 +1,54 @@
-import { CONFIG } from '../config.js';
+import { CONFIG } from '../config';
+import type TerrainSystem from './TerrainSystem';
+
+/**
+ * Interface for move target position
+ */
+interface MoveTarget {
+  x: number;
+  y: number;
+}
+
+/**
+ * Forward declaration for Character (will be fully typed when Character.ts is created)
+ * For now, we define the minimal interface needed by CharacterMovement
+ */
+interface Character {
+  scene: any; // Phaser.Scene
+  terrainSystem: TerrainSystem;
+  sprite: any; // Phaser.GameObjects.Sprite
+  gridX: number;
+  gridY: number;
+  moveSpeed: number;
+  sprintMultiplier: number;
+  abilities?: {
+    isClimbing: boolean;
+    getMovementSpeedMultiplier(): number;
+    shouldPreventFalling(): boolean;
+  };
+}
 
 /**
  * CharacterMovement - handles all movement-related logic for characters
  * Includes: grid movement, smooth movement animation, falling physics
  */
 export default class CharacterMovement {
-  constructor(character) {
+  character: Character;
+  scene: any; // Phaser.Scene
+  terrainSystem: TerrainSystem;
+
+  // Movement state
+  isMoving: boolean;
+  moveTarget: MoveTarget | null;
+  currentMoveSpeed: number;
+  lastMoveTime: number;
+  moveCooldown: number;
+
+  // Falling state
+  isFalling: boolean;
+  fallSpeed: number;
+
+  constructor(character: Character) {
     this.character = character;
     this.scene = character.scene;
     this.terrainSystem = character.terrainSystem;
@@ -25,7 +68,7 @@ export default class CharacterMovement {
   /**
    * Try to move in a direction (grid-based)
    */
-  tryMove(dx, dy, isSprinting) {
+  tryMove(dx: number, dy: number, isSprinting: boolean): boolean {
     const char = this.character;
     const isClimbing = char.abilities && char.abilities.isClimbing;
     const isOnVine = this.isCharacterOnVine();
@@ -159,7 +202,7 @@ export default class CharacterMovement {
   /**
    * Update smooth movement to target
    */
-  updateSmoothMove(delta) {
+  updateSmoothMove(delta: number): void {
     if (!this.isMoving || !this.moveTarget) {
       return;
     }
@@ -224,7 +267,7 @@ export default class CharacterMovement {
   /**
    * Check if character should fall
    */
-  shouldFall() {
+  shouldFall(): boolean {
     if (this.isMoving || this.isFalling) {
       return false;
     }
@@ -242,13 +285,13 @@ export default class CharacterMovement {
   /**
    * Check if character is currently on a vine
    */
-  isCharacterOnVine() {
+  isCharacterOnVine(): boolean {
     const char = this.character;
     return this.terrainSystem.hasVine(char.gridX, char.gridY);
   }
 
   /* Check if there's a vine at a relative position from the character */
-  isVineAtRelativePosition(dx, dy) {
+  isVineAtRelativePosition(dx: number, dy: number): boolean {
     const char = this.character;
     return this.terrainSystem.hasVine(char.gridX + dx, char.gridY + dy);
   }
@@ -256,7 +299,7 @@ export default class CharacterMovement {
   /**
    * Start falling
    */
-  startFalling() {
+  startFalling(): void {
     const char = this.character;
     this.isFalling = true;
     char.gridY++;
@@ -269,7 +312,7 @@ export default class CharacterMovement {
   /**
    * Update falling movement
    */
-  updateFalling(delta) {
+  updateFalling(delta: number): void {
     if (!this.moveTarget) {
       this.isFalling = false;
       return;
@@ -311,7 +354,7 @@ export default class CharacterMovement {
   /**
    * Check if movement input is allowed
    */
-  canMove() {
+  canMove(): boolean {
     const now = Date.now();
     return now - this.lastMoveTime >= this.moveCooldown;
   }
@@ -319,7 +362,7 @@ export default class CharacterMovement {
   /**
    * Snap character to grid position
    */
-  snapToGrid() {
+  snapToGrid(): void {
     const char = this.character;
     this.isMoving = false;
     this.moveTarget = null;

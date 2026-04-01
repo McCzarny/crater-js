@@ -1,16 +1,65 @@
-import { createPanel, makeIcon, makeItemIcon, makePortrait, createButton } from './ui-commons.js';
+import Phaser from 'phaser';
+import {
+  createPanel,
+  makeIcon,
+  makeItemIcon,
+  makePortrait,
+  createButton,
+  ButtonElements,
+  ItemIconReturn,
+} from './ui-commons';
+
+interface Character {
+  race: string;
+  health: number;
+  maxHealth: number;
+  stamina: number;
+  maxStamina: number;
+  patience?: number;
+  maxPatience?: number;
+  stopAllActions?: () => void;
+  abilities?: any;
+  inventory?: any;
+  mining?: any;
+  movement?: any;
+  sprite?: any;
+}
+
+interface BarElement {
+  bg: Phaser.GameObjects.Rectangle;
+  fg: Phaser.GameObjects.Rectangle;
+  label: Phaser.GameObjects.Text;
+}
+
+interface HUDSections {
+  items: ItemIconReturn[];
+  bars: BarElement[];
+  passives: any[];
+  portrait: Phaser.GameObjects.Sprite;
+  standardActions: ButtonElements[];
+  characterActions: ButtonElements[];
+}
+
+interface HUDOptions {
+  [key: string]: any;
+}
 
 export default class HUD {
-  constructor(scene, options = {}) {
+  scene: Phaser.Scene;
+  options: HUDOptions;
+  sections: Partial<HUDSections>;
+  bg?: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle;
+
+  constructor(scene: Phaser.Scene, options: HUDOptions = {}) {
     this.scene = scene;
     this.options = options;
     this.sections = {};
   }
 
-  create() {
+  create(): void {
     const { GAME_WIDTH, GAME_HEIGHT } = {
-      GAME_WIDTH: this.scene.sys.game.config.width,
-      GAME_HEIGHT: this.scene.sys.game.config.height,
+      GAME_WIDTH: this.scene.sys.game.config.width as number,
+      GAME_HEIGHT: this.scene.sys.game.config.height as number,
     };
     const w = GAME_WIDTH;
     const h = 167; // HUD height (fallback)
@@ -70,7 +119,7 @@ export default class HUD {
     const passY = barsY + 64; // Adjust this value as needed
     for (let i = 0; i < 4; i++) {
       const x = passX + (i - 1.5) * 30;
-      const icon = makeIcon(this.scene, x, passY, 24, null);
+      const icon = makeIcon(this.scene, x, passY, 24, '');
       this.sections.passives.push(icon);
     }
 
@@ -87,7 +136,7 @@ export default class HUD {
     this.sections.standardActions = [];
     const stdX = 540;
     const stdY = hudTop + 26 + 32;
-    const standardActions = [];
+    const standardActions: string[][] = [];
     standardActions[0] = [];
     standardActions[0][0] = 'Search';
     standardActions[0][1] = 'MoveUp';
@@ -124,46 +173,46 @@ export default class HUD {
         try {
           btn.rect.on('pointerdown', () => {
             const gameScene = this.scene.scene.get('GameScene');
-            if (!gameScene || !gameScene.player) {
+            if (!gameScene || !(gameScene as any).player) {
               console.warn('HUD action: GameScene or player not available');
               return;
             }
 
-            const player = gameScene.player;
+            const player = (gameScene as any).player as Character;
 
             switch (actionName) {
               case 'MoveUp':
-                player.stopAllActions();
+                player.stopAllActions && player.stopAllActions();
                 if (player.movement && player.movement.tryMove) {
                   player.movement.tryMove(0, 1, false);
                 }
                 break;
               case 'MoveLeft':
-                player.stopAllActions();
+                player.stopAllActions && player.stopAllActions();
                 if (player.movement && player.movement.tryMove) {
                   player.movement.tryMove(-1, 0, false);
                 }
                 break;
               case 'MoveRight':
-                player.stopAllActions();
+                player.stopAllActions && player.stopAllActions();
                 if (player.movement && player.movement.tryMove) {
                   player.movement.tryMove(1, 0, false);
                 }
                 break;
               case 'DigLeft':
-                player.stopAllActions();
+                player.stopAllActions && player.stopAllActions();
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: -1, dy: 0 });
                 }
                 break;
               case 'DigDown':
-                player.stopAllActions();
+                player.stopAllActions && player.stopAllActions();
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: 0, dy: 1 });
                 }
                 break;
               case 'DigRight':
-                player.stopAllActions();
+                player.stopAllActions && player.stopAllActions();
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: 1, dy: 0 });
                 }
@@ -174,25 +223,25 @@ export default class HUD {
                 }
                 break;
               case 'PickUp':
-                player.stopAllActions();
+                player.stopAllActions && player.stopAllActions();
                 if (player.inventory && player.inventory.tryPickup) {
                   player.inventory.tryPickup();
                 }
                 break;
               case 'DigLeftDown':
-                player.stopAllActions();
+                player.stopAllActions && player.stopAllActions();
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: -1, dy: 1 });
                 }
                 break;
               case 'DigRightDown':
-                player.stopAllActions();
+                player.stopAllActions && player.stopAllActions();
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: 1, dy: 1 });
                 }
                 break;
               case 'Search':
-                player.stopAllActions();
+                player.stopAllActions && player.stopAllActions();
                 if (player.inventory) {
                   if (player.inventory.isSearching) {
                     if (player.inventory.stopSearch) {
@@ -237,11 +286,11 @@ export default class HUD {
     }
   }
 
-  _makeBars(x, y) {
+  _makeBars(x: number, y: number): BarElement[] {
     const spacing = 18;
     const labels = ['HP', 'STA', 'PAT'];
     const colors = [0xff4444, 0x44ff44, 0x4444ff];
-    const bars = [];
+    const bars: BarElement[] = [];
     for (let i = 0; i < labels.length; i++) {
       const yy = y + (i - 1) * spacing;
       const bg = this.scene.add
@@ -271,12 +320,13 @@ export default class HUD {
     return bars;
   }
 
-  destroy() {
+  destroy(): void {
     if (this.bg) {
       this.bg.destroy();
     }
-    Object.values(this.sections).forEach(arr => {
-      arr.forEach(item => {
+    Object.values(this.sections).forEach((arr: any) => {
+      if (!Array.isArray(arr)) return;
+      arr.forEach((item: any) => {
         if (!item) {
           return;
         }
@@ -292,8 +342,8 @@ export default class HUD {
         if (item.fg) {
           item.fg.destroy();
         }
-        if (item.label) {
-          item.label.destroy();
+        if (item.image) {
+          item.image.destroy();
         }
       });
     });
@@ -301,30 +351,30 @@ export default class HUD {
 
   /**
    * Update HUD when active character changes. For now update the portrait.
-   * @param {Character} character
+   * @param character - The character to update
    */
-  updateCharacter(character) {
+  updateCharacter(character: Character): void {
     if (!character || !this.sections || !this.sections.portrait) {
       return;
     }
 
     const portrait = this.sections.portrait;
-    const raceTex = character.race || null;
+    const raceTex = character.race || '';
     portrait.setTexture(`hud_portrait_${raceTex}`);
     portrait.setDisplaySize(100, 100);
   }
 
   /**
    * Update items displayed in HUD according to inventory array
-   * @param {Array<string|null>} inventory
+   * @param inventory - Array of item names or null
    */
-  updateInventory(inventory) {
+  updateInventory(inventory: (string | null)[]): void {
     if (!inventory || !this.sections || !this.sections.items) {
       return;
     }
 
     for (let i = 0; i < this.sections.items.length; i++) {
-      const slot = inventory[i] ? inventory[i].toLowerCase() : null;
+      const slot = inventory[i] ? inventory[i]!.toLowerCase() : null;
       const icon = this.sections.items[i];
       if (!icon || !icon.image) {
         continue;
@@ -342,9 +392,9 @@ export default class HUD {
 
   /**
    * Update ability icons for the provided character
-   * @param {Character} character
+   * @param character - The character to update
    */
-  updateAbilities(character) {
+  updateAbilities(character: Character): void {
     if (!this.sections || !this.sections.characterActions) {
       return;
     }
@@ -363,8 +413,8 @@ export default class HUD {
 
     const abilities = character.abilities.getAbilities();
 
-    abilities.forEach((ability, index) => {
-      const slot = this.sections.characterActions[index];
+    abilities.forEach((ability: any, index: number) => {
+      const slot = this.sections.characterActions![index];
       if (!slot) {
         return;
       }
@@ -388,9 +438,9 @@ export default class HUD {
 
   /**
    * Update ability usability and progress indicators. Call this every frame.
-   * @param {Character} character
+   * @param character - The character to update
    */
-  updateAbilityIndicators(character) {
+  updateAbilityIndicators(character: Character): void {
     if (!this.sections || !this.sections.characterActions) {
       return;
     }
@@ -398,8 +448,8 @@ export default class HUD {
       return;
     }
     const abilities = character.abilities.getAbilities();
-    abilities.forEach((ability, index) => {
-      const slot = this.sections.characterActions[index];
+    abilities.forEach((ability: any, index: number) => {
+      const slot = this.sections.characterActions![index];
       if (!slot || !slot.icon || !slot.progressOverlay) {
         return;
       }
@@ -419,9 +469,9 @@ export default class HUD {
 
   /**
    * Update health, stamina, and patience bars every frame.
-   * @param {Character} character
+   * @param character - The character to update
    */
-  updateBars(character) {
+  updateBars(character: Character): void {
     if (!this.sections || !this.sections.bars) {
       return;
     }

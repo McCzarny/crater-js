@@ -1,13 +1,13 @@
 import Phaser from 'phaser';
-import { CONFIG } from './config.js';
-import BootScene from './scenes/BootScene.js';
-import GameScene from './scenes/GameScene.js';
-import UIScene from './scenes/UIScene.js';
+import { CONFIG } from './config';
+import BootScene from './scenes/BootScene';
+import GameScene from './scenes/GameScene';
+import UIScene from './scenes/UIScene';
 
 /**
  * Main game initialization
  */
-const config = {
+const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   width: CONFIG.GAME_WIDTH / CONFIG.PIXEL_SCALE,
   height: CONFIG.GAME_HEIGHT / CONFIG.PIXEL_SCALE,
@@ -25,4 +25,4 @@ const config = {
 const game = new Phaser.Game(config);
 
 // Make it accessible for debugging
-window.game = game;
+(window as any).game = game;

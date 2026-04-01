@@ -1,10 +1,30 @@
-import { CONFIG } from '../config.js';
+import { CONFIG } from '../config';
+import type TerrainSystem from './TerrainSystem';
+
+/**
+ * Forward declaration for Character interface
+ */
+interface Character {
+  scene: any; // Phaser.Scene
+  terrainSystem: TerrainSystem;
+  sprite: any; // Phaser.GameObjects.Sprite
+  gridX: number;
+  gridY: number;
+  race: string;
+  movement?: {
+    tryMove(dx: number, dy: number, isSprinting: boolean): boolean;
+  };
+  stopAllActions(): void;
+}
 
 /**
  * Base Ability class - defines the interface for all character abilities
  */
 class Ability {
-  constructor(character) {
+  character: Character;
+  active: boolean;
+
+  constructor(character: Character) {
     this.character = character;
     this.active = false;
   }
@@ -12,32 +32,32 @@ class Ability {
   /**
    * Get the ability name
    */
-  name() {
+  name(): string {
     return 'Unknown Ability';
   }
 
-  texture() {
+  texture(): string | null {
     return null; // Override in subclasses if they have an icon
   }
 
   /**
    * Get the ability description
    */
-  description() {
+  description(): string {
     return '';
   }
 
   /**
    * Check if this ability can be activated right now
    */
-  canActivate() {
+  canActivate(): boolean {
     return false;
   }
 
   /**
    * Activate the ability
    */
-  activate() {
+  activate(): boolean {
     if (this.canActivate()) {
       this.active = true;
       return true;
@@ -48,21 +68,21 @@ class Ability {
   /**
    * Deactivate the ability
    */
-  deactivate() {
+  deactivate(): void {
     this.active = false;
   }
 
   /**
    * Check if ability is currently active
    */
-  isActive() {
+  isActive(): boolean {
     return this.active;
   }
 
   /**
    * Get movement speed multiplier when this ability is active
    */
-  movementSpeedMultiplier() {
+  movementSpeedMultiplier(): number {
     return 1.0;
   }
 
@@ -70,21 +90,21 @@ class Ability {
    * Check if character can move in a specific direction while ability is active
    * Returns true to allow movement, false to block
    */
-  canMove(_dx, _dy) {
+  canMove(_dx: number, _dy: number): boolean {
     return true;
   }
 
   /**
    * Check if character should fall when ability is active
    */
-  shouldPreventFalling() {
+  shouldPreventFalling(): boolean {
     return false;
   }
 
   /**
    * Update ability state (called each frame)
    */
-  update(_time, _delta) {
+  update(_time: number, _delta: number): void {
     // Override in subclasses if needed
   }
 
@@ -92,7 +112,7 @@ class Ability {
    * Get progress of the ability (0-1). Override in subclasses if needed.
    * Used for showing progress overlays in UI.
    */
-  progress() {
+  progress(): number {
     return 0;
   }
 }
@@ -101,21 +121,24 @@ class Ability {
  * Teleportation Ability - allows Tribe of the Mask to teleport to base camp
  */
 class TeleportationAbility extends Ability {
-  constructor(character) {
+  cooldownTime: number;
+  lastUseTime: number;
+
+  constructor(character: Character) {
     super(character);
     this.cooldownTime = 60000; // 60 seconds cooldown
     this.lastUseTime = 0;
   }
 
-  name() {
+  name(): string {
     return 'Teleportation';
   }
 
-  texture() {
+  texture(): string {
     return 'hud_teleport';
   }
 
-  progress() {
+  progress(): number {
     const currentTime = Date.now();
     const timeSinceLastUse = currentTime - this.lastUseTime;
     if (timeSinceLastUse >= this.cooldownTime) {
@@ -124,17 +147,17 @@ class TeleportationAbility extends Ability {
     return timeSinceLastUse / this.cooldownTime;
   }
 
-  description() {
+  description(): string {
     return 'Teleport to base camp (60s cooldown)';
   }
 
-  canActivate() {
+  canActivate(): boolean {
     const currentTime = Date.now();
     const timeSinceLastUse = currentTime - this.lastUseTime;
     return timeSinceLastUse >= this.cooldownTime;
   }
 
-  activate() {
+  activate(): boolean {
     if (!this.canActivate()) {
       const currentTime = Date.now();
       const timeSinceLastUse = currentTime - this.lastUseTime;
@@ -186,38 +209,40 @@ class TeleportationAbility extends Ability {
  * Climbing Ability - allows Cult of the Spore to climb walls
  */
 class ClimbingAbility extends Ability {
-  constructor(character) {
+  climbingSpeedMultiplier: number;
+
+  constructor(character: Character) {
     super(character);
     this.climbingSpeedMultiplier = 0.5; // 50% of normal speed
   }
 
-  name() {
+  name(): string {
     return 'Climbing';
   }
 
-  texture() {
+  texture(): string {
     return 'hud_climb';
   }
 
-  description() {
+  description(): string {
     return 'Climb walls and prevent falling in tunnels';
   }
 
-  canActivate() {
+  canActivate(): boolean {
     const char = this.character;
     // Can only climb 1 tile above the surface to allow climbing onto the surface
     return char.gridY > CONFIG.SURFACE_HEIGHT - 2;
   }
 
-  movementSpeedMultiplier() {
+  movementSpeedMultiplier(): number {
     return this.climbingSpeedMultiplier;
   }
 
-  shouldPreventFalling() {
+  shouldPreventFalling(): boolean {
     return true; // Climbing prevents falling
   }
 
-  canMove(_dx, _dy) {
+  canMove(_dx: number, _dy: number): boolean {
     // When climbing, allow movement in any direction (up, down, left, right)
     // Check will be handled in CharacterMovement to ensure target is empty
     return true;
@@ -228,7 +253,16 @@ class ClimbingAbility extends Ability {
  * Seed Planting Ability - allows Order of the Seed to plant vines
  */
 class SeedPlantingAbility extends Ability {
-  constructor(character) {
+  vineSpeedMultiplier: number;
+  growthInterval: number;
+
+  // Growth state
+  isGrowing: boolean;
+  currentVineX: number | null;
+  currentVineY: number | null;
+  lastGrowthTime: number;
+
+  constructor(character: Character) {
     super(character);
     this.vineSpeedMultiplier = 0.7; // 70% of normal speed when on vines
     this.growthInterval = 10000; // 10 seconds per vine growth
@@ -240,7 +274,7 @@ class SeedPlantingAbility extends Ability {
     this.lastGrowthTime = 0;
   }
 
-  progress() {
+  progress(): number {
     if (!this.isGrowing) {
       return 0;
     }
@@ -249,19 +283,19 @@ class SeedPlantingAbility extends Ability {
     return Math.min(elapsed / this.growthInterval, 1);
   }
 
-  name() {
+  name(): string {
     return 'Seed Planting';
   }
 
-  texture() {
+  texture(): string {
     return 'hud_seed_planting';
   }
 
-  description() {
+  description(): string {
     return 'Plant seeds that grow into climbable vines';
   }
 
-  canActivate() {
+  canActivate(): boolean {
     const char = this.character;
 
     // Must be underground to plant seeds
@@ -277,7 +311,7 @@ class SeedPlantingAbility extends Ability {
    * Find the starting position for vine growth
    * Returns {x, y} or null if no valid position
    */
-  findStartingPosition() {
+  findStartingPosition(): { x: number; y: number } | null {
     const char = this.character;
     const terrain = char.terrainSystem;
     const checkX = char.gridX;
@@ -325,7 +359,7 @@ class SeedPlantingAbility extends Ability {
     return { x: checkX, y: checkY };
   }
 
-  activate() {
+  activate(): boolean {
     if (!this.canActivate()) {
       return false;
     }
@@ -345,7 +379,7 @@ class SeedPlantingAbility extends Ability {
     return true;
   }
 
-  deactivate() {
+  deactivate(): void {
     this.active = false;
     this.isGrowing = false;
     this.currentVineX = null;
@@ -353,19 +387,19 @@ class SeedPlantingAbility extends Ability {
     console.log('Seed planting stopped');
   }
 
-  movementSpeedMultiplier() {
+  movementSpeedMultiplier(): number {
     // This affects movement speed when the ability itself is active, not when on vines
     return 1.0;
   }
 
-  shouldPreventFalling() {
+  shouldPreventFalling(): boolean {
     return false; // Seed planting doesn't prevent falling
   }
 
   /**
    * Update vine growth
    */
-  update(_time, _delta) {
+  update(_time: number, _delta: number): void {
     if (!this.isGrowing || this.currentVineX === null || this.currentVineY === null) {
       return;
     }
@@ -419,7 +453,10 @@ class SeedPlantingAbility extends Ability {
  * CharacterAbilities - manages all abilities for a character
  */
 export default class CharacterAbilities {
-  constructor(character) {
+  character: Character;
+  abilities: Ability[];
+
+  constructor(character: Character) {
     this.character = character;
     this.abilities = [];
 
@@ -430,7 +467,7 @@ export default class CharacterAbilities {
   /**
    * Initialize abilities based on character race
    */
-  initializeAbilities() {
+  initializeAbilities(): void {
     const race = this.character.race;
 
     switch (race) {
@@ -451,21 +488,21 @@ export default class CharacterAbilities {
   /**
    * Get all available abilities
    */
-  getAbilities() {
+  getAbilities(): Ability[] {
     return this.abilities;
   }
 
   /**
    * Get ability by index
    */
-  getAbility(index) {
+  getAbility(index: number): Ability | null {
     return this.abilities[index] || null;
   }
 
   /**
    * Toggle ability by index
    */
-  toggleAbility(index) {
+  toggleAbility(index: number): boolean {
     const ability = this.getAbility(index);
     if (!ability) {
       return false;
@@ -484,21 +521,21 @@ export default class CharacterAbilities {
   /**
    * Deactivate all abilities
    */
-  deactivateAll() {
+  deactivateAll(): void {
     this.abilities.forEach(ability => ability.deactivate());
   }
 
   /**
    * Get currently active ability
    */
-  getActiveAbility() {
+  getActiveAbility(): Ability | null {
     return this.abilities.find(ability => ability.isActive()) || null;
   }
 
   /**
    * Check if climbing is active
    */
-  get isClimbing() {
+  get isClimbing(): boolean {
     const activeAbility = this.getActiveAbility();
     return activeAbility instanceof ClimbingAbility && activeAbility.isActive();
   }
@@ -506,7 +543,7 @@ export default class CharacterAbilities {
   /**
    * Check if seed planting is active
    */
-  get isPlantingSeeds() {
+  get isPlantingSeeds(): boolean {
     const activeAbility = this.getActiveAbility();
     return activeAbility instanceof SeedPlantingAbility && activeAbility.isActive();
   }
@@ -514,7 +551,7 @@ export default class CharacterAbilities {
   /**
    * Get movement speed multiplier from active ability
    */
-  getMovementSpeedMultiplier() {
+  getMovementSpeedMultiplier(): number {
     const activeAbility = this.getActiveAbility();
     return activeAbility ? activeAbility.movementSpeedMultiplier() : 1.0;
   }
@@ -522,7 +559,7 @@ export default class CharacterAbilities {
   /**
    * Check if active ability prevents falling
    */
-  shouldPreventFalling() {
+  shouldPreventFalling(): boolean {
     const activeAbility = this.getActiveAbility();
     return activeAbility ? activeAbility.shouldPreventFalling() : false;
   }
@@ -530,7 +567,7 @@ export default class CharacterAbilities {
   /**
    * Update all abilities
    */
-  update(time, delta) {
+  update(time: number, delta: number): void {
     this.abilities.forEach(ability => ability.update(time, delta));
   }
 }

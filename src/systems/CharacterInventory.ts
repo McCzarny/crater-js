@@ -1,11 +1,45 @@
-import { CONFIG } from '../config.js';
+import { CONFIG } from '../config';
+import type TerrainSystem from './TerrainSystem';
+
+/**
+ * Forward declaration for Character interface
+ */
+interface Character {
+  scene: any; // Phaser.Scene
+  terrainSystem: TerrainSystem;
+  sprite: any; // Phaser.GameObjects.Sprite
+  gridX: number;
+  gridY: number;
+  moveSpeed: number;
+}
+
+/**
+ * Interface for movement result
+ */
+interface MovementResult {
+  shouldMove: boolean;
+  targetX: number;
+  targetY: number;
+  speed: number;
+}
 
 /**
  * CharacterInventory - handles inventory and item collection logic
  * Includes: inventory management, item pickup, search mode
  */
 export default class CharacterInventory {
-  constructor(character) {
+  character: Character;
+  scene: any; // Phaser.Scene
+  terrainSystem: TerrainSystem;
+  inventory: (string | null)[];
+
+  // Search state
+  isSearching: boolean;
+  searchDirection: number;
+  lastSearchMoveTime: number;
+  searchMoveInterval: number;
+
+  constructor(character: Character) {
     this.character = character;
     this.scene = character.scene;
     this.terrainSystem = character.terrainSystem;
@@ -24,7 +58,7 @@ export default class CharacterInventory {
   /**
    * Try to pick up an item at the character's position
    */
-  tryPickup() {
+  tryPickup(): boolean {
     const char = this.character;
 
     // Check if inventory is full
@@ -66,7 +100,7 @@ export default class CharacterInventory {
   /**
    * Start searching for items
    */
-  startSearch() {
+  startSearch(): void {
     console.log('Starting search mode');
     this.isSearching = true;
     this.searchDirection = 1;
@@ -77,7 +111,7 @@ export default class CharacterInventory {
   /**
    * Stop searching
    */
-  stopSearch() {
+  stopSearch(): void {
     if (!this.isSearching) {
       return;
     }
@@ -89,17 +123,17 @@ export default class CharacterInventory {
   /**
    * Update search behavior
    */
-  updateSearch(time, isMoving) {
+  updateSearch(time: number, isMoving: boolean): MovementResult | null {
     // Check if inventory is full
     if (this.inventory.every(slot => slot !== null)) {
       console.log('Search stopped: inventory full');
       this.stopSearch();
-      return;
+      return null;
     }
 
     // Wait for movement to complete
     if (isMoving) {
-      return;
+      return null;
     }
 
     const char = this.character;
@@ -112,7 +146,7 @@ export default class CharacterInventory {
 
     // Check if enough time has passed
     if (time - this.lastSearchMoveTime < this.searchMoveInterval) {
-      return;
+      return null;
     }
 
     // Try to move in search direction
@@ -159,14 +193,14 @@ export default class CharacterInventory {
   /**
    * Check if inventory has space
    */
-  hasSpace() {
+  hasSpace(): boolean {
     return this.inventory.some(slot => slot === null);
   }
 
   /**
    * Check if inventory is full
    */
-  isFull() {
+  isFull(): boolean {
     return this.inventory.every(slot => slot !== null);
   }
 }

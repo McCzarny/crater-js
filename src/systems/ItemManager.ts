@@ -1,11 +1,36 @@
-import { CONFIG } from '../config.js';
-import { TileType } from './TileTypes.js';
+import Phaser from 'phaser';
+import { CONFIG } from '../config';
+import { TileType, type TileTypeValue } from './TileTypes';
+import type TerrainSystem from './TerrainSystem';
+
+/**
+ * Interface for items on the ground
+ */
+interface Item {
+  gridX: number;
+  gridY: number;
+  type: string;
+  id: string;
+}
+
+/**
+ * Type for item types (resources + essence)
+ */
+type ItemType = keyof typeof CONFIG.RESOURCES | keyof typeof CONFIG.ESSENCE;
 
 /**
  * ItemManager - handles item spawning, rendering, gravity, and collection
  */
 export default class ItemManager {
-  constructor(scene, terrainSystem) {
+  scene: Phaser.Scene;
+  terrainSystem: TerrainSystem;
+  items: Item[];
+  itemSprites: Map<string, Phaser.GameObjects.Graphics | Phaser.GameObjects.Sprite>;
+  itemContainer: Phaser.GameObjects.Container;
+  lastItemGravityUpdate: number;
+  itemGravityInterval: number;
+
+  constructor(scene: Phaser.Scene, terrainSystem: TerrainSystem) {
     this.scene = scene;
     this.terrainSystem = terrainSystem;
 
@@ -25,8 +50,7 @@ export default class ItemManager {
   /**
    * Remove all items at a specific grid position
    */
-
-  removeAllItemsAt(gridX, gridY) {
+  removeAllItemsAt(gridX: number, gridY: number): void {
     // Collect IDs of items at the given position
     const itemsToRemove = this.items.filter(item => item.gridX === gridX && item.gridY === gridY);
     for (const item of itemsToRemove) {
@@ -34,7 +58,10 @@ export default class ItemManager {
     }
   }
 
-  getEssenceTypeForAmount(amount) {
+  /**
+   * Get essence type for a given amount
+   */
+  getEssenceTypeForAmount(amount: number): keyof typeof CONFIG.ESSENCE {
     if (amount <= CONFIG.ESSENCE.ESSENCE_GRAIN.max_value) {
       return 'ESSENCE_GRAIN';
     } else if (amount <= CONFIG.ESSENCE.ESSENCE_LUMP.max_value) {
@@ -49,8 +76,8 @@ export default class ItemManager {
   /**
    * Try to drop an item at the given position based on block type
    */
-  tryDropItem(gridX, gridY, blockType) {
-    const possibleItems = {};
+  tryDropItem(gridX: number, gridY: number, blockType: TileTypeValue): void {
+    const possibleItems: Partial<Record<ItemType, number>> = {};
 
     // Determine drop chances based on block type
     switch (blockType) {
@@ -77,10 +104,10 @@ export default class ItemManager {
     }
 
     // Roll for drop
-    const itemTypes = Object.keys(possibleItems);
+    const itemTypes = Object.keys(possibleItems) as ItemType[];
     if (itemTypes.length > 0) {
       for (const itemType of itemTypes) {
-        if (Math.random() < possibleItems[itemType]) {
+        if (Math.random() < (possibleItems[itemType] || 0)) {
           this.spawnItem(gridX, gridY, itemType);
           return; // Only drop one item per block
         }
@@ -105,8 +132,8 @@ export default class ItemManager {
   /**
    * Spawn an item at the given grid position
    */
-  spawnItem(gridX, gridY, itemType) {
-    const item = {
+  spawnItem(gridX: number, gridY: number, itemType: string): void {
+    const item: Item = {
       gridX: gridX,
       gridY: gridY,
       type: itemType,
@@ -122,8 +149,9 @@ export default class ItemManager {
   /**
    * Render an item sprite
    */
-  renderItem(item) {
-    const config = CONFIG.RESOURCES[item.type] || CONFIG.ESSENCE[item.type];
+  renderItem(item: Item): void {
+    const config = CONFIG.RESOURCES[item.type as keyof typeof CONFIG.RESOURCES] || 
+                   CONFIG.ESSENCE[item.type as keyof typeof CONFIG.ESSENCE];
     if (!config) {
       return;
     }
@@ -166,14 +194,14 @@ export default class ItemManager {
   /**
    * Get items at a specific grid position
    */
-  getItemsAt(gridX, gridY) {
+  getItemsAt(gridX: number, gridY: number): Item[] {
     return this.items.filter(item => item.gridX === gridX && item.gridY === gridY);
   }
 
   /**
    * Remove an item from the ground
    */
-  removeItem(itemId) {
+  removeItem(itemId: string): Item | null {
     const index = this.items.findIndex(item => item.id === itemId);
     if (index >= 0) {
       const item = this.items[index];
@@ -181,7 +209,7 @@ export default class ItemManager {
 
       // Remove sprite
       if (this.itemSprites.has(itemId)) {
-        this.itemSprites.get(itemId).destroy();
+        this.itemSprites.get(itemId)!.destroy();
         this.itemSprites.delete(itemId);
       }
 
@@ -193,7 +221,7 @@ export default class ItemManager {
   /**
    * Update item positions (apply gravity)
    */
-  updateItems(time) {
+  updateItems(time: number): void {
     // Only update at intervals
     if (time - this.lastItemGravityUpdate < this.itemGravityInterval) {
       return;
@@ -210,7 +238,7 @@ export default class ItemManager {
   /**
    * Apply gravity to a single item
    */
-  applyItemGravity(item) {
+  applyItemGravity(item: Item): void {
     // Check if we're at the bottom
     if (item.gridY >= CONFIG.WORLD_HEIGHT - 1) {
       return;

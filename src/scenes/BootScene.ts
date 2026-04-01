@@ -8,7 +8,7 @@ export default class BootScene extends Phaser.Scene {
     super({ key: 'BootScene' });
   }
 
-  preload() {
+  preload(): void {
     // Load race icons
     this.load.image('tribe', 'resources/icons/races/tribe.png');
     this.load.image('fungus', 'resources/icons/races/fungus.png');
@@ -82,7 +82,7 @@ export default class BootScene extends Phaser.Scene {
     console.log('BootScene: Loading race icons and tile textures...');
   }
 
-  create() {
+  create(): void {
     console.log('BootScene: Starting game...');
     this.scene.start('GameScene');
     this.scene.launch('UIScene');

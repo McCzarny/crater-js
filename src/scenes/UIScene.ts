@@ -1,18 +1,33 @@
 import Phaser from 'phaser';
-import { CONFIG } from '../config.js';
-import CharacterIcons from '../ui/CharacterIcons.js';
-import EssenceUI from '../ui/EssenceUI.js';
-import HUD from '../ui/HUD.js';
+import { CONFIG } from '../config';
+import CharacterIcons from '../ui/CharacterIcons';
+import EssenceUI from '../ui/EssenceUI';
+import HUD from '../ui/HUD';
+import GameScene from './GameScene';
+
+interface AbilityButtonElements {
+  btn: Phaser.GameObjects.Rectangle;
+  text: Phaser.GameObjects.Text;
+  hint: Phaser.GameObjects.Text;
+}
 
 /**
  * UI overlay scene - displays HUD, inventory, resources, etc.
  */
 export default class UIScene extends Phaser.Scene {
+  characterIcons!: CharacterIcons;
+  essenceUI!: EssenceUI;
+  hud!: HUD;
+  characterButtons!: Phaser.GameObjects.Sprite[];
+  characterButtonBorders!: Phaser.GameObjects.Rectangle[];
+  activeCharacterIndex!: number;
+  abilityButtonElements!: AbilityButtonElements[];
+
   constructor() {
     super({ key: 'UIScene' });
   }
 
-  create() {
+  create(): void {
     console.log('UIScene: Initializing...');
 
     // Compose modular UI components (mocks/dummies)
@@ -20,7 +35,7 @@ export default class UIScene extends Phaser.Scene {
 
     // Wait for GameScene to be ready, then update icons with actual characters
     this.events.once('updateCharacterIcons', () => {
-      const gameScene = this.scene.get('GameScene');
+      const gameScene = this.scene.get('GameScene') as GameScene;
       if (gameScene && gameScene.characters) {
         this.characterIcons.update(gameScene.characters, 40, 40, 60);
       }
@@ -40,7 +55,7 @@ export default class UIScene extends Phaser.Scene {
     // Update HUD portrait when active character changes in GameScene
     this.game.events.on(
       'characterSwitched',
-      player => {
+      (player: any) => {
         if (this.hud && this.hud.updateCharacter) {
           this.hud.updateCharacter(player);
         }
@@ -53,7 +68,7 @@ export default class UIScene extends Phaser.Scene {
 
     // Trigger initial HUD update if GameScene already has a player and update character icons
     try {
-      const gameScene = this.scene.get('GameScene');
+      const gameScene = this.scene.get('GameScene') as GameScene;
       if (gameScene && gameScene.player && this.hud && this.hud.updateCharacter) {
         this.hud.updateCharacter(gameScene.player);
         if (this.hud.updateAbilities) {
@@ -70,7 +85,7 @@ export default class UIScene extends Phaser.Scene {
     this.events.on('shutdown', this.onShutdown, this);
   }
 
-  onShutdown() {
+  onShutdown(): void {
     if (this.characterIcons && this.characterIcons.destroy) {
       this.characterIcons.destroy();
     }
@@ -81,10 +96,11 @@ export default class UIScene extends Phaser.Scene {
       this.hud.destroy();
     }
   }
+
   /**
    * Create character selection buttons
    */
-  createCharacterButtons() {
+  createCharacterButtons(): void {
     const buttonSize = 50;
     const buttonSpacing = 60;
     const startX = CONFIG.GAME_WIDTH / 2 - buttonSpacing;
@@ -142,7 +158,7 @@ export default class UIScene extends Phaser.Scene {
   /**
    * Select a character
    */
-  selectCharacter(index) {
+  selectCharacter(index: number): void {
     // Update borders
     for (let i = 0; i < this.characterButtonBorders.length; i++) {
       this.characterButtonBorders[i].setVisible(i === index);
@@ -165,7 +181,7 @@ export default class UIScene extends Phaser.Scene {
   /**
    * Update scene (called each frame)
    */
-  update() {
+  update(): void {
     // Only update button visual states, not recreate them
     // (buttons are recreated when character switches)
     if (this.abilityButtonElements && this.abilityButtonElements.length > 0) {
@@ -174,7 +190,7 @@ export default class UIScene extends Phaser.Scene {
 
     if (this.hud && this.hud.updateAbilityIndicators) {
       try {
-        const gameScene = this.scene.get('GameScene');
+        const gameScene = this.scene.get('GameScene') as GameScene;
         if (gameScene && gameScene.player) {
           this.hud.updateAbilityIndicators(gameScene.player);
           if (this.hud.updateBars) {
@@ -190,7 +206,7 @@ export default class UIScene extends Phaser.Scene {
   /**
    * Update race information display
    */
-  updateRaceInfo(race) {
+  updateRaceInfo(race: string): void {
     const raceConfig = CONFIG.RACES[race];
     if (!raceConfig) {
       return;
@@ -203,7 +219,7 @@ export default class UIScene extends Phaser.Scene {
   /**
    * Create ability buttons container
    */
-  createAbilityButtons() {
+  createAbilityButtons(): void {
     // Ability buttons will be created dynamically based on active character
     this.abilityButtonElements = [];
   }
@@ -211,7 +227,7 @@ export default class UIScene extends Phaser.Scene {
   /**
    * Update ability buttons for current character
    */
-  updateAbilityButtonsForCharacter() {
+  updateAbilityButtonsForCharacter(): void {
     // Clear existing ability buttons
     this.abilityButtonElements.forEach(elements => {
       elements.btn.destroy();
@@ -221,7 +237,7 @@ export default class UIScene extends Phaser.Scene {
     this.abilityButtonElements = [];
 
     // Get active character from GameScene
-    const gameScene = this.scene.get('GameScene');
+    const gameScene = this.scene.get('GameScene') as GameScene;
     if (!gameScene || !gameScene.player) {
       return;
     }
@@ -242,7 +258,7 @@ export default class UIScene extends Phaser.Scene {
     const totalWidth = abilities.length * buttonWidth + (abilities.length - 1) * buttonSpacing;
     const startX = (CONFIG.GAME_WIDTH - totalWidth) / 2;
 
-    abilities.forEach((ability, index) => {
+    abilities.forEach((ability: any, index: number) => {
       const x = startX + index * (buttonWidth + buttonSpacing) + buttonWidth / 2;
       const y = startY;
 
@@ -286,7 +302,7 @@ export default class UIScene extends Phaser.Scene {
 
       // Always add hover and click handlers
       btn.on('pointerover', () => {
-        const gameScene = this.scene.get('GameScene');
+        const gameScene = this.scene.get('GameScene') as GameScene;
         if (!gameScene || !gameScene.player) {
           return;
         }
@@ -297,7 +313,7 @@ export default class UIScene extends Phaser.Scene {
       });
 
       btn.on('pointerout', () => {
-        const gameScene = this.scene.get('GameScene');
+        const gameScene = this.scene.get('GameScene') as GameScene;
         if (!gameScene || !gameScene.player) {
           return;
         }
@@ -331,7 +347,7 @@ export default class UIScene extends Phaser.Scene {
   /**
    * Update ability buttons state (called when ability state changes)
    */
-  updateAbilityButtons() {
+  updateAbilityButtons(): void {
     // Just refresh all buttons
     this.updateAbilityButtonsForCharacter();
   }
@@ -340,8 +356,8 @@ export default class UIScene extends Phaser.Scene {
    * Update ability button visual states without recreating them
    * Called every frame for efficiency
    */
-  updateAbilityButtonStates() {
-    const gameScene = this.scene.get('GameScene');
+  updateAbilityButtonStates(): void {
+    const gameScene = this.scene.get('GameScene') as GameScene;
     if (!gameScene || !gameScene.player) {
       return;
     }
@@ -372,7 +388,7 @@ export default class UIScene extends Phaser.Scene {
     });
   }
 
-  updateInventory(inventory) {
+  updateInventory(inventory: any): void {
     if (this.hud && this.hud.updateInventory) {
       this.hud.updateInventory(inventory);
     } else {

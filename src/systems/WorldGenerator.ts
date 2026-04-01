@@ -1,11 +1,14 @@
-import { CONFIG } from '../config.js';
-import { TileType, TileRegistry } from './TileTypes.js';
+import { CONFIG } from '../config';
+import { TileType, TileRegistry, type Tile, type TileTypeValue } from './TileTypes';
 
 /**
  * WorldGenerator - handles world generation logic
  */
 export default class WorldGenerator {
-  static boulderOrTile(tileType, boulderChance) {
+  /**
+   * Randomly decide between a boulder or the given tile type
+   */
+  static boulderOrTile(tileType: TileTypeValue, boulderChance: number): TileTypeValue {
     if (Math.random() < boulderChance) {
       return TileType.BOULDER;
     }
@@ -15,7 +18,7 @@ export default class WorldGenerator {
   /**
    * Generate a single block based on position
    */
-  static generateBlock(x, y) {
+  static generateBlock(x: number, y: number): Tile {
     // Sky/air blocks
     if (y < CONFIG.SURFACE_HEIGHT) {
       return TileRegistry.createTile(TileType.AIR);
@@ -28,8 +31,8 @@ export default class WorldGenerator {
 
     // Underground layers
     const depth = y - CONFIG.SURFACE_HEIGHT;
-    let tileType = TileType.STONE;
-    let layerTileType = TileType.STONE;
+    let tileType: TileTypeValue = TileType.STONE;
+    let layerTileType: TileTypeValue = TileType.STONE;
 
     // Determine layer
     if (depth <= 3) {
@@ -61,10 +64,10 @@ export default class WorldGenerator {
   /**
    * Generate the complete game world
    */
-  static generateWorld() {
+  static generateWorld(): Tile[][] {
     console.log('WorldGenerator: Generating world...');
 
-    const blocks = [];
+    const blocks: Tile[][] = [];
 
     // Initialize 2D array for blocks
     for (let y = 0; y < CONFIG.WORLD_HEIGHT; y++) {

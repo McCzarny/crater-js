@@ -1,21 +1,58 @@
-import { CONFIG } from '../config.js';
-import CharacterMovement from '../systems/CharacterMovement.js';
-import CharacterMining from '../systems/CharacterMining.js';
-import CharacterInventory from '../systems/CharacterInventory.js';
-import CharacterAbilities from '../systems/CharacterAbilities.js';
+import Phaser from 'phaser';
+import { CONFIG, type RaceConfig } from '../config';
+import CharacterMovement from '../systems/CharacterMovement';
+import CharacterMining from '../systems/CharacterMining';
+import CharacterInventory from '../systems/CharacterInventory';
+import CharacterAbilities from '../systems/CharacterAbilities';
+import type TerrainSystem from '../systems/TerrainSystem';
 
 /**
  * Character class - represents a playable character
  * Now uses composition pattern with separate systems for movement, mining, and inventory
  */
 export default class Character {
-  constructor(scene, x, y, race) {
+  isDead: boolean;
+  scene: Phaser.Scene;
+  race: string;
+  raceConfig: RaceConfig;
+  gridX: number;
+  gridY: number;
+  terrainSystem: TerrainSystem;
+  sprite: Phaser.GameObjects.Sprite;
+  
+  // Movement settings
+  baseSpeed: number;
+  moveSpeed: number;
+  sprintMultiplier: number;
+  
+  // Mining settings
+  baseMiningTime: number;
+  digInterval: number;
+  fastDigInterval: number;
+  
+  // Subsystems
+  movement: CharacterMovement;
+  mining: CharacterMining;
+  inventory: CharacterInventory;
+  abilities: CharacterAbilities;
+  
+  // Stamina settings
+  maxStamina: number;
+  stamina: number;
+  staminaDrainPerSecond: number;
+  staminaRegenPerSecond: number;
+  
+  // Health settings
+  maxHealth: number;
+  health: number;
+
+  constructor(scene: Phaser.Scene, x: number, y: number, race: string) {
     this.isDead = false;
     this.scene = scene;
     this.race = race;
 
     // Get race stats
-    const raceConfig = CONFIG.RACES[race] || CONFIG.RACES.tribe;
+    const raceConfig = CONFIG.RACES[race as keyof typeof CONFIG.RACES] || CONFIG.RACES.tribe;
     this.raceConfig = raceConfig;
 
     // Grid position (in tiles)
@@ -23,7 +60,7 @@ export default class Character {
     this.gridY = y;
 
     // Get terrain system reference
-    this.terrainSystem = scene.registry.get('terrainSystem');
+    this.terrainSystem = scene.registry.get('terrainSystem') as TerrainSystem;
 
     // Create sprite
     this.sprite = scene.add.sprite(
@@ -64,7 +101,7 @@ export default class Character {
   /**
    * Stop all active actions
    */
-  stopAllActions() {
+  stopAllActions(): void {
     this.mining.stopAutoDig();
     this.inventory.stopSearch();
     this.mining.stopMining();
@@ -75,7 +112,12 @@ export default class Character {
   /**
    * Update character state
    */
-  update(cursors, keys, time, delta) {
+  update(
+    cursors: Phaser.Types.Input.Keyboard.CursorKeys | null,
+    keys: any,
+    time: number,
+    delta: number,
+  ): void {
     // Update abilities
     this.abilities.update(time, delta);
 
@@ -233,7 +275,7 @@ export default class Character {
   /**
    * Update auto-digging behavior
    */
-  updateAutoDig(time, keys) {
+  updateAutoDig(time: number, keys: any): void {
     const moveRequest = this.mining.updateAutoDig(time, keys, this.movement.isMoving);
 
     if (moveRequest && moveRequest.shouldMove) {
@@ -249,7 +291,7 @@ export default class Character {
   /**
    * Update search behavior
    */
-  updateSearch(time) {
+  updateSearch(time: number): void {
     const moveRequest = this.inventory.updateSearch(time, this.movement.isMoving);
 
     if (moveRequest && moveRequest.shouldMove) {
@@ -265,7 +307,7 @@ export default class Character {
   /**
    * Start auto-digging in a direction
    */
-  startAutoDig(direction) {
+  startAutoDig(direction: { dx: number; dy: number }): void {
     this.stopAllActions();
     this.mining.startAutoDig(direction);
 
@@ -276,9 +318,8 @@ export default class Character {
 
   /**
    * Inflict damage to the character. If health <= 0, kill the character.
-   * @param {number} amount
    */
-  takeDamage(amount) {
+  takeDamage(amount: number): void {
     if (this.isDead) {
       return;
     }
@@ -292,7 +333,7 @@ export default class Character {
   /**
    * Kill the character (set isDead, stop actions, update sprite, etc.)
    */
-  kill() {
+  kill(): void {
     if (this.isDead) {
       return;
     }
