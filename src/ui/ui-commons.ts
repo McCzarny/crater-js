@@ -14,6 +14,7 @@ export interface ButtonElements {
   label: Phaser.GameObjects.Text | null;
   icon: Phaser.GameObjects.Sprite;
   progressOverlay: Phaser.GameObjects.Rectangle;
+  activeOverlay: Phaser.GameObjects.Sprite;
 }
 
 export interface IconReturn {
@@ -66,7 +67,13 @@ export function createButton(
     .setScrollFactor(0)
     .setDepth((opts.depth ?? 203) + 1);
 
-  return { rect, label, icon, progressOverlay };
+  const activeOverlay = scene.add
+    .sprite(x, y, 'hud_active_action')
+    .setScrollFactor(0)
+    .setDepth((opts.depth ?? 204) + 1)
+    .setVisible(false);
+
+  return { rect, label, icon, progressOverlay, activeOverlay };
 }
 
 export function createPanel(

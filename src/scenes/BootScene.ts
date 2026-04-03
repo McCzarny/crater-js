@@ -55,6 +55,7 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('hud', 'resources/ui/hud.png');
     this.load.image('hud_icon', 'resources/ui/hud_icon.png');
     this.load.image('hud_icon_error', 'resources/ui/hud_icon_error.png');
+    this.load.image('hud_active_action', 'resources/ui/hud_active_action.png');
 
     this.load.image('hud_standard_action_MoveLeft', 'resources/ui/move_left.png');
     this.load.image('hud_standard_action_MoveRight', 'resources/ui/move_right.png');

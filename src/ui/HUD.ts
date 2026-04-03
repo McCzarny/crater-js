@@ -405,6 +405,7 @@ export default class HUD {
         action.label?.destroy();
         action.icon?.destroy();
         action.progressOverlay?.destroy();
+        action.activeOverlay?.destroy();
       });
     }
     // Destroy character actions
@@ -414,6 +415,7 @@ export default class HUD {
         action.label?.destroy();
         action.icon?.destroy();
         action.progressOverlay?.destroy();
+        action.activeOverlay?.destroy();
       });
     }
   }
@@ -544,9 +546,19 @@ export default class HUD {
     const abilities = character.abilities.getAbilities();
     abilities.forEach((ability, index) => {
       const slot = this.sections.characterActions![index];
-      if (!slot || !slot.icon || !slot.progressOverlay) {
+      if (!slot || !slot.icon || !slot.progressOverlay || !slot.activeOverlay) {
         return;
       }
+
+      // Active overlay - show when ability is active
+      const isActive = ability.isActive();
+      slot.activeOverlay.setVisible(isActive);
+      if (isActive) {
+        const h = slot.icon.displayHeight;
+        const w = slot.icon.displayWidth;
+        slot.activeOverlay.setDisplaySize(w, h);
+      }
+
       // Progress overlay
       const prog = ability.progress();
       const h = slot.icon.displayHeight;
