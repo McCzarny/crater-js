@@ -1,15 +1,9 @@
 import Phaser from 'phaser';
-import { makeIcon } from './ui-commons';
+import { makeIcon, IconReturn } from './ui-commons';
 
 interface Character {
   isDead: boolean;
   race: string;
-}
-
-interface IconReturn {
-  bg: Phaser.GameObjects.Rectangle;
-  image: Phaser.GameObjects.Sprite;
-  label?: Phaser.GameObjects.Text;
 }
 
 export default class CharacterIcons {

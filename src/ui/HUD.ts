@@ -7,8 +7,10 @@ import {
   createButton,
   ButtonElements,
   ItemIconReturn,
+  IconReturn,
 } from './ui-commons';
 import type TooltipManager from './TooltipManager';
+import { Ability } from '../systems/CharacterAbilities';
 
 interface GameSceneType extends Phaser.Scene {
   player: Character;
@@ -24,7 +26,7 @@ interface Character {
   maxPatience?: number;
   stopAllActions?: () => void;
   abilities?: {
-    getAbilities: () => unknown[];
+    getAbilities: () => Ability[];
   };
   inventory?: {
     tryPickup?: () => void;
@@ -52,7 +54,7 @@ interface BarElement {
 interface HUDSections {
   items: ItemIconReturn[];
   bars: BarElement[];
-  passives: unknown[];
+  passives: IconReturn[];
   portrait: Phaser.GameObjects.Sprite;
   standardActions: ButtonElements[];
   characterActions: ButtonElements[];
@@ -370,32 +372,50 @@ export default class HUD {
     if (this.bg) {
       this.bg.destroy();
     }
-    Object.values(this.sections).forEach(arr => {
-      if (!Array.isArray(arr)) {
-        return;
-      }
-      arr.forEach((item: unknown) => {
-        if (!item || typeof item !== 'object') {
-          return;
-        }
-        const obj = item as Record<string, unknown>;
-        if (obj.rect && typeof obj.rect === 'object' && 'destroy' in obj.rect) {
-          (obj.rect as Phaser.GameObjects.GameObject).destroy();
-        }
-        if (obj.label && typeof obj.label === 'object' && 'destroy' in obj.label) {
-          (obj.label as Phaser.GameObjects.GameObject).destroy();
-        }
-        if (obj.bg && typeof obj.bg === 'object' && 'destroy' in obj.bg) {
-          (obj.bg as Phaser.GameObjects.GameObject).destroy();
-        }
-        if (obj.fg && typeof obj.fg === 'object' && 'destroy' in obj.fg) {
-          (obj.fg as Phaser.GameObjects.GameObject).destroy();
-        }
-        if (obj.image && typeof obj.image === 'object' && 'destroy' in obj.image) {
-          (obj.image as Phaser.GameObjects.GameObject).destroy();
-        }
+    // Destroy items
+    if (this.sections.items) {
+      this.sections.items.forEach(item => {
+        item.bg?.destroy();
+        item.image?.destroy();
       });
-    });
+    }
+    // Destroy bars
+    if (this.sections.bars) {
+      this.sections.bars.forEach(bar => {
+        bar.bg?.destroy();
+        bar.fg?.destroy();
+        bar.label?.destroy();
+      });
+    }
+    // Destroy passives
+    if (this.sections.passives) {
+      this.sections.passives.forEach(passive => {
+        passive.bg?.destroy();
+        passive.image?.destroy();
+      });
+    }
+    // Destroy portrait
+    if (this.sections.portrait) {
+      this.sections.portrait.destroy();
+    }
+    // Destroy standard actions
+    if (this.sections.standardActions) {
+      this.sections.standardActions.forEach(action => {
+        action.rect?.destroy();
+        action.label?.destroy();
+        action.icon?.destroy();
+        action.progressOverlay?.destroy();
+      });
+    }
+    // Destroy character actions
+    if (this.sections.characterActions) {
+      this.sections.characterActions.forEach(action => {
+        action.rect?.destroy();
+        action.label?.destroy();
+        action.icon?.destroy();
+        action.progressOverlay?.destroy();
+      });
+    }
   }
 
   /**
@@ -462,13 +482,7 @@ export default class HUD {
       return;
     }
 
-    interface Ability {
-      texture: () => string;
-      name: () => string;
-      description: () => string;
-      cooldownRemaining: number;
-    }
-    const abilities = character.abilities.getAbilities() as Ability[];
+    const abilities = character.abilities.getAbilities();
 
     abilities.forEach((ability, index) => {
       const slot = this.sections.characterActions![index];
@@ -498,9 +512,7 @@ export default class HUD {
           if (!gameScene || !gameScene.player) {
             return { text: 'No character selected' };
           }
-          const currentAbility = gameScene.player.abilities?.getAbilities()[
-            index
-          ] as Ability | undefined;
+          const currentAbility = gameScene.player.abilities?.getAbilities()[index];
           if (!currentAbility) {
             return { text: 'No ability' };
           }
@@ -529,10 +541,7 @@ export default class HUD {
     if (!character || !character.abilities) {
       return;
     }
-    interface Ability {
-      progress: () => number;
-    }
-    const abilities = character.abilities.getAbilities() as Ability[];
+    const abilities = character.abilities.getAbilities();
     abilities.forEach((ability, index) => {
       const slot = this.sections.characterActions![index];
       if (!slot || !slot.icon || !slot.progressOverlay) {

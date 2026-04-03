@@ -20,7 +20,7 @@ interface Character {
 /**
  * Base Ability class - defines the interface for all character abilities
  */
-class Ability {
+export class Ability {
   character: Character;
   active: boolean;
   cooldownRemaining: number;

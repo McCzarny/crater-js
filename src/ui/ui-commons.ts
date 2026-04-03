@@ -16,9 +16,10 @@ export interface ButtonElements {
   progressOverlay: Phaser.GameObjects.Rectangle;
 }
 
-interface IconReturn {
+export interface IconReturn {
   bg: Phaser.GameObjects.Rectangle;
   image: Phaser.GameObjects.Sprite;
+  label?: Phaser.GameObjects.Text;
 }
 
 export interface ItemIconReturn {
