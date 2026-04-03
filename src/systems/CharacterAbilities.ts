@@ -23,10 +23,12 @@ interface Character {
 class Ability {
   character: Character;
   active: boolean;
+  cooldownRemaining: number;
 
   constructor(character: Character) {
     this.character = character;
     this.active = false;
+    this.cooldownRemaining = 0;
   }
 
   /**
@@ -123,11 +125,13 @@ class Ability {
 class TeleportationAbility extends Ability {
   cooldownTime: number;
   lastUseTime: number;
+  cooldownRemaining: number;
 
   constructor(character: Character) {
     super(character);
     this.cooldownTime = 60000; // 60 seconds cooldown
     this.lastUseTime = 0;
+    this.cooldownRemaining = 0;
   }
 
   name(): string {
@@ -136,6 +140,12 @@ class TeleportationAbility extends Ability {
 
   texture(): string {
     return 'hud_teleport';
+  }
+
+  update(_time: number, _delta: number): void {
+    const currentTime = Date.now();
+    const timeSinceLastUse = currentTime - this.lastUseTime;
+    this.cooldownRemaining = Math.max(0, this.cooldownTime - timeSinceLastUse);
   }
 
   progress(): number {

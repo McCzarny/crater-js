@@ -8,6 +8,7 @@ import {
   ButtonElements,
   ItemIconReturn,
 } from './ui-commons';
+import type TooltipManager from './TooltipManager';
 
 interface GameSceneType extends Phaser.Scene {
   player: Character;
@@ -66,11 +67,19 @@ export default class HUD {
   options: HUDOptions;
   sections: Partial<HUDSections>;
   bg?: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle;
+  tooltipManager?: TooltipManager;
 
   constructor(scene: Phaser.Scene, options: HUDOptions = {}) {
     this.scene = scene;
     this.options = options;
     this.sections = {};
+  }
+
+  /**
+   * Set tooltip manager for ability tooltips
+   */
+  setTooltipManager(tooltipManager: TooltipManager): void {
+    this.tooltipManager = tooltipManager;
   }
 
   create(): void {
@@ -455,6 +464,9 @@ export default class HUD {
 
     interface Ability {
       texture: () => string;
+      name: () => string;
+      description: () => string;
+      cooldownRemaining: number;
     }
     const abilities = character.abilities.getAbilities() as Ability[];
 
@@ -478,6 +490,31 @@ export default class HUD {
       };
       slot.icon.setInteractive({ useHandCursor: true });
       slot.icon.on('pointerdown', clickHandler);
+
+      // Add tooltip if tooltipManager is available
+      if (this.tooltipManager) {
+        this.tooltipManager.registerTooltip(slot.icon, () => {
+          const gameScene = this.scene.scene.get('GameScene') as GameSceneType;
+          if (!gameScene || !gameScene.player) {
+            return { text: 'No character selected' };
+          }
+          const currentAbility = gameScene.player.abilities?.getAbilities()[
+            index
+          ] as Ability | undefined;
+          if (!currentAbility) {
+            return { text: 'No ability' };
+          }
+
+          const cooldownText = currentAbility.cooldownRemaining
+            ? `Cooldown: ${Math.ceil(currentAbility.cooldownRemaining / 1000)}s`
+            : 'Ready';
+
+          return {
+            title: currentAbility.name(),
+            description: [currentAbility.description(), cooldownText, 'Press R to activate'],
+          };
+        });
+      }
     });
   }
 

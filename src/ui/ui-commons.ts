@@ -47,10 +47,10 @@ export function createButton(
 
   const label = opts.text
     ? scene.add.text(x, y, opts.text, {
-        fontSize: opts.fontSize ?? '12px',
-        color: opts.color ?? '#ffffff',
-        fontFamily: 'monospace',
-      })
+      fontSize: opts.fontSize ?? '12px',
+      color: opts.color ?? '#ffffff',
+      fontFamily: 'monospace',
+    })
     : null;
 
   if (label) {
