@@ -406,6 +406,16 @@ class SeedPlantingAbility extends Ability {
     return false; // Seed planting doesn't prevent falling
   }
 
+  canGrowVineAt(x: number, y: number): boolean {
+    if (y <= CONFIG.SURFACE_HEIGHT - 2) {
+      return false; // Can't grow above surface
+    }
+    const terrain = this.character.terrainSystem;
+    const block = terrain.getBlockAt(x, y);
+    const hasVine = terrain.hasVine(x, y);
+    return (!block || !block.solid) && !hasVine;
+  }
+
   /**
    * Update vine growth
    */
@@ -426,22 +436,8 @@ class SeedPlantingAbility extends Ability {
     const nextY = this.currentVineY;
 
     // Stop if reached surface
-    if (nextY <= CONFIG.SURFACE_HEIGHT - 2) {
-      console.log('Vine growth reached surface');
-      this.deactivate();
-      return;
-    }
-
-    // Check if next tile is valid (not solid and not already has vine)
-    const blockAbove = terrain.getBlockAt(this.currentVineX, nextY);
-    if (blockAbove && blockAbove.solid) {
-      console.log('Vine growth hit solid block');
-      this.deactivate();
-      return;
-    }
-
-    if (terrain.hasVine(this.currentVineX, nextY)) {
-      console.log('Vine already exists above');
+    if (!this.canGrowVineAt(this.currentVineX, nextY)) {
+      console.log('Cannot grow further, stopping vine growth');
       this.deactivate();
       return;
     }
@@ -452,6 +448,13 @@ class SeedPlantingAbility extends Ability {
       this.currentVineY = nextY - 1; // Move up for next growth
       this.lastGrowthTime = currentTime;
       console.log('Vine grew to:', this.currentVineX, nextY);
+
+      // Check if we can continue growing
+      if (!this.canGrowVineAt(this.currentVineX, this.currentVineY)) {
+        console.log('Cannot grow further, stopping vine growth');
+        this.deactivate();
+        return;
+      }
     } else {
       console.log('Failed to grow vine');
       this.deactivate();
