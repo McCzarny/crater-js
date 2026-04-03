@@ -61,8 +61,7 @@ class Ability {
    */
   activate(): boolean {
     if (this.canActivate()) {
-      this.active = true;
-      return true;
+      this.character.stopAllActions();
     }
     return false;
   }
@@ -168,11 +167,8 @@ class TeleportationAbility extends Ability {
   }
 
   activate(): boolean {
+    super.activate();
     if (!this.canActivate()) {
-      const currentTime = Date.now();
-      const timeSinceLastUse = currentTime - this.lastUseTime;
-      const remainingTime = Math.ceil((this.cooldownTime - timeSinceLastUse) / 1000);
-      console.log(`Teleportation on cooldown. ${remainingTime}s remaining`);
       return false;
     }
 
@@ -242,6 +238,16 @@ class ClimbingAbility extends Ability {
     const char = this.character;
     // Can only climb 1 tile above the surface to allow climbing onto the surface
     return char.gridY > CONFIG.SURFACE_HEIGHT - 2;
+  }
+
+  activate(): boolean {
+    super.activate();
+    if (!this.canActivate()) {
+      return false;
+    }
+    this.active = true;
+    console.log('Climbing ability activated');
+    return true;
   }
 
   movementSpeedMultiplier(): number {
@@ -370,6 +376,7 @@ class SeedPlantingAbility extends Ability {
   }
 
   activate(): boolean {
+    super.activate();
     if (!this.canActivate()) {
       return false;
     }
@@ -390,6 +397,7 @@ class SeedPlantingAbility extends Ability {
   }
 
   deactivate(): void {
+    super.deactivate();
     this.active = false;
     this.isGrowing = false;
     this.currentVineX = null;
