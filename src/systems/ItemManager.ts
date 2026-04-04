@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { CONFIG } from '../config';
 import { TileType, type TileTypeValue } from './TileTypes';
 import type TerrainSystem from './TerrainSystem';
+import TooltipManager from '../ui/TooltipManager';
 
 /**
  * Interface for items on the ground
@@ -29,6 +30,7 @@ export default class ItemManager {
   itemContainer: Phaser.GameObjects.Container;
   lastItemGravityUpdate: number;
   itemGravityInterval: number;
+  tooltipManager: TooltipManager;
 
   constructor(scene: Phaser.Scene, terrainSystem: TerrainSystem) {
     this.scene = scene;
@@ -45,6 +47,10 @@ export default class ItemManager {
     // Item gravity settings
     this.lastItemGravityUpdate = 0;
     this.itemGravityInterval = 100; // Check gravity every 100ms
+
+    // Tooltip manager for item hover tooltips
+    this.tooltipManager = new TooltipManager(scene, 200);
+    this.tooltipManager.tooltip.container.setScrollFactor(0);
   }
 
   /**
@@ -164,12 +170,12 @@ export default class ItemManager {
     const size = CONFIG.BLOCK_SIZE;
 
     // If a texture is defined for this resource and loaded, use it. Otherwise fallback to color graphic.
+    let gameObject: Phaser.GameObjects.Sprite | Phaser.GameObjects.Graphics;
     if (config.texture && this.scene.textures.exists(config.texture)) {
       const sprite = this.scene.add.sprite(pixelX, pixelY, config.texture);
       sprite.setDisplaySize(size, size);
       sprite.setDepth(500);
-      this.itemSprites.set(item.id, sprite);
-      this.itemContainer.add(sprite);
+      gameObject = sprite;
     } else {
       const graphics = this.scene.add.graphics();
       const color = config.color || 0xffffff;
@@ -187,9 +193,53 @@ export default class ItemManager {
       graphics.setPosition(pixelX, pixelY);
       graphics.setDepth(500);
 
-      this.itemSprites.set(item.id, graphics);
-      this.itemContainer.add(graphics);
+      gameObject = graphics;
     }
+
+    this.itemSprites.set(item.id, gameObject);
+    this.itemContainer.add(gameObject);
+
+    // Make item interactive and register tooltip
+    gameObject.setInteractive(
+      new Phaser.Geom.Rectangle(-size / 2, -size / 2, size, size),
+      Phaser.Geom.Rectangle.Contains,
+    );
+    const tooltipContent = this.getItemTooltipContent(item.type);
+    this.tooltipManager.registerTooltip(gameObject, tooltipContent);
+  }
+
+  /**
+   * Get tooltip content for an item type
+   */
+  private getItemTooltipContent(itemType: string): {
+    title: string;
+    icon?: string;
+    description: string[];
+  } {
+    const resourceConfig = CONFIG.RESOURCES[itemType as keyof typeof CONFIG.RESOURCES];
+    if (resourceConfig) {
+      const name = itemType.charAt(0) + itemType.slice(1).toLowerCase();
+      return {
+        title: name,
+        icon: resourceConfig.texture,
+        description: [`Value: ${resourceConfig.value}`],
+      };
+    }
+
+    const essenceConfig = CONFIG.ESSENCE[itemType as keyof typeof CONFIG.ESSENCE];
+    if (essenceConfig) {
+      const name = itemType
+        .split('_')
+        .map(w => w.charAt(0) + w.slice(1).toLowerCase())
+        .join(' ');
+      return {
+        title: name,
+        icon: essenceConfig.texture,
+        description: ['Essence'],
+      };
+    }
+
+    return { title: itemType, description: [] };
   }
 
   /**

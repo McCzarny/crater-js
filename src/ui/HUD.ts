@@ -11,6 +11,7 @@ import {
 } from './ui-commons';
 import type TooltipManager from './TooltipManager';
 import { Ability } from '../systems/CharacterAbilities';
+import { CONFIG } from '../config';
 
 interface GameSceneType extends Phaser.Scene {
   player: Character;
@@ -446,19 +447,64 @@ export default class HUD {
 
     for (let i = 0; i < this.sections.items.length; i++) {
       const slot = inventory[i] ? inventory[i]!.toLowerCase() : null;
+      const itemType = inventory[i] ?? null;
       const icon = this.sections.items[i];
       if (!icon || !icon.image) {
         continue;
       }
 
+      // Unregister previous tooltip
+      if (this.tooltipManager) {
+        this.tooltipManager.unregisterTooltip(icon.bg);
+      }
+
       if (slot) {
         icon.image.setTexture(slot);
         icon.image.setVisible(true);
+
+        // Register tooltip for this inventory slot
+        if (this.tooltipManager && itemType) {
+          this.tooltipManager.registerTooltip(icon.bg, this.getInventoryItemTooltip(itemType));
+        }
       } else {
         // Show empty slot texture
         icon.image.setVisible(false);
       }
     }
+  }
+
+  /**
+   * Get tooltip content for an inventory item
+   */
+  private getInventoryItemTooltip(itemType: string): {
+    title: string;
+    icon?: string;
+    description: string[];
+  } {
+    const resourceConfig = CONFIG.RESOURCES[itemType as keyof typeof CONFIG.RESOURCES];
+    if (resourceConfig) {
+      const name = itemType.charAt(0) + itemType.slice(1).toLowerCase();
+      return {
+        title: name,
+        icon: resourceConfig.texture,
+        description: [`Value: ${resourceConfig.value}`, 'CMD + Click to drop'],
+      };
+    }
+
+    const essenceConfig = CONFIG.ESSENCE[itemType as keyof typeof CONFIG.ESSENCE];
+    if (essenceConfig) {
+      const name = itemType
+        .split('_')
+        .map(w => w.charAt(0) + w.slice(1).toLowerCase())
+        .join(' ');
+      return {
+        title: name,
+        icon: essenceConfig.texture,
+        description: ['Essence', 'CMD + Click to drop'],
+      };
+    }
+
+    return { title: itemType, description: [] };
   }
 
   /**
