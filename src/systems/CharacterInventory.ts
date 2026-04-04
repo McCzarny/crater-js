@@ -50,16 +50,39 @@ export default class CharacterInventory {
   }
 
   /**
+   * Check if an item type is essence
+   */
+  private isEssence(itemType: string): boolean {
+    return itemType in CONFIG.ESSENCE;
+  }
+
+  /**
+   * Try to absorb essence directly into the character's pool.
+   * Returns true if absorbed, false if pool is full.
+   */
+  private tryAbsorbEssence(itemType: string): boolean {
+    const char = this.character;
+    if (char.essence >= char.maxEssence) {
+      return false;
+    }
+
+    const essenceConfig = CONFIG.ESSENCE[itemType as keyof typeof CONFIG.ESSENCE];
+    if (!essenceConfig) {
+      return false;
+    }
+
+    const essenceValue = Phaser.Math.Between(essenceConfig.min_value, essenceConfig.max_value);
+
+    char.essence = Math.min(char.essence + essenceValue, char.maxEssence);
+    console.log('Absorbed essence:', itemType, '-> pool:', char.essence, '/', char.maxEssence);
+    return true;
+  }
+
+  /**
    * Try to pick up an item at the character's position
    */
   tryPickup(): boolean {
     const char = this.character;
-
-    // Check if inventory is full
-    if (this.inventory.every(slot => slot !== null)) {
-      console.log('Inventory is full!');
-      return false;
-    }
 
     // Get items at current position
     const items = this.terrainSystem.getItemsAt(char.gridX, char.gridY);
@@ -69,23 +92,39 @@ export default class CharacterInventory {
       return false;
     }
 
-    // Pick up the first item
-    const item = items[0];
-    const removed = this.terrainSystem.removeItem(item.id);
+    // Try essence items first (they don't use inventory slots)
+    for (const item of items) {
+      if (this.isEssence(item.type) && this.tryAbsorbEssence(item.type)) {
+        this.terrainSystem.removeItem(item.id);
+        this.scene.game.events.emit('essenceChanged', char.essence, char.maxEssence);
+        return true;
+      }
+    }
 
-    if (removed) {
-      for (let i = 0; i < this.inventory.length; i++) {
-        if (this.inventory[i] === null) {
-          this.inventory[i] = removed.type;
-          break;
-        }
+    // Then try non-essence items (need an inventory slot)
+    if (this.inventory.every(slot => slot !== null)) {
+      console.log('Inventory is full!');
+      return false;
+    }
+
+    for (const item of items) {
+      if (this.isEssence(item.type)) {
+        continue; // skip essence (pool must be full if we got here)
       }
 
-      console.log('Picked up:', removed.type);
+      const removed = this.terrainSystem.removeItem(item.id);
+      if (removed) {
+        for (let i = 0; i < this.inventory.length; i++) {
+          if (this.inventory[i] === null) {
+            this.inventory[i] = removed.type;
+            break;
+          }
+        }
 
-      // Emit event for UI update
-      this.scene.game.events.emit('inventoryChanged', this.inventory);
-      return true;
+        console.log('Picked up:', removed.type);
+        this.scene.game.events.emit('inventoryChanged', this.inventory);
+        return true;
+      }
     }
 
     return false;
@@ -145,9 +184,11 @@ export default class CharacterInventory {
    * Update search behavior
    */
   updateSearch(time: number, isMoving: boolean): MovementResult | null {
-    // Check if inventory is full
-    if (this.inventory.every(slot => slot !== null)) {
-      console.log('Search stopped: inventory full');
+    // Stop searching if inventory is full AND essence pool is full
+    const inventoryFull = this.inventory.every(slot => slot !== null);
+    const essenceFull = this.character.essence >= this.character.maxEssence;
+    if (inventoryFull && essenceFull) {
+      console.log('Search stopped: inventory and essence full');
       this.stopSearch();
       return null;
     }

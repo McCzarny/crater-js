@@ -19,6 +19,7 @@ interface ResourceConfig {
 // Essence types
 interface EssenceConfig {
   color: number;
+  min_value: number;
   max_value: number;
   texture: string;
 }
@@ -137,10 +138,10 @@ export const CONFIG: GameConfig = {
     AMETHYST: { color: 0x0000ff, value: 90, texture: 'amethyst' },
   },
   ESSENCE: {
-    ESSENCE_GRAIN: { color: 0xffff00, max_value: 10, texture: 'essence_grain' },
-    ESSENCE_LUMP: { color: 0xffa500, max_value: 25, texture: 'essence_lump' },
-    ESSENCE_CHUNK: { color: 0xff4500, max_value: 50, texture: 'essence_chunk' },
-    ESSENCE_CORE: { color: 0xff0000, max_value: 9999, texture: 'essence_core' },
+    ESSENCE_GRAIN: { color: 0xffff00, min_value: 1, max_value: 10, texture: 'essence_grain' },
+    ESSENCE_LUMP: { color: 0xffa500, min_value: 10, max_value: 25, texture: 'essence_lump' },
+    ESSENCE_CHUNK: { color: 0xff4500, min_value: 25, max_value: 50, texture: 'essence_chunk' },
+    ESSENCE_CORE: { color: 0xff0000, min_value: 50, max_value: 100, texture: 'essence_core' },
   },
   MAX_ESSENCE_DROP: 100, // Max essence that can drop from a single block
   // Race definitions
