@@ -59,11 +59,18 @@ export default class TerrainSystem {
    * Generate the game world
    */
   generateWorld(): void {
-    // Use WorldGenerator to create the block data
-    this.blocks = WorldGenerator.generateWorld();
+    // Use WorldGenerator pipeline to create the block data
+    const generator = new WorldGenerator();
+    const ctx = generator.generate();
+    this.blocks = ctx.blocks;
 
     // Render the world
     this.renderWorld();
+
+    // Spawn items queued by generation stages (e.g. cave loot)
+    for (const item of ctx.pendingItems) {
+      this.itemManager.spawnItem(item.gridX, item.gridY, item.type);
+    }
   }
 
   /**
