@@ -274,6 +274,13 @@ export default class TerrainSystem {
   }
 
   /**
+   * Spawn an item at a grid position
+   */
+  spawnItem(gridX: number, gridY: number, itemType: string): void {
+    this.itemManager.spawnItem(gridX, gridY, itemType);
+  }
+
+  /**
    * Update items (apply gravity)
    */
   updateItems(time: number): void {

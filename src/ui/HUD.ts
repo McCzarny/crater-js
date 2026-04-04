@@ -453,10 +453,11 @@ export default class HUD {
         continue;
       }
 
-      // Unregister previous tooltip
+      // Unregister previous tooltip and click handler
       if (this.tooltipManager) {
         this.tooltipManager.unregisterTooltip(icon.bg);
       }
+      icon.bg.off('pointerdown');
 
       if (slot) {
         icon.image.setTexture(slot);
@@ -466,6 +467,18 @@ export default class HUD {
         if (this.tooltipManager && itemType) {
           this.tooltipManager.registerTooltip(icon.bg, this.getInventoryItemTooltip(itemType));
         }
+
+        // CMD/CTRL + click to drop item
+        const slotIndex = i;
+        icon.bg.setInteractive({ useHandCursor: true });
+        icon.bg.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+          if (pointer.event.metaKey || pointer.event.ctrlKey) {
+            const gameScene = this.scene.scene.get('GameScene');
+            if (gameScene) {
+              gameScene.events.emit('dropItem', slotIndex);
+            }
+          }
+        });
       } else {
         // Show empty slot texture
         icon.image.setVisible(false);

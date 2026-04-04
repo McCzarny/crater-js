@@ -144,6 +144,13 @@ export default class GameScene extends Phaser.Scene {
       this.game.events.emit('abilityStateChanged');
     });
 
+    // Listen for drop item events from UIScene
+    this.events.on('dropItem', (slotIndex: number) => {
+      if (this.player && this.player.inventory) {
+        this.player.inventory.dropItem(slotIndex);
+      }
+    });
+
     console.log('GameScene: Ready!');
   }
 

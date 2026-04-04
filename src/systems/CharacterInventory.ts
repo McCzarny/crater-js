@@ -98,6 +98,33 @@ export default class CharacterInventory {
   }
 
   /**
+   * Drop an item from a specific inventory slot onto the ground
+   */
+  dropItem(slotIndex: number): boolean {
+    if (slotIndex < 0 || slotIndex >= this.inventory.length) {
+      return false;
+    }
+
+    const itemType = this.inventory[slotIndex];
+    if (!itemType) {
+      return false;
+    }
+
+    // Remove from inventory
+    this.inventory[slotIndex] = null;
+
+    // Spawn item at character's position
+    const char = this.character;
+    this.terrainSystem.spawnItem(char.gridX, char.gridY, itemType);
+
+    console.log('Dropped:', itemType, 'from slot', slotIndex);
+
+    // Emit event for UI update
+    this.scene.game.events.emit('inventoryChanged', this.inventory);
+    return true;
+  }
+
+  /**
    * Start searching for items
    */
   startSearch(): void {
