@@ -1,27 +1,11 @@
 import { CONFIG } from '../config';
 import type TerrainSystem from './TerrainSystem';
+import type { ICharacter } from '../types/game-types';
 
 /**
- * Forward declaration for Character interface
+ * Character type for mining system
  */
-interface Character {
-  scene: Phaser.Scene;
-  terrainSystem: TerrainSystem;
-  sprite: Phaser.GameObjects.Sprite;
-  gridX: number;
-  gridY: number;
-  digInterval: number;
-  fastDigInterval: number;
-  moveSpeed: number;
-  stamina: number;
-  maxStamina: number;
-  abilities?: {
-    shouldPreventFalling(): boolean;
-  };
-  movement?: {
-    tryMove(dx: number, dy: number, isSprinting: boolean): boolean;
-  };
-}
+type Character = ICharacter;
 
 /**
  * Interface for mining target position

@@ -10,40 +10,13 @@ import {
   IconReturn,
 } from './ui-commons';
 import type TooltipManager from './TooltipManager';
-import { Ability } from '../systems/CharacterAbilities';
 import { CONFIG } from '../config';
+import type { ICharacter } from '../types/game-types';
+
+type Character = ICharacter;
 
 interface GameSceneType extends Phaser.Scene {
   player: Character;
-}
-
-interface Character {
-  race: string;
-  health: number;
-  maxHealth: number;
-  stamina: number;
-  maxStamina: number;
-  patience?: number;
-  maxPatience?: number;
-  stopAllActions?: () => void;
-  abilities?: {
-    getAbilities: () => Ability[];
-  };
-  inventory?: {
-    tryPickup?: () => void;
-    isSearching?: boolean;
-    stopSearch?: () => void;
-    startSearch?: () => void;
-  };
-  mining?: {
-    startAutoDig?: (direction: { dx: number; dy: number }) => void;
-  };
-  movement?: {
-    tryMove?: (dx: number, dy: number, isSprinting: boolean) => void;
-  };
-  sprite?: {
-    clearTint?: () => void;
-  };
 }
 
 interface BarElement {
@@ -136,7 +109,7 @@ export default class HUD {
       this.sections.items.push(icon);
     }
 
-    // Bars (health, stamina, patience)
+    // Bars (health, stamina, patience, essence)
     const barsX = 230;
     const barsY = itemsY;
     this.sections.bars = this._makeBars(barsX, barsY);
@@ -337,8 +310,8 @@ export default class HUD {
 
   _makeBars(x: number, y: number): BarElement[] {
     const spacing = 18;
-    const labels = ['HP', 'STA', 'PAT'];
-    const colors = [0xff4444, 0x44ff44, 0x4444ff];
+    const labels = ['HP', 'STA', 'PAT', 'ESS'];
+    const colors = [0xff4444, 0x44ff44, 0x4444ff, 0xca1aad];
     const bars: BarElement[] = [];
     for (let i = 0; i < labels.length; i++) {
       const yy = y + (i - 1) * spacing;
@@ -643,24 +616,37 @@ export default class HUD {
     if (!character) {
       return;
     }
-    // Assume: bars[0]=HP, bars[1]=STA, bars[2]=PAT
+    // Assume: bars[0]=HP, bars[1]=STA, bars[2]=PAT, bars[3]=ESS
     const bars = this.sections.bars;
+
     // Health
-    if (bars[0] && character.health !== undefined && character.maxHealth) {
+    if (bars[0]) {
       const frac = Math.max(0, Math.min(1, character.health / character.maxHealth));
       bars[0].fg.setScale(frac, 1);
     }
+
     // Stamina
-    if (bars[1] && character.stamina !== undefined && character.maxStamina) {
+    if (bars[1]) {
       const frac = Math.max(0, Math.min(1, character.stamina / character.maxStamina));
       bars[1].fg.setScale(frac, 1);
     }
-    // Patience (optional, fallback to 1 if not present)
+
+    // Patience
     if (bars[2]) {
-      const patience = character.patience !== undefined ? character.patience : 1;
-      const maxPatience = character.maxPatience !== undefined ? character.maxPatience : 1;
-      const frac = maxPatience ? Math.max(0, Math.min(1, patience / maxPatience)) : 1;
+      const frac = Math.max(0, Math.min(1, character.patience / character.maxPatience));
       bars[2].fg.setScale(frac, 1);
     }
+
+    // Essence
+    if (bars[3]) {
+      const frac = Math.max(0, Math.min(1, character.essence / character.maxEssence));
+      bars[3].fg.setScale(frac, 1);
+    }
+  }
+
+  // On frame updates
+  update(character: Character): void {
+    this.updateAbilityIndicators(character);
+    this.updateBars(character);
   }
 }

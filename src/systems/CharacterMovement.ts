@@ -1,5 +1,6 @@
 import { CONFIG } from '../config';
 import type TerrainSystem from './TerrainSystem';
+import type { ICharacter } from '../types/game-types';
 
 /**
  * Interface for move target position
@@ -10,23 +11,9 @@ interface MoveTarget {
 }
 
 /**
- * Forward declaration for Character (will be fully typed when Character.ts is created)
- * For now, we define the minimal interface needed by CharacterMovement
+ * Character type for movement system
  */
-interface Character {
-  scene: Phaser.Scene;
-  terrainSystem: TerrainSystem;
-  sprite: Phaser.GameObjects.Sprite;
-  gridX: number;
-  gridY: number;
-  moveSpeed: number;
-  sprintMultiplier: number;
-  abilities?: {
-    isClimbing: boolean;
-    getMovementSpeedMultiplier(): number;
-    shouldPreventFalling(): boolean;
-  };
-}
+type Character = ICharacter;
 
 /**
  * CharacterMovement - handles all movement-related logic for characters

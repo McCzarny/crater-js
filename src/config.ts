@@ -32,6 +32,7 @@ interface RaceConfig {
   staminaLimit: number;
   patienceLimit: number;
   healthLimit: number;
+  essenceLimit: number;
 }
 
 // Main configuration interface
@@ -152,6 +153,7 @@ export const CONFIG: GameConfig = {
       staminaLimit: 300,
       patienceLimit: 100,
       healthLimit: 100,
+      essenceLimit: 50,
     },
     fungus: {
       name: 'Cult of the Spore',
@@ -161,6 +163,7 @@ export const CONFIG: GameConfig = {
       staminaLimit: 200,
       patienceLimit: 75,
       healthLimit: 120,
+      essenceLimit: 40,
     },
     petal: {
       name: 'Order of the Seed',
@@ -170,6 +173,7 @@ export const CONFIG: GameConfig = {
       staminaLimit: 160,
       patienceLimit: 150,
       healthLimit: 80,
+      essenceLimit: 60,
     },
   },
 

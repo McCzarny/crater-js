@@ -1,10 +1,8 @@
 import Phaser from 'phaser';
 import { makeIcon, IconReturn } from './ui-commons';
+import type { ICharacter } from '../types/game-types';
 
-interface Character {
-  isDead: boolean;
-  race: string;
-}
+type Character = ICharacter;
 
 export default class CharacterIcons {
   scene: Phaser.Scene;

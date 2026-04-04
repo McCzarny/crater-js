@@ -94,8 +94,8 @@ export default class UIScene extends Phaser.Scene {
     const gameScene = this.scene.get('GameScene') as GameScene;
     if (gameScene && gameScene.player) {
       const player = gameScene.player;
-      if (this.hud && this.hud.updateAbilityIndicators) {
-        this.hud.updateAbilityIndicators(player);
+      if (this.hud && this.hud.update) {
+        this.hud.update(player);
       }
     }
 

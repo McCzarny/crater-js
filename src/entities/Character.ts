@@ -5,12 +5,13 @@ import CharacterMining from '../systems/CharacterMining';
 import CharacterInventory from '../systems/CharacterInventory';
 import CharacterAbilities from '../systems/CharacterAbilities';
 import type TerrainSystem from '../systems/TerrainSystem';
+import { ICharacter } from '../types/game-types';
 
 /**
  * Character class - represents a playable character
  * Now uses composition pattern with separate systems for movement, mining, and inventory
  */
-export default class Character {
+export default class Character implements ICharacter {
   isDead: boolean;
   scene: Phaser.Scene;
   race: string;
@@ -45,6 +46,14 @@ export default class Character {
   // Health settings
   maxHealth: number;
   health: number;
+
+  // Patience settings
+  patience: number;
+  maxPatience: number;
+
+  // Essence settings
+  essence: number;
+  maxEssence: number;
 
   constructor(scene: Phaser.Scene, x: number, y: number, race: string) {
     this.isDead = false;
@@ -96,6 +105,14 @@ export default class Character {
     // Health settings
     this.maxHealth = this.raceConfig.healthLimit;
     this.health = this.maxHealth;
+
+    // Patience settings
+    this.maxPatience = this.raceConfig.patienceLimit;
+    this.patience = this.maxPatience;
+
+    // Essence settings
+    this.maxEssence = this.raceConfig.essenceLimit;
+    this.essence = 0;
   }
 
   /**

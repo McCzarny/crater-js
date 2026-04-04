@@ -1,21 +1,10 @@
 import { CONFIG } from '../config';
-import type TerrainSystem from './TerrainSystem';
+import type { ICharacter } from '../types/game-types';
 
 /**
- * Forward declaration for Character interface
+ * Character type for abilities system
  */
-interface Character {
-  scene: Phaser.Scene;
-  terrainSystem: TerrainSystem;
-  sprite: Phaser.GameObjects.Sprite;
-  gridX: number;
-  gridY: number;
-  race: string;
-  movement?: {
-    tryMove(dx: number, dy: number, isSprinting: boolean): boolean;
-  };
-  stopAllActions(): void;
-}
+type Character = ICharacter;
 
 /**
  * Base Ability class - defines the interface for all character abilities
