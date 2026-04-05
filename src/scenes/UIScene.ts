@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
+import BaseUI from '../ui/BaseUI';
 import CharacterIcons from '../ui/CharacterIcons';
 import EssenceUI from '../ui/EssenceUI';
 import HUD from '../ui/HUD';
@@ -19,6 +20,7 @@ interface AbilityButtonElements {
 export default class UIScene extends Phaser.Scene {
   characterIcons!: CharacterIcons;
   essenceUI!: EssenceUI;
+  baseUI!: BaseUI;
   hud!: HUD;
   tooltipManager!: TooltipManager;
   characterButtons!: Phaser.GameObjects.Sprite[];
@@ -49,6 +51,21 @@ export default class UIScene extends Phaser.Scene {
 
     this.essenceUI = new EssenceUI(this, { points: 0 });
     this.essenceUI.create(CONFIG.GAME_WIDTH - 90, 24);
+
+    this.baseUI = new BaseUI(this);
+    this.baseUI.create(CONFIG.GAME_WIDTH / 2, 40);
+    this.baseUI.setTooltipManager(this.tooltipManager);
+
+    // Update global essence display when essence is transferred to the base
+    this.game.events.on(
+      'essenceTransferred',
+      (globalEssence: number) => {
+        if (this.essenceUI) {
+          this.essenceUI.setEssence(globalEssence);
+        }
+      },
+      this,
+    );
 
     this.hud = new HUD(this);
     this.hud.create();
@@ -97,6 +114,19 @@ export default class UIScene extends Phaser.Scene {
       if (this.hud && this.hud.update) {
         this.hud.update(player);
       }
+
+      // Show BaseUI panel when active character is near their race's base
+      if (this.baseUI && gameScene.baseSystem) {
+        const baseCenter = gameScene.baseSystem.getBaseCenter(player.race);
+        if (baseCenter && player.gridX !== undefined && player.gridY !== undefined) {
+          const nearBase =
+            Math.abs(player.gridX - baseCenter.gridX) <= CONFIG.BASE_SIZE &&
+            Math.abs(player.gridY - baseCenter.gridY) <= 1;
+          this.baseUI.setVisible(nearBase);
+        } else {
+          this.baseUI.setVisible(false);
+        }
+      }
     }
 
     // Update tooltip content if visible (keeps cooldown counter fresh)
@@ -111,6 +141,9 @@ export default class UIScene extends Phaser.Scene {
     }
     if (this.essenceUI && this.essenceUI.destroy) {
       this.essenceUI.destroy();
+    }
+    if (this.baseUI && this.baseUI.destroy) {
+      this.baseUI.destroy();
     }
     if (this.tooltipManager && this.tooltipManager.destroy) {
       this.tooltipManager.destroy();

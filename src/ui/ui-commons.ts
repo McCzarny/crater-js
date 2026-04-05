@@ -7,6 +7,7 @@ export interface ButtonOptions {
   fontSize?: string;
   color?: string;
   icon?: string;
+  allowOverlayIcon?: boolean;
 }
 
 export interface ButtonElements {
@@ -15,6 +16,7 @@ export interface ButtonElements {
   icon: Phaser.GameObjects.Sprite;
   progressOverlay: Phaser.GameObjects.Rectangle;
   activeOverlay: Phaser.GameObjects.Sprite;
+  getGameObjects: () => Phaser.GameObjects.GameObject[];
 }
 
 export interface IconReturn {
@@ -49,10 +51,10 @@ export function createButton(
 
   const label = opts.text
     ? scene.add.text(x, y, opts.text, {
-        fontSize: opts.fontSize ?? '12px',
-        color: opts.color ?? '#ffffff',
-        fontFamily: 'monospace',
-      })
+      fontSize: opts.fontSize ?? '12px',
+      color: opts.color ?? '#ffffff',
+      fontFamily: 'monospace',
+    })
     : null;
 
   if (label) {
@@ -67,13 +69,26 @@ export function createButton(
     .setScrollFactor(0)
     .setDepth((opts.depth ?? 203) + 1);
 
-  const activeOverlay = scene.add
-    .sprite(x, y, 'hud_active_action')
-    .setScrollFactor(0)
-    .setDepth((opts.depth ?? 204) + 1)
-    .setVisible(false);
+  const activeOverlay =
+    opts.allowOverlayIcon === undefined || opts.allowOverlayIcon
+      ? scene.add
+        .sprite(x, y, 'hud_active_action')
+        .setScrollFactor(0)
+        .setDepth((opts.depth ?? 204) + 1)
+        .setVisible(false)
+      : null;
 
-  return { rect, label, icon, progressOverlay, activeOverlay };
+  return {
+    rect,
+    label,
+    icon,
+    progressOverlay,
+    activeOverlay,
+    getGameObjects: () =>
+      [rect, label, icon, progressOverlay, activeOverlay].filter(
+        Boolean,
+      ) as Phaser.GameObjects.GameObject[],
+  };
 }
 
 export function createPanel(

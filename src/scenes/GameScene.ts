@@ -36,6 +36,7 @@ export default class GameScene extends Phaser.Scene {
   cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   keys!: GameKeys;
   windSprites!: WindSprite[];
+  globalEssence: number = 0;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -148,6 +149,15 @@ export default class GameScene extends Phaser.Scene {
     this.events.on('dropItem', (slotIndex: number) => {
       if (this.player && this.player.inventory) {
         this.player.inventory.dropItem(slotIndex);
+      }
+    });
+
+    // Transfer all essence from active character to global pool
+    this.events.on('transferEssence', () => {
+      if (this.player && this.player.essence > 0) {
+        this.globalEssence += this.player.essence;
+        this.player.essence = 0;
+        this.game.events.emit('essenceTransferred', this.globalEssence);
       }
     });
 

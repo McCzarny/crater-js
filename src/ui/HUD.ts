@@ -635,7 +635,8 @@ export default class HUD {
     if (bars[0]) {
       const frac = Math.max(0, Math.min(1, character.health / character.maxHealth));
       bars[0].fg.setScale(frac, 1);
-      bars[0].counter.setText(`${Math.floor(character.health)}`);    }
+      bars[0].counter.setText(`${Math.floor(character.health)}`);
+    }
 
     // Stamina
     if (bars[1]) {
