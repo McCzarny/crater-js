@@ -23,6 +23,7 @@ interface BarElement {
   bg: Phaser.GameObjects.Rectangle;
   fg: Phaser.GameObjects.Rectangle;
   label: Phaser.GameObjects.Text;
+  counter: Phaser.GameObjects.Text;
 }
 
 interface HUDSections {
@@ -336,7 +337,17 @@ export default class HUD {
         .setScrollFactor(0)
         .setDepth(199);
 
-      bars.push({ bg, fg, label });
+      const counter = this.scene.add
+        .text(x + 65, yy, '', {
+          fontSize: '10px',
+          color: '#ffffff',
+          fontFamily: 'monospace',
+        })
+        .setOrigin(0, 0.5)
+        .setScrollFactor(0)
+        .setDepth(199);
+
+      bars.push({ bg, fg, label, counter });
     }
 
     return bars;
@@ -359,6 +370,7 @@ export default class HUD {
         bar.bg?.destroy();
         bar.fg?.destroy();
         bar.label?.destroy();
+        bar.counter?.destroy();
       });
     }
     // Destroy passives
@@ -623,24 +635,27 @@ export default class HUD {
     if (bars[0]) {
       const frac = Math.max(0, Math.min(1, character.health / character.maxHealth));
       bars[0].fg.setScale(frac, 1);
-    }
+      bars[0].counter.setText(`${Math.floor(character.health)}`);    }
 
     // Stamina
     if (bars[1]) {
       const frac = Math.max(0, Math.min(1, character.stamina / character.maxStamina));
       bars[1].fg.setScale(frac, 1);
+      bars[1].counter.setText(`${Math.floor(character.stamina)}`);
     }
 
     // Patience
     if (bars[2]) {
       const frac = Math.max(0, Math.min(1, character.patience / character.maxPatience));
       bars[2].fg.setScale(frac, 1);
+      bars[2].counter.setText(`${Math.floor(character.patience)}`);
     }
 
     // Essence
     if (bars[3]) {
       const frac = Math.max(0, Math.min(1, character.essence / character.maxEssence));
       bars[3].fg.setScale(frac, 1);
+      bars[3].counter.setText(`${Math.floor(character.essence)}`);
     }
   }
 
