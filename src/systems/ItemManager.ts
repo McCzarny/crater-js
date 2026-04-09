@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CONFIG } from '../config';
+import { CONFIG, getBaseItemConfig } from '../config';
 import { TileType, type TileTypeValue } from './TileTypes';
 import type TerrainSystem from './TerrainSystem';
 import TooltipManager from '../ui/TooltipManager';
@@ -13,11 +13,6 @@ interface Item {
   type: string;
   id: string;
 }
-
-/**
- * Type for item types (resources + essence)
- */
-type ItemType = keyof typeof CONFIG.RESOURCES | keyof typeof CONFIG.ESSENCE;
 
 /**
  * ItemManager - handles item spawning, rendering, gravity, and collection
@@ -83,7 +78,7 @@ export default class ItemManager {
    * Try to drop an item at the given position based on block type
    */
   tryDropItem(gridX: number, gridY: number, blockType: TileTypeValue): void {
-    const possibleItems: Partial<Record<ItemType, number>> = {};
+    const possibleItems: Partial<Record<string, number>> = {};
 
     // Determine drop chances based on block type
     switch (blockType) {
@@ -110,7 +105,7 @@ export default class ItemManager {
     }
 
     // Roll for drop
-    const itemTypes = Object.keys(possibleItems) as ItemType[];
+    const itemTypes = Object.keys(possibleItems);
     if (itemTypes.length > 0) {
       for (const itemType of itemTypes) {
         if (Math.random() < (possibleItems[itemType] || 0)) {
@@ -156,12 +151,7 @@ export default class ItemManager {
    * Render an item sprite
    */
   renderItem(item: Item): void {
-    const config =
-      CONFIG.RESOURCES[item.type as keyof typeof CONFIG.RESOURCES] ||
-      CONFIG.ESSENCE[item.type as keyof typeof CONFIG.ESSENCE];
-    if (!config) {
-      return;
-    }
+    const config = getBaseItemConfig(item.type);
 
     const pixelX = item.gridX * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2;
     const pixelY = item.gridY * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2;
@@ -169,43 +159,20 @@ export default class ItemManager {
     // Create a smaller diamond/gem shape
     const size = CONFIG.BLOCK_SIZE;
 
-    // If a texture is defined for this resource and loaded, use it. Otherwise fallback to color graphic.
-    let gameObject: Phaser.GameObjects.Sprite | Phaser.GameObjects.Graphics;
-    if (config.texture && this.scene.textures.exists(config.texture)) {
-      const sprite = this.scene.add.sprite(pixelX, pixelY, config.texture);
-      sprite.setDisplaySize(size, size);
-      sprite.setDepth(500);
-      gameObject = sprite;
-    } else {
-      const graphics = this.scene.add.graphics();
-      const color = config.color || 0xffffff;
-      graphics.fillStyle(color, 1);
+    const sprite = this.scene.add.sprite(pixelX, pixelY, config.texture);
+    sprite.setDisplaySize(size, size);
+    sprite.setDepth(500);
 
-      // Draw a diamond shape
-      graphics.fillTriangle(0, -size / 2, size / 2, 0, 0, size / 2);
-      graphics.fillTriangle(0, -size / 2, -size / 2, 0, 0, size / 2);
-
-      // Add a bright border
-      graphics.lineStyle(1, 0xffffff, 0.8);
-      graphics.strokeTriangle(0, -size / 2, size / 2, 0, 0, size / 2);
-      graphics.strokeTriangle(0, -size / 2, -size / 2, 0, 0, size / 2);
-
-      graphics.setPosition(pixelX, pixelY);
-      graphics.setDepth(500);
-
-      gameObject = graphics;
-    }
-
-    this.itemSprites.set(item.id, gameObject);
-    this.itemContainer.add(gameObject);
+    this.itemSprites.set(item.id, sprite);
+    this.itemContainer.add(sprite);
 
     // Make item interactive and register tooltip
-    gameObject.setInteractive(
+    sprite.setInteractive(
       new Phaser.Geom.Rectangle(-size / 2, -size / 2, size, size),
       Phaser.Geom.Rectangle.Contains,
     );
     const tooltipContent = this.getItemTooltipContent(item.type);
-    this.tooltipManager.registerTooltip(gameObject, tooltipContent);
+    this.tooltipManager.registerTooltip(sprite, tooltipContent);
   }
 
   /**
@@ -222,7 +189,7 @@ export default class ItemManager {
       return {
         title: name,
         icon: resourceConfig.texture,
-        description: [`Value: ${resourceConfig.value}`],
+        description: [`Value: ${resourceConfig.baseValue} essence`],
       };
     }
 

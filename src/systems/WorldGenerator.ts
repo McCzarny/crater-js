@@ -5,7 +5,7 @@ import { TileType, TileRegistry, type Tile, type TileTypeValue } from './TileTyp
  * Shared context passed between generation stages.
  * Stages can read/write to communicate data (e.g. cave positions).
  */
-export interface GenerationContext {
+interface GenerationContext {
   blocks: Tile[][];
   /** Positions of generated caves (center points) for separation checks */
   cavePositions: { x: number; y: number }[];
@@ -221,7 +221,7 @@ function carveCave(
     ctx.blocks[pos.y][pos.x] = TileRegistry.createTile(minedVariant(tile.type));
     carved.push(pos);
 
-    // Add neighbours
+    // Add neighbors
     const dirs = [
       { x: 1, y: 0 },
       { x: -1, y: 0 },

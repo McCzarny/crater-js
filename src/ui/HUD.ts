@@ -10,13 +10,11 @@ import {
   IconReturn,
 } from './ui-commons';
 import type TooltipManager from './TooltipManager';
-import { CONFIG } from '../config';
+import { getItemConfig } from '../config';
 import type { ICharacter } from '../types/game-types';
 
-type Character = ICharacter;
-
 interface GameSceneType extends Phaser.Scene {
-  player: Character;
+  player: ICharacter;
 }
 
 interface BarElement {
@@ -181,7 +179,7 @@ export default class HUD {
               return;
             }
 
-            const player = (gameScene as GameSceneType).player as Character;
+            const player = (gameScene as GameSceneType).player as ICharacter;
 
             switch (actionName) {
               case 'MoveUp':
@@ -410,7 +408,7 @@ export default class HUD {
    * Update HUD when active character changes. For now update the portrait.
    * @param character - The character to update
    */
-  updateCharacter(character: Character): void {
+  updateCharacter(character: ICharacter): void {
     if (!character || !this.sections || !this.sections.portrait) {
       return;
     }
@@ -453,15 +451,18 @@ export default class HUD {
           this.tooltipManager.registerTooltip(icon.bg, this.getInventoryItemTooltip(itemType));
         }
 
-        // CMD/CTRL + click to drop item
+        // CMD/CTRL + click to drop; plain click to use (if usable)
         const slotIndex = i;
         icon.bg.setInteractive({ useHandCursor: true });
         icon.bg.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+          const gameScene = this.scene.scene.get('GameScene');
+          if (!gameScene) {
+            return;
+          }
           if (pointer.event.metaKey || pointer.event.ctrlKey) {
-            const gameScene = this.scene.scene.get('GameScene');
-            if (gameScene) {
-              gameScene.events.emit('dropItem', slotIndex);
-            }
+            gameScene.events.emit('dropItem', slotIndex);
+          } else {
+            gameScene.events.emit('useItem', slotIndex);
           }
         });
       } else {
@@ -479,26 +480,15 @@ export default class HUD {
     icon?: string;
     description: string[];
   } {
-    const resourceConfig = CONFIG.RESOURCES[itemType as keyof typeof CONFIG.RESOURCES];
-    if (resourceConfig) {
-      const name = itemType.charAt(0) + itemType.slice(1).toLowerCase();
+    const itemConfig = getItemConfig(itemType);
+    if (itemConfig) {
+      const hints = itemConfig.usable
+        ? ['Click to use | CMD+Click to drop']
+        : ['CMD+Click to drop'];
       return {
-        title: name,
-        icon: resourceConfig.texture,
-        description: [`Value: ${resourceConfig.value}`, 'CMD + Click to drop'],
-      };
-    }
-
-    const essenceConfig = CONFIG.ESSENCE[itemType as keyof typeof CONFIG.ESSENCE];
-    if (essenceConfig) {
-      const name = itemType
-        .split('_')
-        .map(w => w.charAt(0) + w.slice(1).toLowerCase())
-        .join(' ');
-      return {
-        title: name,
-        icon: essenceConfig.texture,
-        description: ['Essence', 'CMD + Click to drop'],
+        title: itemConfig.name,
+        icon: itemConfig.texture,
+        description: [itemConfig.description, ...hints],
       };
     }
 
@@ -509,7 +499,7 @@ export default class HUD {
    * Update ability icons for the provided character
    * @param character - The character to update
    */
-  updateAbilities(character: Character): void {
+  updateAbilities(character: ICharacter): void {
     if (!this.sections || !this.sections.characterActions) {
       return;
     }
@@ -580,7 +570,7 @@ export default class HUD {
    * Update ability usability and progress indicators. Call this every frame.
    * @param character - The character to update
    */
-  updateAbilityIndicators(character: Character): void {
+  updateAbilityIndicators(character: ICharacter): void {
     if (!this.sections || !this.sections.characterActions) {
       return;
     }
@@ -621,7 +611,7 @@ export default class HUD {
    * Update health, stamina, and patience bars every frame.
    * @param character - The character to update
    */
-  updateBars(character: Character): void {
+  updateBars(character: ICharacter): void {
     if (!this.sections || !this.sections.bars) {
       return;
     }
@@ -661,7 +651,7 @@ export default class HUD {
   }
 
   // On frame updates
-  update(character: Character): void {
+  update(character: ICharacter): void {
     this.updateAbilityIndicators(character);
     this.updateBars(character);
   }

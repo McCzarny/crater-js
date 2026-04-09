@@ -165,7 +165,7 @@ export default class Character implements ICharacter {
       }
     }
 
-    // Spacebar to stop all actions
+    // Space bar to stop all actions
     if (keys.space && keys.space.isDown) {
       this.stopAllActions();
     }

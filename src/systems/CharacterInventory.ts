@@ -1,6 +1,8 @@
 import { CONFIG } from '../config';
 import type TerrainSystem from './TerrainSystem';
-import type { ICharacter } from '../types/game-types';
+import type { ICharacter, ICharacterInventory } from '../types/game-types';
+import { getItemConfig } from '../config';
+import { getNextLadderCoordinate } from './LadderUtils';
 
 /**
  * Character type for inventory system
@@ -21,17 +23,17 @@ interface MovementResult {
  * CharacterInventory - handles inventory and item collection logic
  * Includes: inventory management, item pickup, search mode
  */
-export default class CharacterInventory {
+export default class CharacterInventory implements ICharacterInventory {
   character: Character;
   scene: Phaser.Scene;
   terrainSystem: TerrainSystem;
-  inventory: (string | null)[];
 
   // Search state
   isSearching: boolean;
   searchDirection: number;
   lastSearchMoveTime: number;
   searchMoveInterval: number;
+  inventory: string[];
 
   constructor(character: Character) {
     this.character = character;
@@ -127,6 +129,52 @@ export default class CharacterInventory {
       }
     }
 
+    return false;
+  }
+
+  /**
+   * Place a ladder item from inventory at the character's current position.
+   * Uses the same validation as vine placement: must be underground, tile must be
+   * empty and have no existing ladder.
+   */
+  placeLadder(slotIndex: number): boolean {
+    const char = this.character;
+
+    if (slotIndex === -1) {
+      return false;
+    }
+
+    const ladderY = getNextLadderCoordinate(char.gridX, char.gridY, this.terrainSystem)?.y;
+    if (ladderY === null) {
+      return false;
+    }
+
+    const placed = this.terrainSystem.addLadder(char.gridX, ladderY, false);
+    if (!placed) {
+      return false;
+    }
+
+    this.inventory[slotIndex] = null;
+    this.scene.game.events.emit('inventoryChanged', this.inventory);
+    console.log('Placed ladder at:', char.gridX, ladderY);
+    return true;
+  }
+
+  /**
+   * Use the item at the given inventory slot, if it is usable.
+   */
+  useItem(slotIndex: number): boolean {
+    const itemType = this.inventory[slotIndex];
+    if (!itemType) {
+      return false;
+    }
+    const config = getItemConfig(itemType);
+    if (!config || !config.usable) {
+      return false;
+    }
+    if (itemType === 'LADDER') {
+      return this.placeLadder(slotIndex);
+    }
     return false;
   }
 

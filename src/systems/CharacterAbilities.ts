@@ -1,5 +1,6 @@
 import { CONFIG } from '../config';
 import type { ICharacter } from '../types/game-types';
+import { getNextLadderCoordinate, canPlaceLadderAt } from './LadderUtils';
 
 /**
  * Character type for abilities system
@@ -263,7 +264,6 @@ class SeedPlantingAbility extends Ability {
 
   // Growth state
   isGrowing: boolean;
-  currentVineX: number | null;
   currentVineY: number | null;
   lastGrowthTime: number;
 
@@ -274,7 +274,6 @@ class SeedPlantingAbility extends Ability {
 
     // Growth state
     this.isGrowing = false;
-    this.currentVineX = null;
     this.currentVineY = null;
     this.lastGrowthTime = 0;
   }
@@ -309,59 +308,13 @@ class SeedPlantingAbility extends Ability {
     }
 
     // Check if current tile or any tile above has space for vines
-    return this.findStartingPosition() !== null;
-  }
-
-  /**
-   * Find the starting position for vine growth
-   * Returns {x, y} or null if no valid position
-   */
-  findStartingPosition(): { x: number; y: number } | null {
-    const char = this.character;
-    const terrain = char.terrainSystem;
-    const checkX = char.gridX;
-    let checkY = char.gridY;
-
-    // Start from current position, check upward for first empty tile without a vine
-    // Max to 1 tile above surface to allow planting just below the surface
-    while (checkY > CONFIG.SURFACE_HEIGHT - 2) {
-      const block = terrain.getBlockAt(checkX, checkY);
-      const hasVine = terrain.hasVine(checkX, checkY);
-
-      // Found a valid position: empty tile without vine
-      if ((!block || !block.solid) && !hasVine) {
-        return { x: checkX, y: checkY };
-      }
-
-      // If there's a vine, check if there's another vine above
-      if (hasVine) {
-        // Check tile above
-        checkY--;
-        const blockAbove = terrain.getBlockAt(checkX, checkY);
-
-        // If solid block above, can't grow further
-        if (blockAbove && blockAbove.solid) {
-          return null;
-        }
-
-        // Continue checking upward
-        continue;
-      }
-
-      // If solid block and no vine, can't plant here
-      if (block && block.solid) {
-        return null;
-      }
-
-      break;
-    }
-
-    // If we reached surface, no valid position
-    if (checkY <= CONFIG.SURFACE_HEIGHT - 2) {
-      return null;
-    }
-
-    return { x: checkX, y: checkY };
+    return (
+      getNextLadderCoordinate(
+        this.character.gridX,
+        this.character.gridY,
+        this.character.terrainSystem,
+      ) !== null
+    );
   }
 
   activate(): boolean {
@@ -370,14 +323,17 @@ class SeedPlantingAbility extends Ability {
       return false;
     }
 
-    const startPos = this.findStartingPosition();
+    const startPos = getNextLadderCoordinate(
+      this.character.gridX,
+      this.character.gridY,
+      this.character.terrainSystem,
+    );
     if (!startPos) {
       return false;
     }
 
     this.active = true;
     this.isGrowing = true;
-    this.currentVineX = startPos.x;
     this.currentVineY = startPos.y;
     this.lastGrowthTime = Date.now();
 
@@ -389,7 +345,6 @@ class SeedPlantingAbility extends Ability {
     super.deactivate();
     this.active = false;
     this.isGrowing = false;
-    this.currentVineX = null;
     this.currentVineY = null;
     console.log('Seed planting stopped');
   }
@@ -403,21 +358,11 @@ class SeedPlantingAbility extends Ability {
     return false; // Seed planting doesn't prevent falling
   }
 
-  canGrowVineAt(x: number, y: number): boolean {
-    if (y <= CONFIG.SURFACE_HEIGHT - 2) {
-      return false; // Can't grow above surface
-    }
-    const terrain = this.character.terrainSystem;
-    const block = terrain.getBlockAt(x, y);
-    const hasVine = terrain.hasVine(x, y);
-    return (!block || !block.solid) && !hasVine;
-  }
-
   /**
    * Update vine growth
    */
   update(_time: number, _delta: number): void {
-    if (!this.isGrowing || this.currentVineX === null || this.currentVineY === null) {
+    if (!this.isGrowing || this.currentVineY === null) {
       return;
     }
 
@@ -429,25 +374,23 @@ class SeedPlantingAbility extends Ability {
       return;
     }
 
-    // Try to grow upward
-    const nextY = this.currentVineY;
-
     // Stop if reached surface
-    if (!this.canGrowVineAt(this.currentVineX, nextY)) {
+    if (!canPlaceLadderAt(this.character.gridX, this.currentVineY, terrain)) {
       console.log('Cannot grow further, stopping vine growth');
       this.deactivate();
       return;
     }
 
     // Grow vine upward
-    const success = terrain.addVine(this.currentVineX, nextY, this.character.race);
+    const success = terrain.addLadder(this.character.gridX, this.currentVineY, /*isVine:*/ true);
     if (success) {
-      this.currentVineY = nextY - 1; // Move up for next growth
+      console.log('Vine grew to:', this.character.gridX, this.currentVineY);
+      this.currentVineY =
+        getNextLadderCoordinate(this.character.gridX, this.currentVineY, terrain)?.y || null;
       this.lastGrowthTime = currentTime;
-      console.log('Vine grew to:', this.currentVineX, nextY);
 
       // Check if we can continue growing
-      if (!this.canGrowVineAt(this.currentVineX, this.currentVineY)) {
+      if (this.currentVineY === null) {
         console.log('Cannot grow further, stopping vine growth');
         this.deactivate();
         return;

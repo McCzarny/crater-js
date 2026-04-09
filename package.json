@@ -11,7 +11,8 @@
     "lint": "eslint . --ext .js,.ts",
     "lint:fix": "eslint . --ext .js,.ts --fix",
     "format": "prettier --write \"**/*.{js,ts,json,md,html,css}\"",
-    "format:check": "prettier --check \"**/*.{js,ts,json,md,html,css}\""
+    "format:check": "prettier --check \"**/*.{js,ts,json,md,html,css}\"",
+    "precommit": "npm run format && npm run lint:fix"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

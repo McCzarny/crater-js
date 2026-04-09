@@ -2,6 +2,8 @@
  * Game configuration constants with TypeScript types
  */
 
+import { BaseItem, TradableConfig } from './types/game-types';
+
 // Layer configuration
 interface LayerConfig {
   start: number;
@@ -10,18 +12,12 @@ interface LayerConfig {
 }
 
 // Resource types
-interface ResourceConfig {
-  color: number;
-  value: number;
-  texture: string;
-}
+type ResourceConfig = TradableConfig;
 
 // Essence types
-interface EssenceConfig {
-  color: number;
+interface EssenceConfig extends BaseItem {
   min_value: number;
   max_value: number;
-  texture: string;
 }
 
 // Race configuration
@@ -80,6 +76,11 @@ interface GameConfig {
 
   MAX_ESSENCE_DROP: number;
 
+  // Shop items
+  ITEMS: {
+    LADDER: TradableConfig;
+  };
+
   // Race definitions
   RACES: {
     tribe: RaceConfig;
@@ -132,18 +133,48 @@ export const CONFIG: GameConfig = {
 
   // Resource types
   RESOURCES: {
-    COAL: { color: 0x1a1a1a, value: 5, texture: 'coal' },
-    DIAMOND: { color: 0x00ffff, value: 100, texture: 'diamond' },
-    EMERALD: { color: 0x00ff00, value: 75, texture: 'emerald' },
-    AMETHYST: { color: 0x0000ff, value: 90, texture: 'amethyst' },
+    COAL: { baseValue: 5, texture: 'coal', name: 'Coal', description: 'Basic fuel source', usable: false },
+    DIAMOND: {
+      baseValue: 100,
+      texture: 'diamond',
+      name: 'Diamond',
+      description: 'Precious gemstone',
+      usable: false,
+    },
+    EMERALD: {
+      baseValue: 75,
+      texture: 'emerald',
+      name: 'Emerald',
+      description: 'Valuable green gem',
+      usable: false,
+    },
+    AMETHYST: {
+      baseValue: 90,
+      texture: 'amethyst',
+      name: 'Amethyst',
+      description: 'Purple gemstone',
+      usable: false,
+    },
   },
   ESSENCE: {
-    ESSENCE_GRAIN: { color: 0xffff00, min_value: 1, max_value: 10, texture: 'essence_grain' },
-    ESSENCE_LUMP: { color: 0xffa500, min_value: 10, max_value: 25, texture: 'essence_lump' },
-    ESSENCE_CHUNK: { color: 0xff4500, min_value: 25, max_value: 50, texture: 'essence_chunk' },
-    ESSENCE_CORE: { color: 0xff0000, min_value: 50, max_value: 100, texture: 'essence_core' },
+    ESSENCE_GRAIN: { name: 'Essence Grain', description: 'Small amount of essence', min_value: 1, max_value: 10, texture: 'essence_grain' },
+    ESSENCE_LUMP: { name: 'Essence Lump', description: 'Moderate amount of essence', min_value: 10, max_value: 25, texture: 'essence_lump' },
+    ESSENCE_CHUNK: { name: 'Essence Chunk', description: 'Large amount of essence', min_value: 25, max_value: 50, texture: 'essence_chunk' },
+    ESSENCE_CORE: { name: 'Essence Core', description: 'Very large amount of essence', min_value: 50, max_value: 100, texture: 'essence_core' },
   },
   MAX_ESSENCE_DROP: 100, // Max essence that can drop from a single block
+
+  // Shop items
+  ITEMS: {
+    LADDER: {
+      baseValue: 5,
+      texture: 'ladder',
+      name: 'Ladder',
+      description: 'Allows climbing in tunnels',
+      usable: true,
+    },
+  },
+
   // Race definitions
   RACES: {
     tribe: {
@@ -195,5 +226,22 @@ export const CONFIG: GameConfig = {
   UI_TEXT_COLOR: '#ffffff',
 };
 
+export function getItemConfig(itemType: string): TradableConfig | null {
+  return (
+    CONFIG.ITEMS[itemType as keyof typeof CONFIG.ITEMS] ||
+    CONFIG.RESOURCES[itemType as keyof typeof CONFIG.RESOURCES] ||
+    null
+  );
+}
+
+export function getBaseItemConfig(itemType: string): BaseItem | null {
+  return (
+    CONFIG.ITEMS[itemType as keyof typeof CONFIG.ITEMS] ||
+    CONFIG.RESOURCES[itemType as keyof typeof CONFIG.RESOURCES] ||
+    CONFIG.ESSENCE[itemType as keyof typeof CONFIG.ESSENCE] ||
+    null
+  );
+}
+
 // Export types for use in other files
-export type { GameConfig, RaceConfig, ResourceConfig, EssenceConfig, LayerConfig };
+export type { GameConfig, RaceConfig, ResourceConfig, EssenceConfig, LayerConfig, TradableConfig };

@@ -31,10 +31,13 @@ export interface IAbility {
  * Character Inventory interface (UI-facing)
  */
 export interface ICharacterInventory {
-  tryPickup?: () => void;
+  tryPickup?: () => boolean;
+  placeLadder: (slotIndex: number) => boolean;
+  useItem: (slotIndex: number) => boolean;
   isSearching?: boolean;
   stopSearch?: () => void;
   startSearch?: () => void;
+  inventory: (string | null)[];
 }
 
 /**
@@ -66,7 +69,7 @@ export interface ICharacterSprite {
 }
 
 /**
- * Character interface — the single canonical type for all consumers.
+ * Character interface - the single canonical type for all consumers.
  * UI-only fields (e.g. patience, essence) are optional so system code doesn't need them.
  * Entity-level fields (e.g. scene, gridX) are optional so UI code doesn't need them.
  */
@@ -130,4 +133,15 @@ export interface BarElement {
   bg: Phaser.GameObjects.Rectangle;
   fg: Phaser.GameObjects.Rectangle;
   label: Phaser.GameObjects.Text;
+}
+
+export interface BaseItem {
+  name: string;
+  description: string;
+  texture: string;
+}
+
+export interface TradableConfig extends BaseItem {
+  baseValue: number;
+  usable: boolean;
 }

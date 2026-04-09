@@ -152,6 +152,13 @@ export default class GameScene extends Phaser.Scene {
       }
     });
 
+    // Use an inventory item (e.g. place a ladder) from UIScene
+    this.events.on('useItem', (slotIndex: number) => {
+      if (this.player) {
+        this.player.inventory.useItem(slotIndex);
+      }
+    });
+
     // Transfer all essence from active character to global pool
     this.events.on('transferEssence', () => {
       if (this.player && this.player.essence > 0) {
@@ -159,6 +166,58 @@ export default class GameScene extends Phaser.Scene {
         this.player.essence = 0;
         this.game.events.emit('essenceTransferred', this.globalEssence);
       }
+    });
+
+    // Open trade window for current player
+    this.events.on('openTrade', () => {
+      this.game.events.emit('openTrade', this.player);
+    });
+
+    // Sell an inventory item for essence
+    this.events.on('sellItem', (slotIndex: number) => {
+      if (!this.player || !this.player.inventory) {
+        return;
+      }
+      const inventory = this.player.inventory.inventory;
+      const itemType = inventory[slotIndex];
+      if (!itemType) {
+        return;
+      }
+      const resourceConfig = CONFIG.RESOURCES[itemType as keyof typeof CONFIG.RESOURCES];
+      if (!resourceConfig) {
+        return;
+      }
+      inventory[slotIndex] = null;
+      const gained = Math.min(
+        resourceConfig.baseValue,
+        this.player.maxEssence - this.player.essence,
+      );
+      this.player.essence += gained;
+      this.game.events.emit('inventoryChanged', [...inventory]);
+      this.game.events.emit('essenceChanged', this.player.essence, this.player.maxEssence);
+    });
+
+    // Buy an item from the trader
+    this.events.on('buyItem', (itemKey: string) => {
+      if (!this.player || !this.player.inventory) {
+        return;
+      }
+      const itemConfig = CONFIG.ITEMS[itemKey as keyof typeof CONFIG.ITEMS];
+      if (!itemConfig) {
+        return;
+      }
+      if (this.player.essence < itemConfig.baseValue) {
+        return;
+      }
+      const inventory = this.player.inventory.inventory;
+      const emptySlot = inventory.findIndex(s => s === null);
+      if (emptySlot === -1) {
+        return;
+      }
+      this.player.essence -= itemConfig.baseValue;
+      inventory[emptySlot] = itemKey;
+      this.game.events.emit('inventoryChanged', [...inventory]);
+      this.game.events.emit('essenceChanged', this.player.essence, this.player.maxEssence);
     });
 
     console.log('GameScene: Ready!');

@@ -11,6 +11,7 @@ const BUTTON_DEPTH = 206;
 export default class BaseUI {
   scene: Phaser.Scene;
   private transferButton!: ButtonElements;
+  private tradeButton!: ButtonElements;
   private elements: Phaser.GameObjects.GameObject[];
   private tooltipManager?: TooltipManager;
 
@@ -34,11 +35,25 @@ export default class BaseUI {
       }
     });
 
+    this.tradeButton = createButton(this.scene, x + 50, y + 10, {
+      depth: BUTTON_DEPTH,
+      useHandCursor: true,
+      icon: 'trade_icon',
+      allowOverlayIcon: false,
+    });
+
+    this.tradeButton.rect.on('pointerdown', () => {
+      const gameScene = this.scene.scene.get('GameScene');
+      if (gameScene) {
+        gameScene.events.emit('openTrade');
+      }
+    });
+
     if (this.tooltipManager) {
       this.registerTooltips();
     }
 
-    this.elements = this.transferButton.getGameObjects();
+    this.elements = [...this.transferButton.getGameObjects(), ...this.tradeButton.getGameObjects()];
 
     this.setVisible(false);
   }
@@ -54,6 +69,10 @@ export default class BaseUI {
     this.tooltipManager!.registerTooltip(this.transferButton.rect, {
       title: 'Transfer Essence',
       description: ['Transfer essence from the character to the Unity'],
+    });
+    this.tooltipManager!.registerTooltip(this.tradeButton.rect, {
+      title: 'Trade',
+      description: ['Open the trader to sell resources and buy items'],
     });
   }
 

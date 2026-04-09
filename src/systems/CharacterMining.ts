@@ -251,13 +251,19 @@ export default class CharacterMining {
     // Semantics: For diagonal requests (dx != 0 && dy != 0):
     // - if there is a solid block behind the character, dig horizontally in the requested direction
     // - otherwise, dig downwards
+    // - if you cannot dig downwards, try to dig horizontally anyway (e.g. a boulder is blocking the downward path)
     let dirToUse = this.autoDigDirection;
     if (dirToUse && dirToUse.dx !== 0 && dirToUse.dy !== 0) {
       const blockBehind = this.terrainSystem.getBlockAt(char.gridX - dirToUse.dx, char.gridY);
       if (blockBehind && blockBehind.solid) {
         dirToUse = { dx: dirToUse.dx, dy: 0 };
       } else {
-        dirToUse = { dx: 0, dy: 1 };
+        const blockBelow = this.terrainSystem.getBlockAt(char.gridX, char.gridY + 1);
+        if (blockBelow && blockBelow.breakable) {
+          dirToUse = { dx: 0, dy: 1 };
+        } else {
+          dirToUse = { dx: dirToUse.dx, dy: 0 };
+        }
       }
     }
 

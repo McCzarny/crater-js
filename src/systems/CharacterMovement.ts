@@ -58,7 +58,7 @@ export default class CharacterMovement {
   tryMove(dx: number, dy: number, isSprinting: boolean): boolean {
     const char = this.character;
     const isClimbing = char.abilities && char.abilities.isClimbing;
-    const isOnVine = this.isCharacterOnVine();
+    const isOnLadder = this.isCharacterOnLadder();
 
     // Calculate current actual tile position based on sprite's position
     const currentTileX = Math.floor(char.sprite.x / CONFIG.BLOCK_SIZE);
@@ -130,22 +130,12 @@ export default class CharacterMovement {
       return false;
     }
 
-    // Check if target has a vine
-    const targetHasVine = this.terrainSystem.hasVine(targetX, targetY);
-
-    // Debug logging for vine climbing
-    if (dy < 0 && (isOnVine || targetHasVine)) {
-      console.log('Vine climbing attempt:', {
-        isOnVine,
-        targetHasVine,
-        currentPos: { x: currentTileX, y: currentTileY },
-        targetPos: { x: targetX, y: targetY },
-      });
-    }
+    // Check if target has a ladder
+    const targetHasLadder = this.terrainSystem.hasLadder(targetX, targetY);
 
     // Special handling for vertical movement
-    // Skip ground check when: climbing OR on vine AND moving to vine
-    if (dy !== 0 && !isClimbing && !isOnVine && !targetHasVine) {
+    // Skip ground check when: climbing OR on ladder AND moving to ladder
+    if (dy !== 0 && !isClimbing && !isOnLadder && !targetHasLadder) {
       const blockBelow = this.terrainSystem.getBlockAt(currentTileX, currentTileY + 1);
       if (dy < 0 && (!blockBelow || !blockBelow.solid)) {
         console.log('Blocked upward movement: no ground below');
@@ -153,8 +143,8 @@ export default class CharacterMovement {
       }
     }
 
-    if (dy < 0 && !targetHasVine && !isClimbing) {
-      console.log('Blocked upward movement: no vine to climb');
+    if (dy < 0 && !targetHasLadder && !isClimbing) {
+      console.log('Blocked upward movement: no ladder to climb');
       return false;
     }
 
@@ -175,8 +165,8 @@ export default class CharacterMovement {
       baseSpeed *= char.abilities.getMovementSpeedMultiplier();
     }
 
-    // Apply vine speed multiplier if on vine or moving to vine (0.7x speed)
-    if (isOnVine || targetHasVine) {
+    // Apply ladder speed multiplier if on ladder or moving to ladder (0.7x speed)
+    if (isOnLadder || targetHasLadder) {
       baseSpeed *= 0.7;
     }
 
@@ -208,12 +198,12 @@ export default class CharacterMovement {
 
       // Check if we should fall now that movement is complete (only if not prevented by abilities)
       if (!char.abilities || !char.abilities.shouldPreventFalling()) {
-        // Check if there's a vine at current position OR solid ground below
-        const hasVine = this.isCharacterOnVine();
+        // Check if there's a ladder at current position OR solid ground below
+        const hasLadder = this.isCharacterOnLadder();
         const blockBelow = this.terrainSystem.getBlockAt(char.gridX, char.gridY + 1);
         const hasSolidGround = blockBelow && blockBelow.solid;
 
-        if (!hasVine && !hasSolidGround) {
+        if (!hasLadder && !hasSolidGround) {
           // No support - start falling
           this.startFalling();
           return;
@@ -235,12 +225,12 @@ export default class CharacterMovement {
       const currentTileX = Math.floor(char.sprite.x / CONFIG.BLOCK_SIZE);
       const currentTileY = Math.floor(char.sprite.y / CONFIG.BLOCK_SIZE);
 
-      // Check if current sprite position has vine OR solid ground below
-      const hasVine = this.terrainSystem.hasVine(currentTileX, currentTileY);
+      // Check if current sprite position has ladder OR solid ground below
+      const hasLadder = this.terrainSystem.hasLadder(currentTileX, currentTileY);
       const blockBelow = this.terrainSystem.getBlockAt(currentTileX, currentTileY + 1);
       const hasSolidGround = blockBelow && blockBelow.solid;
 
-      if (!hasVine && !hasSolidGround) {
+      if (!hasLadder && !hasSolidGround) {
         // No support at current position - update grid and start falling
         char.gridX = currentTileX;
         char.gridY = currentTileY;
@@ -259,8 +249,8 @@ export default class CharacterMovement {
       return false;
     }
 
-    // Don't fall if on a vine
-    if (this.isCharacterOnVine()) {
+    // Don't fall if on a ladder
+    if (this.isCharacterOnLadder()) {
       return false;
     }
 
@@ -270,17 +260,17 @@ export default class CharacterMovement {
   }
 
   /**
-   * Check if character is currently on a vine
+   * Check if character is currently on a ladder
    */
-  isCharacterOnVine(): boolean {
+  isCharacterOnLadder(): boolean {
     const char = this.character;
-    return this.terrainSystem.hasVine(char.gridX, char.gridY);
+    return this.terrainSystem.hasLadder(char.gridX, char.gridY);
   }
 
-  /* Check if there's a vine at a relative position from the character */
-  isVineAtRelativePosition(dx: number, dy: number): boolean {
+  /* Check if there's a ladder at a relative position from the character */
+  isLadderAtRelativePosition(dx: number, dy: number): boolean {
     const char = this.character;
-    return this.terrainSystem.hasVine(char.gridX + dx, char.gridY + dy);
+    return this.terrainSystem.hasLadder(char.gridX + dx, char.gridY + dy);
   }
 
   /**

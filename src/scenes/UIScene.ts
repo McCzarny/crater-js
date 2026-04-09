@@ -5,6 +5,7 @@ import CharacterIcons from '../ui/CharacterIcons';
 import EssenceUI from '../ui/EssenceUI';
 import HUD from '../ui/HUD';
 import TooltipManager from '../ui/TooltipManager';
+import TradeUI from '../ui/TradeUI';
 import GameScene from './GameScene';
 import type Character from '../entities/Character';
 
@@ -21,6 +22,7 @@ export default class UIScene extends Phaser.Scene {
   characterIcons!: CharacterIcons;
   essenceUI!: EssenceUI;
   baseUI!: BaseUI;
+  tradeUI!: TradeUI;
   hud!: HUD;
   tooltipManager!: TooltipManager;
   characterButtons!: Phaser.GameObjects.Sprite[];
@@ -56,12 +58,49 @@ export default class UIScene extends Phaser.Scene {
     this.baseUI.create(CONFIG.GAME_WIDTH / 2, 40);
     this.baseUI.setTooltipManager(this.tooltipManager);
 
+    this.tradeUI = new TradeUI(this);
+    this.tradeUI.create(CONFIG.GAME_WIDTH / 2, CONFIG.GAME_HEIGHT / 2);
+    this.tradeUI.setTooltipManager(this.tooltipManager);
+
     // Update global essence display when essence is transferred to the base
     this.game.events.on(
       'essenceTransferred',
       (globalEssence: number) => {
         if (this.essenceUI) {
           this.essenceUI.setEssence(globalEssence);
+        }
+      },
+      this,
+    );
+
+    // Open trade window
+    this.game.events.on(
+      'openTrade',
+      (player: Character) => {
+        if (this.tradeUI) {
+          this.tradeUI.open(player);
+        }
+      },
+      this,
+    );
+
+    // Close trade window
+    this.game.events.on(
+      'closeTrade',
+      () => {
+        if (this.tradeUI) {
+          this.tradeUI.close();
+        }
+      },
+      this,
+    );
+
+    // Refresh trade UI when player essence changes
+    this.game.events.on(
+      'essenceChanged',
+      (essence: number, maxEssence: number) => {
+        if (this.tradeUI) {
+          this.tradeUI.refreshEssence(essence, maxEssence);
         }
       },
       this,
@@ -77,6 +116,9 @@ export default class UIScene extends Phaser.Scene {
     this.game.events.on(
       'characterSwitched',
       (player: Character) => {
+        if (this.tradeUI) {
+          this.tradeUI.close();
+        }
         if (this.hud && this.hud.updateCharacter) {
           this.hud.updateCharacter(player);
         }
@@ -123,6 +165,10 @@ export default class UIScene extends Phaser.Scene {
             Math.abs(player.gridX - baseCenter.gridX) <= CONFIG.BASE_SIZE &&
             Math.abs(player.gridY - baseCenter.gridY) <= 1;
           this.baseUI.setVisible(nearBase);
+          // Auto-close trade window when player walks away
+          if (!nearBase && this.tradeUI && this.tradeUI.isOpen) {
+            this.tradeUI.close();
+          }
         } else {
           this.baseUI.setVisible(false);
         }
@@ -145,6 +191,9 @@ export default class UIScene extends Phaser.Scene {
     if (this.baseUI && this.baseUI.destroy) {
       this.baseUI.destroy();
     }
+    if (this.tradeUI && this.tradeUI.destroy) {
+      this.tradeUI.destroy();
+    }
     if (this.tooltipManager && this.tooltipManager.destroy) {
       this.tooltipManager.destroy();
     }
@@ -158,6 +207,9 @@ export default class UIScene extends Phaser.Scene {
       this.hud.updateInventory(inventory);
     } else {
       console.log('Inventory updated:', inventory);
+    }
+    if (this.tradeUI) {
+      this.tradeUI.refreshInventory(inventory);
     }
   }
 }

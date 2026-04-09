@@ -5,10 +5,10 @@ import ItemManager from './ItemManager';
 import { TileRegistry, type Tile } from './TileTypes';
 
 /**
- * Interface for vine data
+ * Interface for ladder data
  */
-interface VineData {
-  createdBy: string | null;
+interface LadderData {
+  isVine: boolean;
 }
 
 /**
@@ -24,8 +24,8 @@ export default class TerrainSystem {
   scene: Phaser.Scene;
   blocks: Tile[][];
   blockSprites: Map<string, Phaser.GameObjects.Graphics | Phaser.GameObjects.Sprite>;
-  vines: Map<string, VineData>;
-  vineSprites: Map<string, Phaser.GameObjects.Graphics | Phaser.GameObjects.Sprite>;
+  ladders: Map<string, LadderData>;
+  ladderSprites: Map<string, Phaser.GameObjects.Graphics | Phaser.GameObjects.Sprite>;
   container: Phaser.GameObjects.Container;
   itemManager: ItemManager;
   reactionHandlers: ReactionHandler[];
@@ -35,9 +35,9 @@ export default class TerrainSystem {
     this.blocks = [];
     this.blockSprites = new Map();
 
-    // Vine tracking system
-    this.vines = new Map(); // key: 'x,y', value: { sprite, createdBy }
-    this.vineSprites = new Map();
+    // Ladder (vine) tracking system
+    this.ladders = new Map(); // key: 'x,y', value: { sprite, createdBy }
+    this.ladderSprites = new Map();
 
     // Create a container for all block sprites
     this.container = scene.add.container(0, 0);
@@ -295,46 +295,44 @@ export default class TerrainSystem {
   }
 
   /**
-   * Check if a vine exists at the given position
+   * Check if a ladder(vine) exists at the given position
    */
-  hasVine(gridX: number, gridY: number): boolean {
+  hasLadder(gridX: number, gridY: number): boolean {
     const key = `${gridX},${gridY}`;
-    const exists = this.vines.has(key);
-    // Only log when checking for movement
-    // console.log('Checking vine at:', gridX, gridY, 'exists:', exists);
+    const exists = this.ladders.has(key);
     return exists;
   }
 
   /**
-   * Add a vine at the given position
+   * Add a ladder at the given position
    */
-  addVine(gridX: number, gridY: number, createdBy: string | null = null): boolean {
+  addLadder(gridX: number, gridY: number, isVine: boolean = false): boolean {
     const key = `${gridX},${gridY}`;
 
     // Don't add if already exists
-    if (this.vines.has(key)) {
-      console.log('Vine already exists at:', gridX, gridY);
+    if (this.ladders.has(key)) {
+      console.log('Ladder already exists at:', gridX, gridY);
       return false;
     }
 
     // Don't add vines on solid blocks
     const block = this.getBlockAt(gridX, gridY);
     if (block && block.solid) {
-      console.log('Cannot add vine on solid block at:', gridX, gridY);
+      console.log('Cannot add ladder on solid block at:', gridX, gridY);
       return false;
     }
 
-    // Store vine data
-    this.vines.set(key, { createdBy });
-    console.log('Vine added at:', gridX, gridY, 'Total vines:', this.vines.size);
+    // Store ladder data
+    this.ladders.set(key, { isVine });
+    console.log('Ladder added at:', gridX, gridY, 'Total ladders:', this.ladders.size);
 
-    // Render the vine
+    // Render the ladder (vine)
     try {
-      this.renderVine(gridX, gridY);
+      this.renderLadder(gridX, gridY, isVine);
     } catch (error) {
-      console.error('Error rendering vine:', error);
-      // Remove vine data if rendering failed
-      this.vines.delete(key);
+      console.error('Error rendering ladder:', error);
+      // Remove ladder data if rendering failed
+      this.ladders.delete(key);
       return false;
     }
 
@@ -342,70 +340,59 @@ export default class TerrainSystem {
   }
 
   /**
-   * Remove a vine at the given position
+   * Remove a ladder at the given position
    */
-  removeVine(gridX: number, gridY: number): boolean {
+  removeLadder(gridX: number, gridY: number): boolean {
     const key = `${gridX},${gridY}`;
 
-    if (!this.vines.has(key)) {
+    if (!this.ladders.has(key)) {
       return false;
     }
 
-    // Remove vine data
-    this.vines.delete(key);
+    // Remove ladder data
+    this.ladders.delete(key);
 
-    // Remove vine sprite
-    if (this.vineSprites.has(key)) {
-      this.vineSprites.get(key)!.destroy();
-      this.vineSprites.delete(key);
+    // Remove ladder sprite
+    if (this.ladderSprites.has(key)) {
+      this.ladderSprites.get(key)!.destroy();
+      this.ladderSprites.delete(key);
     }
 
     return true;
   }
 
   /**
-   * Render a vine sprite at the given position
+   * Render a ladder (vine) sprite at the given position
    */
-  renderVine(gridX: number, gridY: number): void {
+  renderLadder(gridX: number, gridY: number, isVine: boolean = false): void {
     const key = `${gridX},${gridY}`;
 
     // Remove existing sprite if any
-    if (this.vineSprites.has(key)) {
-      this.vineSprites.get(key)!.destroy();
+    if (this.ladderSprites.has(key)) {
+      this.ladderSprites.get(key)!.destroy();
     }
 
     const pixelX = gridX * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2;
     const pixelY = gridY * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2;
 
-    // Check if vine texture exists
-    if (!this.scene.textures.exists('vine')) {
-      console.error('Vine texture not found! Using placeholder.');
-      // Create a placeholder graphic instead
-      const graphics = this.scene.add.graphics();
-      graphics.fillStyle(0x00ff00, 0.5);
-      graphics.fillRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
-      graphics.setPosition(gridX * CONFIG.BLOCK_SIZE, gridY * CONFIG.BLOCK_SIZE);
-      graphics.setDepth(500);
-      this.vineSprites.set(key, graphics);
-      return;
-    }
+    const textureKey = isVine ? 'vine' : 'ladder';
 
     // Create vine sprite
     const vineSprite = this.scene.add
-      .sprite(pixelX, pixelY, 'vine')
+      .sprite(pixelX, pixelY, textureKey)
       .setDisplaySize(CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE)
       .setDepth(500); // Between blocks and characters
 
-    this.vineSprites.set(key, vineSprite);
-    console.log('Vine sprite rendered at:', gridX, gridY);
+    this.ladderSprites.set(key, vineSprite);
+    console.log('Ladder sprite rendered at:', gridX, gridY);
   }
 
   /**
-   * Get vine at the given position
+   * Get ladder (vine) at the given position
    */
-  getVine(gridX: number, gridY: number): VineData | null {
+  getLadder(gridX: number, gridY: number): LadderData | null {
     const key = `${gridX},${gridY}`;
-    return this.vines.get(key) || null;
+    return this.ladders.get(key) || null;
   }
 
   /**
