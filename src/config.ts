@@ -30,6 +30,7 @@ interface RaceConfig {
   patienceLimit: number;
   healthLimit: number;
   essenceLimit: number;
+  mapTexture: string;
 }
 
 // Main configuration interface
@@ -216,6 +217,7 @@ export const CONFIG: GameConfig = {
       patienceLimit: 100,
       healthLimit: 100,
       essenceLimit: 50,
+      mapTexture: 'tribe_character',
     },
     fungus: {
       name: 'Cult of the Spore',
@@ -226,6 +228,7 @@ export const CONFIG: GameConfig = {
       patienceLimit: 75,
       healthLimit: 120,
       essenceLimit: 40,
+      mapTexture: 'fungus_character',
     },
     petal: {
       name: 'Order of the Seed',
@@ -236,13 +239,14 @@ export const CONFIG: GameConfig = {
       patienceLimit: 150,
       healthLimit: 80,
       essenceLimit: 60,
+      mapTexture: 'petal_character',
     },
   },
 
   // Character settings (base stats)
   CHAR_SPEED: 100,
   CHAR_JUMP_VELOCITY: -300,
-  CHAR_SIZE: 28,
+  CHAR_SIZE: 32,
   MINING_RANGE: 40,
   MINING_TIME: 5000, // ms to mine one block (base time)
   MAX_HEALTH: 100,

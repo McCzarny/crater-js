@@ -75,7 +75,7 @@ export default class Character implements ICharacter {
     this.sprite = scene.add.sprite(
       this.gridX * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
       this.gridY * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
-      race,
+      raceConfig.mapTexture,
     );
     this.sprite.setDisplaySize(CONFIG.CHAR_SIZE, CONFIG.CHAR_SIZE);
     this.sprite.setDepth(1000);
