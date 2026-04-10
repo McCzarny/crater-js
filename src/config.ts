@@ -133,7 +133,13 @@ export const CONFIG: GameConfig = {
 
   // Resource types
   RESOURCES: {
-    COAL: { baseValue: 5, texture: 'coal', name: 'Coal', description: 'Basic fuel source', usable: false },
+    COAL: {
+      baseValue: 5,
+      texture: 'coal',
+      name: 'Coal',
+      description: 'Basic fuel source',
+      usable: false,
+    },
     DIAMOND: {
       baseValue: 100,
       texture: 'diamond',
@@ -157,10 +163,34 @@ export const CONFIG: GameConfig = {
     },
   },
   ESSENCE: {
-    ESSENCE_GRAIN: { name: 'Essence Grain', description: 'Small amount of essence', min_value: 1, max_value: 10, texture: 'essence_grain' },
-    ESSENCE_LUMP: { name: 'Essence Lump', description: 'Moderate amount of essence', min_value: 10, max_value: 25, texture: 'essence_lump' },
-    ESSENCE_CHUNK: { name: 'Essence Chunk', description: 'Large amount of essence', min_value: 25, max_value: 50, texture: 'essence_chunk' },
-    ESSENCE_CORE: { name: 'Essence Core', description: 'Very large amount of essence', min_value: 50, max_value: 100, texture: 'essence_core' },
+    ESSENCE_GRAIN: {
+      name: 'Essence Grain',
+      description: 'Small amount of essence',
+      min_value: 1,
+      max_value: 10,
+      texture: 'essence_grain',
+    },
+    ESSENCE_LUMP: {
+      name: 'Essence Lump',
+      description: 'Moderate amount of essence',
+      min_value: 10,
+      max_value: 25,
+      texture: 'essence_lump',
+    },
+    ESSENCE_CHUNK: {
+      name: 'Essence Chunk',
+      description: 'Large amount of essence',
+      min_value: 25,
+      max_value: 50,
+      texture: 'essence_chunk',
+    },
+    ESSENCE_CORE: {
+      name: 'Essence Core',
+      description: 'Very large amount of essence',
+      min_value: 50,
+      max_value: 100,
+      texture: 'essence_core',
+    },
   },
   MAX_ESSENCE_DROP: 100, // Max essence that can drop from a single block
 

@@ -53,6 +53,72 @@ export default class CharacterMovement {
   }
 
   /**
+   * Check whether a character can walk to (targetX, targetY) from (fromX, fromY).
+   *
+   * Handles:
+   *  - Passability of the target tile
+   *  - Automatic 1-tile step-up when moving sideways into a wall
+   *  - Fall safety:
+   *      'automatic' - refuses to move if there is 2 or more tiles of fall distance
+   *      'manual'    - allows falling
+   *
+   * Returns null when the walk is not possible, or a { tileX, tileY } object with the
+   * resolved destination (may differ from target when stepping up).
+   */
+  canWalkTo(
+    fromX: number,
+    fromY: number,
+    targetX: number,
+    targetY: number,
+    dx: number,
+    dy: number,
+    mode: 'manual' | 'automatic',
+  ): { tileX: number; tileY: number } | null {
+    // Bounds check
+    if (
+      targetX < 0 ||
+      targetX >= CONFIG.WORLD_WIDTH ||
+      targetY < 0 ||
+      targetY >= CONFIG.WORLD_HEIGHT
+    ) {
+      return null;
+    }
+
+    const targetBlock = this.terrainSystem.getBlockAt(targetX, targetY);
+
+    if (targetBlock && targetBlock.solid) {
+      // Auto-climb: moving sideways into a wall - try to step 1 tile up
+      if (dx !== 0 && dy === 0) {
+        const tileAboveChar = this.terrainSystem.getBlockAt(fromX, fromY - 1);
+        const charAbovePassable = !tileAboveChar || !tileAboveChar.solid;
+        const tileAboveTarget = this.terrainSystem.getBlockAt(targetX, targetY - 1);
+        const targetAbovePassable = !tileAboveTarget || !tileAboveTarget.solid;
+
+        if (charAbovePassable && targetAbovePassable && targetY - 1 >= 0) {
+          // Step up: wall tile below the climb destination is always solid — safe
+          return { tileX: targetX, tileY: targetY - 1 };
+        }
+      }
+      return null;
+    }
+
+    // Target tile is passable — check fall safety for horizontal movement
+    if (dy === 0) {
+      const groundDirect = this.terrainSystem.getBlockAt(targetX, targetY + 2);
+      const hasSolidDirectly = groundDirect && groundDirect.solid;
+
+      if (mode === 'automatic') {
+        // Automatic: refuse to walk off any ledge
+        if (!hasSolidDirectly) {
+          return null;
+        }
+      }
+    }
+
+    return { tileX: targetX, tileY: targetY };
+  }
+
+  /**
    * Try to move in a direction (grid-based)
    */
   tryMove(dx: number, dy: number, isSprinting: boolean): boolean {
@@ -61,13 +127,50 @@ export default class CharacterMovement {
     const isOnLadder = this.isCharacterOnLadder();
 
     // Calculate current actual tile position based on sprite's position
-    const currentTileX = Math.floor(char.sprite.x / CONFIG.BLOCK_SIZE);
-    const currentTileY = Math.floor(char.sprite.y / CONFIG.BLOCK_SIZE);
+    const currentTileX = char.gridX; // Math.floor(char.sprite.x / CONFIG.BLOCK_SIZE);
+    const currentTileY = char.gridY; // Math.floor(char.sprite.y / CONFIG.BLOCK_SIZE);
 
     const targetX = currentTileX + dx;
     const targetY = currentTileY + dy;
 
-    // Check if target is in bounds
+    // When climbing, allow moving 1 tile above the surface to be able to climb onto the surface
+    if (isClimbing && targetY <= CONFIG.SURFACE_HEIGHT - 2) {
+      return false;
+    }
+
+    // For horizontal movement (not on ladders/climbing), delegate to canWalkTo
+    if (dy === 0 && !isClimbing && !isOnLadder) {
+      const dest = this.canWalkTo(currentTileX, currentTileY, targetX, targetY, dx, dy, 'manual');
+      if (!dest) {
+        return false;
+      }
+
+      const isStepUp = dest.tileY !== targetY;
+
+      char.gridX = dest.tileX;
+      char.gridY = dest.tileY;
+      this.isMoving = true;
+      this.moveTarget = {
+        x: dest.tileX * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
+        y: dest.tileY * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
+      };
+
+      let baseSpeed = isSprinting ? char.moveSpeed * char.sprintMultiplier : char.moveSpeed;
+      if (isStepUp) {
+        baseSpeed *= 0.85; // 15% slower when stepping up
+      }
+      if (char.abilities) {
+        baseSpeed *= char.abilities.getMovementSpeedMultiplier();
+      }
+
+      this.currentMoveSpeed = baseSpeed;
+      this.lastMoveTime = Date.now();
+      return true;
+    }
+
+    // Vertical movement (ladders / climbing)
+
+    // Bounds check
     if (
       targetX < 0 ||
       targetX >= CONFIG.WORLD_WIDTH ||
@@ -77,56 +180,8 @@ export default class CharacterMovement {
       return false;
     }
 
-    // When climbing, allow moving 1 tile above the surface to be able to climb onto the surface
-    if (isClimbing && targetY <= CONFIG.SURFACE_HEIGHT - 2) {
-      return false;
-    }
-
-    // Check if target tile is solid
     const targetBlock = this.terrainSystem.getBlockAt(targetX, targetY);
     if (targetBlock && targetBlock.solid) {
-      // Auto-climb: If moving sideways into a wall, check if we can step up
-      if (dx !== 0 && dy === 0) {
-        // Check if tile above character is not solid
-        const tileAboveChar = this.terrainSystem.getBlockAt(currentTileX, currentTileY - 1);
-        const charTilePassable = !tileAboveChar || !tileAboveChar.solid;
-
-        // Check if tile above target is not solid
-        const tileAboveTarget = this.terrainSystem.getBlockAt(targetX, targetY - 1);
-        const targetTilePassable = !tileAboveTarget || !tileAboveTarget.solid;
-
-        // If both tiles above are passable, climb up instead
-        if (charTilePassable && targetTilePassable) {
-          // Adjust target to climb one tile up
-          const climbTargetY = targetY - 1;
-
-          // Verify the climb target is in bounds
-          if (climbTargetY >= 0) {
-            // Update target to the tile above
-            char.gridX = targetX;
-            char.gridY = climbTargetY;
-            this.isMoving = true;
-            this.moveTarget = {
-              x: targetX * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
-              y: climbTargetY * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
-            };
-
-            // Calculate movement speed (slightly slower for climbing)
-            let baseSpeed = isSprinting ? char.moveSpeed * char.sprintMultiplier : char.moveSpeed;
-            baseSpeed *= 0.85; // 15% slower when climbing over walls
-
-            if (char.abilities) {
-              baseSpeed *= char.abilities.getMovementSpeedMultiplier();
-            }
-
-            this.currentMoveSpeed = baseSpeed;
-            this.lastMoveTime = Date.now();
-
-            return true;
-          }
-        }
-      }
-
       return false;
     }
 
@@ -214,31 +269,11 @@ export default class CharacterMovement {
     }
 
     // Move towards target
-    const moveAmount = (this.currentMoveSpeed * delta) / 1000;
-    const ratio = Math.min(moveAmount / distance, 1);
+    const horizontalRatio = Math.min((this.currentMoveSpeed * delta) / 1000 / distance, 1);
+    const verticalRatio = Math.min((this.fallSpeed * delta) / 1000 / distance, 1);
 
-    char.sprite.x += dx * ratio;
-    char.sprite.y += dy * ratio;
-
-    // Check if sprite's current position has support (only if not prevented by abilities)
-    if (!char.abilities || !char.abilities.shouldPreventFalling()) {
-      const currentTileX = Math.floor(char.sprite.x / CONFIG.BLOCK_SIZE);
-      const currentTileY = Math.floor(char.sprite.y / CONFIG.BLOCK_SIZE);
-
-      // Check if current sprite position has ladder OR solid ground below
-      const hasLadder = this.terrainSystem.hasLadder(currentTileX, currentTileY);
-      const blockBelow = this.terrainSystem.getBlockAt(currentTileX, currentTileY + 1);
-      const hasSolidGround = blockBelow && blockBelow.solid;
-
-      if (!hasLadder && !hasSolidGround) {
-        // No support at current position - update grid and start falling
-        char.gridX = currentTileX;
-        char.gridY = currentTileY;
-        this.isMoving = false;
-        this.moveTarget = null;
-        this.startFalling();
-      }
-    }
+    char.sprite.x += dx * horizontalRatio;
+    char.sprite.y += dy * verticalRatio;
   }
 
   /**
@@ -333,7 +368,7 @@ export default class CharacterMovement {
    */
   canMove(): boolean {
     const now = Date.now();
-    return now - this.lastMoveTime >= this.moveCooldown;
+    return !this.isMoving && now - this.lastMoveTime >= this.moveCooldown;
   }
 
   /**

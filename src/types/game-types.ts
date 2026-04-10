@@ -114,6 +114,15 @@ export interface ICharacter {
   mining?: ICharacterMining;
   movement?: ICharacterMovement & {
     tryMove: (dx: number, dy: number, isSprinting: boolean) => boolean;
+    canWalkTo: (
+      fromX: number,
+      fromY: number,
+      targetX: number,
+      targetY: number,
+      dx: number,
+      dy: number,
+      mode: 'manual' | 'automatic',
+    ) => { tileX: number; tileY: number } | null;
   };
 }
 

@@ -211,7 +211,7 @@ export default class CharacterInventory implements ICharacterInventory {
   startSearch(): void {
     console.log('Starting search mode');
     this.isSearching = true;
-    this.searchDirection = 1;
+    this.searchDirection = Math.random() < 0.5 ? -1 : 1; // randomize initial search direction
     this.lastSearchMoveTime = 0;
     this.character.sprite.setTint(0x00ffff);
   }
@@ -263,39 +263,33 @@ export default class CharacterInventory implements ICharacterInventory {
     const targetX = char.gridX + this.searchDirection;
     const targetY = char.gridY;
 
-    // Check bounds
-    if (targetX < 0 || targetX >= CONFIG.WORLD_WIDTH) {
+    // Use shared walking logic (automatic mode: no falling allowed)
+    const dest = char.movement.canWalkTo(
+      char.gridX,
+      char.gridY,
+      targetX,
+      targetY,
+      this.searchDirection,
+      0,
+      'automatic',
+    );
+
+    if (!dest) {
       this.searchDirection *= -1;
       this.lastSearchMoveTime = time;
       return null;
     }
 
-    // Check if blocked by solid block
-    const targetBlock = this.terrainSystem.getBlockAt(targetX, targetY);
-    if (targetBlock && targetBlock.solid) {
-      this.searchDirection *= -1;
-      this.lastSearchMoveTime = time;
-      return null;
-    }
-
-    // Check if there's ground below target
-    const blockBelow = this.terrainSystem.getBlockAt(targetX, targetY + 1);
-    if (!blockBelow || !blockBelow.solid) {
-      this.searchDirection *= -1;
-      this.lastSearchMoveTime = time;
-      return null;
-    }
-
-    // Move to target
-    char.gridX = targetX;
-    char.gridY = targetY;
+    // Move to destination (canWalkTo may resolve a step-up)
+    char.gridX = dest.tileX;
+    char.gridY = dest.tileY;
     this.lastSearchMoveTime = time;
 
     // Return movement request
     return {
       shouldMove: true,
-      targetX: targetX,
-      targetY: targetY,
+      targetX: dest.tileX,
+      targetY: dest.tileY,
       speed: char.moveSpeed,
     };
   }

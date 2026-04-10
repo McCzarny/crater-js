@@ -170,13 +170,7 @@ export default class Character implements ICharacter {
       this.stopAllActions();
     }
 
-    // Search mode takes highest priority
-    if (this.inventory.isSearching) {
-      this.updateSearch(time);
-      return;
-    }
-
-    // Handle falling (only if not prevented by abilities)
+    // Handle falling before any mode-specific logic - physics override everything
     if (this.movement.isFalling) {
       this.movement.updateFalling(delta);
       return;
@@ -197,6 +191,32 @@ export default class Character implements ICharacter {
       }
 
       this.updateAutoDig(time, keys);
+      return;
+    }
+
+    // Stop active actions when trying to move manually (except climbing)
+    if (
+      cursors &&
+      (cursors.left.isDown || cursors.right.isDown || cursors.up.isDown || cursors.down.isDown)
+    ) {
+      // TODO: Stop all abilities except climbing
+      // Stop seed planting on any movement
+      if (this.abilities.isPlantingSeeds) {
+        this.abilities.deactivateAll();
+      }
+
+      // Don't stop climbing when moving - it's intended to be used during movement
+      this.mining.stopAutoDig();
+      this.inventory.stopSearch();
+      this.mining.stopMining();
+      if (!this.abilities.isClimbing && !this.abilities.isPlantingSeeds) {
+        this.sprite.clearTint();
+      }
+    }
+
+    // Search mode takes highest priority
+    if (this.inventory.isSearching) {
+      this.updateSearch(time);
       return;
     }
 
@@ -261,22 +281,6 @@ export default class Character implements ICharacter {
     }
 
     const isSprinting = keys.shift && keys.shift.isDown;
-
-    // Stop active actions when trying to move manually (except climbing)
-    if (cursors.left.isDown || cursors.right.isDown || cursors.up.isDown || cursors.down.isDown) {
-      // Stop seed planting on any movement
-      if (this.abilities.isPlantingSeeds) {
-        this.abilities.deactivateAll();
-      }
-
-      // Don't stop climbing when moving - it's intended to be used during movement
-      this.mining.stopAutoDig();
-      this.inventory.stopSearch();
-      this.mining.stopMining();
-      if (!this.abilities.isClimbing && !this.abilities.isPlantingSeeds) {
-        this.sprite.clearTint();
-      }
-    }
 
     if (cursors.left.isDown) {
       this.movement.tryMove(-1, 0, isSprinting);

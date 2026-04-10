@@ -301,13 +301,30 @@ export default class CharacterMining {
     // If the block is not solid, move into the direction instead of mining
     if (!block.solid) {
       console.log('Auto-dig moving into non-solid block at:', targetX, targetY);
-      char.gridX = targetX;
-      char.gridY = targetY;
+      // Use shared walking logic (automatic mode: no falling off ledges)
+      const dest =
+        char.movement &&
+        char.movement.canWalkTo(
+          char.gridX,
+          char.gridY,
+          targetX,
+          targetY,
+          dirToUse.dx,
+          dirToUse.dy,
+          'automatic',
+        );
+      if (!dest) {
+        console.log('Auto-dig stopped: walk check failed for non-solid block');
+        this.stopAutoDig();
+        return;
+      }
+      char.gridX = dest.tileX;
+      char.gridY = dest.tileY;
       this.hideMiningIndicator();
       return {
         shouldMove: true,
-        targetX: targetX,
-        targetY: targetY,
+        targetX: dest.tileX,
+        targetY: dest.tileY,
         speed: char.moveSpeed,
       };
     }
@@ -346,14 +363,32 @@ export default class CharacterMining {
     }
 
     // Update character position to move into the mined space
-    char.gridX = targetX;
-    char.gridY = targetY;
+    // Use shared walking logic (automatic mode: no falling off ledges)
+    const dest =
+      char.movement &&
+      char.movement.canWalkTo(
+        char.gridX,
+        char.gridY,
+        targetX,
+        targetY,
+        dirToUse.dx,
+        dirToUse.dy,
+        'automatic',
+      );
+    if (!dest) {
+      // Mined but can't safely step in - stop auto-dig
+      console.log('Auto-dig stopped: cannot safely enter mined space');
+      this.stopAutoDig();
+      return;
+    }
+    char.gridX = dest.tileX;
+    char.gridY = dest.tileY;
 
     // Trigger smooth movement
     return {
       shouldMove: true,
-      targetX: targetX,
-      targetY: targetY,
+      targetX: dest.tileX,
+      targetY: dest.tileY,
       speed: char.moveSpeed,
     };
   }
