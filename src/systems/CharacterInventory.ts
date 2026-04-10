@@ -214,6 +214,7 @@ export default class CharacterInventory implements ICharacterInventory {
     this.searchDirection = Math.random() < 0.5 ? -1 : 1; // randomize initial search direction
     this.lastSearchMoveTime = 0;
     this.character.sprite.setTint(0x00ffff);
+    this.character.sprite.setFlipX(this.searchDirection < 0);
   }
 
   /**
@@ -276,6 +277,7 @@ export default class CharacterInventory implements ICharacterInventory {
 
     if (!dest) {
       this.searchDirection *= -1;
+      this.character.sprite.setFlipX(this.searchDirection < 0);
       this.lastSearchMoveTime = time;
       return null;
     }

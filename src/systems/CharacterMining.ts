@@ -165,6 +165,9 @@ export default class CharacterMining {
     this.autoDigDirection = direction;
     this.needsInitialDigTime = true;
     this.character.sprite.setTint(0xffaa00);
+    if (direction.dx !== 0) {
+      this.character.sprite.setFlipX(direction.dx < 0);
+    }
   }
 
   /**
@@ -182,6 +185,9 @@ export default class CharacterMining {
     this.autoDigDirection = direction;
     this.needsInitialDigTime = true;
     this.hideMiningIndicator();
+    if (direction.dx !== 0) {
+      this.character.sprite.setFlipX(direction.dx < 0);
+    }
   }
 
   /**

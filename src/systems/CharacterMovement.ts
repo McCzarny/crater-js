@@ -155,6 +155,10 @@ export default class CharacterMovement {
         y: dest.tileY * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
       };
 
+      if (char.sprite && dx !== 0) {
+        char.sprite.setFlipX(dx < 0);
+      }
+
       let baseSpeed = isSprinting ? char.moveSpeed * char.sprintMultiplier : char.moveSpeed;
       if (isStepUp) {
         baseSpeed *= 0.85; // 15% slower when stepping up
@@ -380,5 +384,10 @@ export default class CharacterMovement {
     this.moveTarget = null;
     char.sprite.x = char.gridX * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2;
     char.sprite.y = char.gridY * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2;
+  }
+
+  stopMovement(): void {
+    this.isMoving = false;
+    this.moveTarget = null;
   }
 }

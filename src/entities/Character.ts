@@ -124,6 +124,7 @@ export default class Character implements ICharacter {
     this.mining.stopMining();
     this.abilities.deactivateAll();
     this.sprite.clearTint();
+    this.movement.stopMovement();
   }
 
   /**
@@ -300,6 +301,10 @@ export default class Character implements ICharacter {
     const moveRequest = this.mining.updateAutoDig(time, keys, this.movement.isMoving);
 
     if (moveRequest && moveRequest.shouldMove) {
+      const moveDx = moveRequest.targetX - this.gridX;
+      if (this.sprite && moveDx !== 0) {
+        this.sprite.setFlipX(moveDx < 0);
+      }
       this.movement.isMoving = true;
       this.movement.moveTarget = {
         x: moveRequest.targetX * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
@@ -316,6 +321,10 @@ export default class Character implements ICharacter {
     const moveRequest = this.inventory.updateSearch(time, this.movement.isMoving);
 
     if (moveRequest && moveRequest.shouldMove) {
+      const moveDx = moveRequest.targetX - this.gridX;
+      if (this.sprite && moveDx !== 0) {
+        this.sprite.setFlipX(moveDx < 0);
+      }
       this.movement.isMoving = true;
       this.movement.moveTarget = {
         x: moveRequest.targetX * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
