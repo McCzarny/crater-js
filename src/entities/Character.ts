@@ -75,10 +75,11 @@ export default class Character implements ICharacter {
     this.sprite = scene.add.sprite(
       this.gridX * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
       this.gridY * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
-      raceConfig.mapTexture,
+      `${raceConfig.id}_character_sheet`,
     );
     this.sprite.setDisplaySize(CONFIG.CHAR_SIZE, CONFIG.CHAR_SIZE);
     this.sprite.setDepth(1000);
+    this.sprite.play({ key: `${raceConfig.id}_idle`, repeat: -1, yoyo: true });
 
     // Movement settings - apply race multiplier
     this.baseSpeed = CONFIG.CHAR_SPEED;

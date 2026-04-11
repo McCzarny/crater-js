@@ -23,6 +23,7 @@ interface EssenceConfig extends BaseItem {
 // Race configuration
 interface RaceConfig {
   name: string;
+  id: string;
   description: string;
   miningSpeedMultiplier: number;
   movementSpeedMultiplier: number;
@@ -30,7 +31,6 @@ interface RaceConfig {
   patienceLimit: number;
   healthLimit: number;
   essenceLimit: number;
-  mapTexture: string;
 }
 
 // Main configuration interface
@@ -210,6 +210,7 @@ export const CONFIG: GameConfig = {
   RACES: {
     tribe: {
       name: 'Tribe of the Mask',
+      id: 'tribe',
       description: 'Tribal warriors with stamina boost and tool making abilities',
       miningSpeedMultiplier: 1.0, // Base mining speed
       movementSpeedMultiplier: 1.0, // Base movement speed
@@ -217,10 +218,10 @@ export const CONFIG: GameConfig = {
       patienceLimit: 100,
       healthLimit: 100,
       essenceLimit: 50,
-      mapTexture: 'tribe_character',
     },
     fungus: {
       name: 'Cult of the Spore',
+      id: 'fungus',
       description: 'Mole-like creatures with fast digging and climbing abilities',
       miningSpeedMultiplier: 1.5, // 50% faster mining
       movementSpeedMultiplier: 1.0, // Normal movement speed
@@ -228,10 +229,10 @@ export const CONFIG: GameConfig = {
       patienceLimit: 75,
       healthLimit: 120,
       essenceLimit: 40,
-      mapTexture: 'fungus_character',
     },
     petal: {
       name: 'Order of the Seed',
+      id: 'petal',
       description: 'Plant-based beings with regeneration and vine creation',
       miningSpeedMultiplier: 1.0, // Base mining speed
       movementSpeedMultiplier: 0.85, // 15% slower movement (plant-based)
@@ -239,7 +240,6 @@ export const CONFIG: GameConfig = {
       patienceLimit: 150,
       healthLimit: 80,
       essenceLimit: 60,
-      mapTexture: 'petal_character',
     },
   },
 
