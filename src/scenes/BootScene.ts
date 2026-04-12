@@ -21,9 +21,21 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('petal_character', 'resources/characters/petal/petal_character.png');
 
     // Load race character animations
-    this.load.aseprite('tribe_character_sheet', 'resources/characters/tribe/tribe_character_sheet.png', 'resources/characters/tribe/tribe_character_sheet.json');
-    this.load.aseprite('fungus_character_sheet', 'resources/characters/fungus/fungus_character_sheet.png', 'resources/characters/fungus/fungus_character_sheet.json');
-    this.load.aseprite('petal_character_sheet', 'resources/characters/petal/petal_character_sheet.png', 'resources/characters/petal/petal_character_sheet.json');
+    this.load.aseprite(
+      'tribe_character_sheet',
+      'resources/characters/tribe/tribe_character_sheet.png',
+      'resources/characters/tribe/tribe_character_sheet.json',
+    );
+    this.load.aseprite(
+      'fungus_character_sheet',
+      'resources/characters/fungus/fungus_character_sheet.png',
+      'resources/characters/fungus/fungus_character_sheet.json',
+    );
+    this.load.aseprite(
+      'petal_character_sheet',
+      'resources/characters/petal/petal_character_sheet.png',
+      'resources/characters/petal/petal_character_sheet.json',
+    );
 
     // Bases
     this.load.image('vine', 'resources/tile-decals/vine.png');

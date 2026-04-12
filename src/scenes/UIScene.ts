@@ -119,12 +119,9 @@ export default class UIScene extends Phaser.Scene {
         if (this.tradeUI) {
           this.tradeUI.close();
         }
-        if (this.hud && this.hud.updateCharacter) {
-          this.hud.updateCharacter(player);
-        }
-        if (this.hud && this.hud.updateAbilities) {
-          this.hud.updateAbilities(player);
-        }
+        this.hud.updateCharacter(player);
+        this.hud.updateAbilities(player);
+        this.hud.updateInventory(player.inventory.inventory);
       },
       this,
     );
