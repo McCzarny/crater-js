@@ -153,7 +153,7 @@ class TeleportationAbility extends Ability {
   canActivate(): boolean {
     const currentTime = Date.now();
     const timeSinceLastUse = currentTime - this.lastUseTime;
-    return timeSinceLastUse >= this.cooldownTime;
+    return timeSinceLastUse >= this.cooldownTime && this.character.stamina > 0;
   }
 
   activate(): boolean {
@@ -161,6 +161,9 @@ class TeleportationAbility extends Ability {
     if (!this.canActivate()) {
       return false;
     }
+
+    // Teleportation costs all stamina
+    this.character.stamina = 0;
 
     // Get base system from scene registry
     const baseSystem = this.character.scene.registry.get('baseSystem');
@@ -206,10 +209,12 @@ class TeleportationAbility extends Ability {
  */
 class ClimbingAbility extends Ability {
   climbingSpeedMultiplier: number;
+  staminaDrainPerSecond: number;
 
   constructor(character: Character) {
     super(character);
     this.climbingSpeedMultiplier = 0.5; // 50% of normal speed
+    this.staminaDrainPerSecond = 5; // 5 stamina per second while climbing
   }
 
   name(): string {
@@ -227,7 +232,7 @@ class ClimbingAbility extends Ability {
   canActivate(): boolean {
     const char = this.character;
     // Can only climb 1 tile above the surface to allow climbing onto the surface
-    return char.gridY > CONFIG.SURFACE_HEIGHT - 2;
+    return char.gridY > CONFIG.SURFACE_HEIGHT - 2 && char.stamina > 0;
   }
 
   activate(): boolean {
@@ -253,6 +258,18 @@ class ClimbingAbility extends Ability {
     // Check will be handled in CharacterMovement to ensure target is empty
     return true;
   }
+
+  update(_time: number, delta: number): void {
+    if (!this.active) {
+      return;
+    }
+    const deltaSec = delta / 1000;
+    this.character.stamina -= this.staminaDrainPerSecond * deltaSec;
+    if (this.character.stamina <= 0) {
+      this.character.stamina = 0;
+      this.deactivate();
+    }
+  }
 }
 
 /**
@@ -261,6 +278,7 @@ class ClimbingAbility extends Ability {
 class SeedPlantingAbility extends Ability {
   vineSpeedMultiplier: number;
   growthInterval: number;
+  staminaDrainPerSecond: number;
 
   // Growth state
   isGrowing: boolean;
@@ -271,6 +289,7 @@ class SeedPlantingAbility extends Ability {
     super(character);
     this.vineSpeedMultiplier = 0.7; // 70% of normal speed when on vines
     this.growthInterval = 10000; // 10 seconds per vine growth
+    this.staminaDrainPerSecond = 10; // 10 stamina per second while vines are active
 
     // Growth state
     this.isGrowing = false;
@@ -304,6 +323,11 @@ class SeedPlantingAbility extends Ability {
 
     // Must be underground to plant seeds
     if (char.gridY <= CONFIG.SURFACE_HEIGHT - 2) {
+      return false;
+    }
+
+    // Must have stamina
+    if (char.stamina <= 0) {
       return false;
     }
 
@@ -359,10 +383,19 @@ class SeedPlantingAbility extends Ability {
   }
 
   /**
-   * Update vine growth
+   * Update vine growth and drain stamina
    */
-  update(_time: number, _delta: number): void {
+  update(_time: number, delta: number): void {
     if (!this.isGrowing || this.currentVineY === null) {
+      return;
+    }
+
+    // Drain stamina while vines are active
+    const deltaSec = delta / 1000;
+    this.character.stamina -= this.staminaDrainPerSecond * deltaSec;
+    if (this.character.stamina <= 0) {
+      this.character.stamina = 0;
+      this.deactivate();
       return;
     }
 
@@ -469,6 +502,10 @@ export default class CharacterAbilities {
       this.deactivateAll();
       return ability.activate();
     }
+  }
+
+  anyAbilityActive(): boolean {
+    return this.abilities.some(ability => ability.isActive());
   }
 
   /**

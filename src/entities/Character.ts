@@ -160,7 +160,7 @@ export default class Character implements ICharacter {
         this.stopAllActions();
         return;
       }
-    } else {
+    } else if (!this.abilities.anyAbilityActive()) {
       this.stamina += this.staminaRegenPerSecond * deltaSecEarly;
       if (this.stamina > this.maxStamina) {
         this.stamina = this.maxStamina;
