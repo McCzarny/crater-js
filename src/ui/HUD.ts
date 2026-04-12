@@ -10,7 +10,7 @@ import {
   IconReturn,
 } from './ui-commons';
 import type TooltipManager from './TooltipManager';
-import { getItemConfig } from '../config';
+import { getItemConfig, CONFIG } from '../config';
 import type { ICharacter } from '../types/game-types';
 
 interface GameSceneType extends Phaser.Scene {
@@ -417,6 +417,33 @@ export default class HUD {
     const raceTex = character.race || '';
     portrait.setTexture(`hud_portrait_${raceTex}`);
     portrait.setDisplaySize(100, 100);
+
+    if (this.tooltipManager) {
+      this.tooltipManager.unregisterTooltip(portrait);
+      portrait.setInteractive({ useHandCursor: false });
+      this.tooltipManager.registerTooltip(portrait, () => {
+        const raceConfig = CONFIG.RACES[character.race as keyof typeof CONFIG.RACES];
+        if (!raceConfig) {
+          return { title: character.race, description: [] };
+        }
+        const miningPct = Math.round(raceConfig.miningSpeedMultiplier * 100);
+        const movePct = Math.round(raceConfig.movementSpeedMultiplier * 100);
+        return {
+          title: raceConfig.name,
+          description: [
+            raceConfig.description,
+            '',
+            `Mining speed: ${miningPct}%`,
+            `Movement speed: ${movePct}%`,
+            '',
+            `Health limit: ${raceConfig.healthLimit}`,
+            `Stamina limit: ${raceConfig.staminaLimit}`,
+            `Patience limit: ${raceConfig.patienceLimit}`,
+            `Essence limit: ${raceConfig.essenceLimit}`,
+          ],
+        };
+      });
+    }
   }
 
   /**
