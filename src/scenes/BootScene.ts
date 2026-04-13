@@ -107,6 +107,11 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('transfer_essence_icon', 'resources/ui/transfer_essence_icon.png');
     this.load.image('ladder', 'resources/tile-decals/ladder.png');
 
+    this.load.spritesheet('current_action', 'resources/ui/current_action.png', {
+      frameWidth: 16,
+      frameHeight: 16,
+    });
+
     this.load.image('trader_portrait', 'resources/ui/trader_portrait.png');
 
     console.log('BootScene: Loading race icons and tile textures...');

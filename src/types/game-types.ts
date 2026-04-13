@@ -45,6 +45,8 @@ export interface ICharacterInventory {
  */
 export interface ICharacterMining {
   startAutoDig?: (direction: { dx: number; dy: number }) => void;
+  isMining?: boolean;
+  isAutoDigging?: boolean;
 }
 
 /**
@@ -52,6 +54,7 @@ export interface ICharacterMining {
  */
 export interface ICharacterMovement {
   tryMove?: (dx: number, dy: number, isSprinting: boolean) => void;
+  isMoving?: boolean;
 }
 
 /**
@@ -59,6 +62,7 @@ export interface ICharacterMovement {
  */
 export interface ICharacterAbilities {
   getAbilities: () => IAbility[];
+  anyAbilityActive: () => boolean;
 }
 
 /**
@@ -104,7 +108,7 @@ export interface ICharacter {
   sprite?: Phaser.GameObjects.Sprite & ICharacterSprite;
 
   // Subsystems
-  abilities?: ICharacterAbilities & {
+  abilities: ICharacterAbilities & {
     isClimbing?: boolean;
     isPlantingSeeds?: boolean;
     getMovementSpeedMultiplier?: () => number;

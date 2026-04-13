@@ -154,6 +154,11 @@ export default class UIScene extends Phaser.Scene {
         this.hud.update(player);
       }
 
+      // Update action indicators on character icons each frame
+      if (this.characterIcons && gameScene.characters) {
+        this.characterIcons.updateActionIndicators(gameScene.characters);
+      }
+
       // Show BaseUI panel when active character is near their race's base
       if (this.baseUI && gameScene.baseSystem) {
         const baseCenter = gameScene.baseSystem.getBaseCenter(player.race);
