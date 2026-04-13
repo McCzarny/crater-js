@@ -102,8 +102,15 @@ export default class CharacterMovement {
       return null;
     }
 
-    // Target tile is passable — check fall safety for horizontal movement
+    // Target tile is passable - check fall safety for horizontal movement
     if (dy === 0) {
+      const tileBelowTarget = this.terrainSystem.getBlockAt(targetX, targetY + 1);
+
+      if (tileBelowTarget && tileBelowTarget.solid) {
+        return { tileX: targetX, tileY: targetY };
+      }
+
+      // No solid ground directly below target - check if it's a safe fall (1 tile) or not
       const groundDirect = this.terrainSystem.getBlockAt(targetX, targetY + 2);
       const hasSolidDirectly = groundDirect && groundDirect.solid;
 
