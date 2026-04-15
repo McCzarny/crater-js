@@ -286,7 +286,7 @@ export default class GameScene extends Phaser.Scene {
    * @returns The created character
    */
   addCharacter(race: string, x: number, y: number): Character {
-    const character = new Character(this, x, y, race);
+    const character = new Character(this, x, y, race, this.characters.length);
     this.characters.push(character);
     return character;
   }

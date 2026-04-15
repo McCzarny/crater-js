@@ -55,7 +55,7 @@ export default class Character implements ICharacter {
   essence: number;
   maxEssence: number;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, race: string) {
+  constructor(scene: Phaser.Scene, x: number, y: number, race: string, idx: number) {
     this.isDead = false;
     this.scene = scene;
     this.race = race;
@@ -80,6 +80,19 @@ export default class Character implements ICharacter {
     this.sprite.setDisplaySize(CONFIG.CHAR_SIZE, CONFIG.CHAR_SIZE);
     this.sprite.setDepth(1000);
     this.sprite.play({ key: `${raceConfig.id}_idle`, repeat: -1, yoyo: true });
+
+    // Make the sprite clickable to allow selecting the character from the world
+    this.sprite.setInteractive({ useHandCursor: true });
+    this.sprite.on('pointerover', () => this.sprite.setScale(1.05));
+    this.sprite.on('pointerout', () => this.sprite.setScale(1));
+    this.sprite.on('pointerdown', () => {
+      if (this.isDead) {
+        return;
+      }
+      // Emit a switchCharacter event on the scene; GameScene listens for this
+      // and will switch active character based on the index in its array.
+      this.scene.events.emit('switchCharacter', idx);
+    });
 
     // Movement settings - apply race multiplier
     this.baseSpeed = CONFIG.CHAR_SPEED;
@@ -373,6 +386,10 @@ export default class Character implements ICharacter {
     if (this.sprite) {
       this.sprite.setTint(0x222222);
       this.sprite.setAlpha(0.5);
+      // Prevent clicking dead characters
+      if (this.sprite.input && this.sprite.disableInteractive) {
+        this.sprite.disableInteractive();
+      }
     }
     // Optionally: play death animation, sound, etc.
   }

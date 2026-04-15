@@ -28,6 +28,11 @@ export default class CharacterIcons {
     this.borders = [];
     this.actionIndicators = [];
     this.activeIndex = 0;
+
+    this.scene.scene.get('GameScene').events.on('switchCharacter', (index: number) => {
+      this.activeIndex = index;
+      this.borders.forEach((b, i) => b.setVisible(i === index));
+    });
   }
 
   /**
@@ -106,7 +111,6 @@ export default class CharacterIcons {
 
   select(index: number): void {
     this.activeIndex = index;
-    this.borders.forEach((b, i) => b.setVisible(i === index));
 
     // Emit event for external listeners
     if (this.scene && this.scene.scene) {
