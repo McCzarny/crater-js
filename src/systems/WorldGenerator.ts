@@ -11,6 +11,11 @@ interface GenerationContext {
   cavePositions: { x: number; y: number }[];
   /** Items to spawn after the world is rendered (type + position) */
   pendingItems: { gridX: number; gridY: number; type: string }[];
+  /**
+   * Spider + cocoon positions to instantiate after the world is rendered.
+   * Added by the SpiderSpawn stage.
+   */
+  pendingSpiders: { spiderX: number; spiderY: number; cocoonX: number; cocoonY: number }[];
 }
 
 /**
@@ -369,6 +374,102 @@ const SurfaceFeaturesStage: GenerationStage = {
 };
 
 // ---------------------------------------------------------------------------
+// Stage 5: Essence Spider dens
+// ---------------------------------------------------------------------------
+
+/**
+ * How many spider dens the stage will attempt to place.
+ * Each den carves a larger-than-normal cave and contains one spider + cocoon.
+ */
+const SPIDER_COUNT_TARGET = 6;
+/** Den caves are bigger than regular caves to give spiders room to patrol. */
+const SPIDER_DEN_MIN_SIZE = 14;
+const SPIDER_DEN_MAX_SIZE = 22;
+/**
+ * Minimum Euclidean tile distance between any two spider dens.
+ * Keeps them spread across the world.
+ */
+const SPIDER_DEN_MIN_SEPARATION = 30;
+/**
+ * Spider dens only appear at or below the stone layer so they feel deep
+ * and threatening.
+ */
+const SPIDER_DEN_MIN_DEPTH_BELOW_SURFACE = CONFIG.LAYERS.STONE.start; // 15
+
+const SpiderSpawnStage: GenerationStage = {
+  name: 'SpiderSpawn',
+  apply(ctx: GenerationContext): void {
+    /** Tracks placed den centres for the separation constraint. */
+    const denPositions: { x: number; y: number }[] = [];
+
+    const minY = CONFIG.SURFACE_HEIGHT + SPIDER_DEN_MIN_DEPTH_BELOW_SURFACE;
+    const maxY = CONFIG.WORLD_HEIGHT - 5;
+
+    for (let attempt = 0; attempt < 200 && denPositions.length < SPIDER_COUNT_TARGET; attempt++) {
+      const cx = 3 + Math.floor(Math.random() * (CONFIG.WORLD_WIDTH - 6));
+      const cy = minY + Math.floor(Math.random() * (maxY - minY));
+
+      // Keep dens away from each other
+      if (!isFarEnough(cx, cy, denPositions, SPIDER_DEN_MIN_SEPARATION)) {
+        continue;
+      }
+      // Keep dens slightly separated from regular cave centres too (avoids
+      // overlapping with player-accessible caves right at the entrance)
+      if (!isFarEnough(cx, cy, ctx.cavePositions, 8)) {
+        continue;
+      }
+
+      const size =
+        SPIDER_DEN_MIN_SIZE +
+        Math.floor(Math.random() * (SPIDER_DEN_MAX_SIZE - SPIDER_DEN_MIN_SIZE + 1));
+      const carved = carveCave(ctx, cx, cy, size);
+
+      // A den needs enough space for both spider and cocoon
+      if (carved.length < SPIDER_DEN_MIN_SIZE) {
+        continue;
+      }
+
+      // Collect floor tiles: carved tiles that have a solid tile directly below
+      const floorTiles = carved.filter(p => {
+        const below = ctx.blocks[p.y + 1]?.[p.x];
+        return below !== undefined && below.solid;
+      });
+
+      if (floorTiles.length < 2) {
+        continue; // Need at least two floor positions for cocoon + spider
+      }
+
+      // Place cocoon at the middle floor tile (most central feel)
+      const midIdx = Math.floor(floorTiles.length / 2);
+      const cocoonPos = floorTiles[midIdx];
+
+      // Place spider on a different floor tile, preferably adjacent
+      const spiderPos =
+        floorTiles.find(
+          p =>
+            (p.x !== cocoonPos.x || p.y !== cocoonPos.y) &&
+            Math.abs(p.x - cocoonPos.x) <= 3 &&
+            Math.abs(p.y - cocoonPos.y) <= 1,
+        ) ??
+        floorTiles.find(p => p.x !== cocoonPos.x || p.y !== cocoonPos.y) ??
+        floorTiles[0];
+
+      denPositions.push({ x: cx, y: cy });
+      ctx.cavePositions.push({ x: cx, y: cy }); // Register as a cave too
+
+      ctx.pendingSpiders.push({
+        spiderX: spiderPos.x,
+        spiderY: spiderPos.y,
+        cocoonX: cocoonPos.x,
+        cocoonY: cocoonPos.y,
+      });
+    }
+
+    console.log(`SpiderSpawnStage: placed ${denPositions.length} spider dens`);
+  },
+};
+
+// ---------------------------------------------------------------------------
 // WorldGenerator - orchestrates the pipeline
 // ---------------------------------------------------------------------------
 
@@ -392,6 +493,7 @@ export default class WorldGenerator {
     this.stages.push(createCaveStage());
     this.stages.push(BoulderStage);
     this.stages.push(SurfaceFeaturesStage);
+    this.stages.push(SpiderSpawnStage);
   }
 
   /**
@@ -423,6 +525,7 @@ export default class WorldGenerator {
       blocks: [],
       cavePositions: [],
       pendingItems: [],
+      pendingSpiders: [],
     };
 
     for (const stage of this.stages) {

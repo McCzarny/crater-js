@@ -263,6 +263,11 @@ export default class GameScene extends Phaser.Scene {
       this.terrainSystem.updateItems(time);
     }
 
+    // Update Essence Spider AI
+    if (this.terrainSystem) {
+      this.terrainSystem.updateSpiders(this.characters, time, delta);
+    }
+
     // --- WIND EFFECT UPDATE ---
     if (this.windSprites) {
       const worldPixelWidth = CONFIG.WORLD_WIDTH * CONFIG.BLOCK_SIZE;

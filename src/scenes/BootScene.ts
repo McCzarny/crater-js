@@ -15,26 +15,21 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('petal', 'resources/icons/races/petal.png');
     this.load.image('skull', 'resources/icons/races/skull.png');
 
-    // Load race character sprites
-    this.load.image('tribe_character', 'resources/characters/tribe/tribe_character.png');
-    this.load.image('fungus_character', 'resources/characters/fungus/fungus_character.png');
-    this.load.image('petal_character', 'resources/characters/petal/petal_character.png');
-
     // Load race character animations
     this.load.aseprite(
       'tribe_character_sheet',
-      'resources/characters/tribe/tribe_character_sheet.png',
-      'resources/characters/tribe/tribe_character_sheet.json',
+      'resources/characters/tribe_character_sheet.png',
+      'resources/characters/tribe_character_sheet.json',
     );
     this.load.aseprite(
       'fungus_character_sheet',
-      'resources/characters/fungus/fungus_character_sheet.png',
-      'resources/characters/fungus/fungus_character_sheet.json',
+      'resources/characters/fungus_character_sheet.png',
+      'resources/characters/fungus_character_sheet.json',
     );
     this.load.aseprite(
       'petal_character_sheet',
-      'resources/characters/petal/petal_character_sheet.png',
-      'resources/characters/petal/petal_character_sheet.json',
+      'resources/characters/petal_character_sheet.png',
+      'resources/characters/petal_character_sheet.json',
     );
 
     // Bases
@@ -63,7 +58,7 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('essence_chunk', 'resources/tile-decals/essence_chunk.png');
     this.load.image('essence_core', 'resources/tile-decals/essence_core.png');
 
-    // Tile textures (add your own as needed)
+    // Tile textures
     this.load.image('surface_1', 'resources/tiles/surface_1.png');
     this.load.image('surface_2', 'resources/tiles/surface_2.png');
     this.load.image('surface_3', 'resources/tiles/surface_3.png');
@@ -73,6 +68,15 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('dirt_2', 'resources/tiles/dirt_2.png');
     this.load.image('dirt_3', 'resources/tiles/dirt_3.png');
     this.load.image('dirt_4', 'resources/tiles/dirt_4.png');
+
+    // Mobs
+    this.load.aseprite(
+      'essence_spider_sheet',
+      'resources/mobs/essence_spider_sheet.png',
+      'resources/mobs/essence_spider_sheet.json',
+    );
+
+    this.load.image('spider_cocoon', 'resources/mobs/spider_cocoon.png');
 
     // UI
     this.load.image('hud', 'resources/ui/hud.png');
@@ -122,6 +126,7 @@ export default class BootScene extends Phaser.Scene {
     this.anims.createFromAseprite('tribe_character_sheet');
     this.anims.createFromAseprite('fungus_character_sheet');
     this.anims.createFromAseprite('petal_character_sheet');
+    this.anims.createFromAseprite('essence_spider_sheet');
 
     this.scene.start('GameScene');
     this.scene.launch('UIScene');

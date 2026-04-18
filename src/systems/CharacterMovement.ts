@@ -397,4 +397,32 @@ export default class CharacterMovement {
     this.isMoving = false;
     this.moveTarget = null;
   }
+
+  /**
+   * Derive and apply the correct animation from current movement state.
+   * Call this once per frame, before movement updates, so the previous
+   * frame's settled state drives the decision. Walk is also triggered
+   * eagerly inside tryMove so the first tile has no delay.
+   */
+  updateAnimation(): void {
+    const char = this.character;
+    if (this.isMoving || this.isFalling) {
+      this.playAnim(`${char.race}_walk`);
+    } else {
+      this.playAnim(`${char.race}_idle`, true);
+    }
+  }
+
+  private playAnim(key: string, yoyo = false): void {
+    const sprite = this.character.sprite;
+    if (!sprite) {
+      return;
+    }
+    if (sprite.anims.currentAnim?.key === key) {
+      return;
+    }
+    if (this.scene.anims.exists(key)) {
+      sprite.play({ key, repeat: -1, yoyo });
+    }
+  }
 }

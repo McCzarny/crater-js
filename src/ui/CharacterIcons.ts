@@ -92,11 +92,21 @@ export default class CharacterIcons {
   }
 
   private getActionFrame(char: Character): number {
-    if (char.isDead) { return ACTION_FRAME.idle; }
-    if (char.mining?.isMining || char.mining?.isAutoDigging) { return ACTION_FRAME.mining; }
-    if (char.abilities.anyAbilityActive()) { return ACTION_FRAME.ability; }
-    if (char.inventory?.isSearching) { return ACTION_FRAME.searching; }
-    if (char.movement?.isMoving) { return ACTION_FRAME.walking; }
+    if (char.isDead) {
+      return ACTION_FRAME.idle;
+    }
+    if (char.mining?.isMining || char.mining?.isAutoDigging) {
+      return ACTION_FRAME.mining;
+    }
+    if (char.abilities.anyAbilityActive()) {
+      return ACTION_FRAME.ability;
+    }
+    if (char.inventory?.isSearching) {
+      return ACTION_FRAME.searching;
+    }
+    if (char.movement?.isMoving) {
+      return ACTION_FRAME.walking;
+    }
     return ACTION_FRAME.idle;
   }
 

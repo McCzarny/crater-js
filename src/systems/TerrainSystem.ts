@@ -3,6 +3,8 @@ import { CONFIG } from '../config';
 import WorldGenerator from './WorldGenerator';
 import ItemManager from './ItemManager';
 import { TileRegistry, type Tile } from './TileTypes';
+import EssenceSpider from '../entities/EssenceSpider';
+import type { ICharacter } from '../types/game-types';
 
 /**
  * Interface for ladder data
@@ -29,6 +31,8 @@ export default class TerrainSystem {
   container: Phaser.GameObjects.Container;
   itemManager: ItemManager;
   reactionHandlers: ReactionHandler[];
+  /** All active Essence Spiders in the world. */
+  spiders: EssenceSpider[] = [];
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -70,6 +74,25 @@ export default class TerrainSystem {
     // Spawn items queued by generation stages (e.g. cave loot)
     for (const item of ctx.pendingItems) {
       this.itemManager.spawnItem(item.gridX, item.gridY, item.type);
+    }
+
+    // Instantiate Essence Spiders (+ cocoons) from the generation stage
+    this.spiders = [];
+    for (const s of ctx.pendingSpiders) {
+      this.spiders.push(
+        new EssenceSpider(this.scene, this, s.spiderX, s.spiderY, s.cocoonX, s.cocoonY),
+      );
+    }
+    console.log(`TerrainSystem: spawned ${this.spiders.length} essence spiders`);
+  }
+
+  /**
+   * Advance spider AI. Call once per frame from GameScene, passing the current
+   * list of player characters so spiders can detect and chase them.
+   */
+  updateSpiders(characters: ICharacter[], time: number, delta: number): void {
+    for (const spider of this.spiders) {
+      spider.update(characters, time, delta);
     }
   }
 

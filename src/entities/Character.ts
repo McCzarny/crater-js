@@ -160,6 +160,10 @@ export default class Character implements ICharacter {
       this.sprite.setTint(0x00ff00); // Green tint for seed planting
     }
 
+    // Derive animation from last frame's settled movement state, before any
+    // new moves are queued.
+    this.movement.updateAnimation();
+
     // Handle smooth movement to target position
     this.movement.updateSmoothMove(delta);
 
