@@ -7,6 +7,31 @@ import type Phaser from 'phaser';
 import type TerrainSystem from '../systems/TerrainSystem';
 
 /**
+ * Common interface for any entity that participates in melee combat.
+ * Both player characters and mobs implement (or structurally satisfy) this.
+ */
+export interface ICombatant {
+  isDead: boolean;
+  health: number;
+  maxHealth: number;
+  gridX: number;
+  gridY: number;
+  /** Rendered sprite used for hit-flash effects. */
+  sprite: Phaser.GameObjects.Image;
+  attackPower: number;
+  attackInterval: number;
+  attackCooldown: number;
+}
+
+/**
+ * Interface for hostile mob entities (non-player combatants).
+ * Extends ICombatant with lifecycle cleanup.
+ */
+export interface IMob extends ICombatant {
+  destroy(): void;
+}
+
+/**
  * Ability interface - represents a character ability
  */
 export interface IAbility {

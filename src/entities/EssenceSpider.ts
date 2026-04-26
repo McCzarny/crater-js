@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
 import type TerrainSystem from '../systems/TerrainSystem';
-import type { ICharacter } from '../types/game-types';
+import type { ICharacter, IMob } from '../types/game-types';
 
 // ── Tuning constants ────────────────────────────────────────────────────────
 
@@ -42,7 +42,7 @@ export const SPIDER_ATTACK_INTERVAL = 1200;
  *  - Attack / death / loot logic is left for a future iteration; health is
  *    defined here so the field is ready to be wired up.
  */
-export default class EssenceSpider {
+export default class EssenceSpider implements IMob {
   scene: Phaser.Scene;
 
   gridX: number;

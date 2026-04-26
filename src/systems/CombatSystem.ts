@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type Character from '../entities/Character';
-import type EssenceSpider from '../entities/EssenceSpider';
+import type { IMob } from '../types/game-types';
 
 /** Chebyshev distance at which a melee attack can land (1 = same tile or adjacent). */
 const ATTACK_RANGE = 1;
@@ -30,11 +30,11 @@ export default class CombatSystem {
   /**
    * Advance all combat for one frame.
    * @param characters  All characters currently in the scene.
-   * @param spiders     All spiders currently in the scene (alive or dead).
+   * @param mobs        All mobs currently in the scene (alive or dead).
    * @param delta       Frame time in milliseconds.
    */
-  update(characters: Character[], spiders: EssenceSpider[], delta: number): void {
-    const liveSpiders = spiders.filter(s => !s.isDead);
+  update(characters: Character[], mobs: IMob[], delta: number): void {
+    const liveMobs = mobs.filter(m => !m.isDead);
 
     // ── Character attacks ───────────────────────────────────────────────────
     for (const attacker of characters) {
@@ -44,10 +44,10 @@ export default class CombatSystem {
       attacker.attackCooldown = Math.max(0, attacker.attackCooldown - delta);
       if (attacker.attackCooldown > 0) {continue;}
 
-      // Find the nearest valid target (different-race character or spider)
+      // Find the nearest valid target (different-race character or mob)
       let nearestDist = Infinity;
       let targetChar: Character | null = null;
-      let targetSpider: EssenceSpider | null = null;
+      let targetMob: IMob | null = null;
 
       for (const defender of characters) {
         if (defender === attacker || defender.isDead || defender.race === attacker.race) {continue;}
@@ -55,32 +55,32 @@ export default class CombatSystem {
         if (d <= ATTACK_RANGE && d < nearestDist) {
           nearestDist = d;
           targetChar = defender;
-          targetSpider = null;
+          targetMob = null;
         }
       }
 
-      for (const spider of liveSpiders) {
-        const d = chebyshev(attacker.gridX, attacker.gridY, spider.gridX, spider.gridY);
+      for (const mob of liveMobs) {
+        const d = chebyshev(attacker.gridX, attacker.gridY, mob.gridX, mob.gridY);
         if (d <= ATTACK_RANGE && d < nearestDist) {
           nearestDist = d;
-          targetSpider = spider;
+          targetMob = mob;
           targetChar = null;
         }
       }
 
       if (targetChar) {
-        this.hitCharacter(attacker.raceConfig.attackPower, targetChar);
-        attacker.attackCooldown = attacker.raceConfig.attackInterval;
-      } else if (targetSpider) {
-        this.hitSpider(attacker.raceConfig.attackPower, targetSpider);
-        attacker.attackCooldown = attacker.raceConfig.attackInterval;
+        this.hitCharacter(attacker.attackPower, targetChar);
+        attacker.attackCooldown = attacker.attackInterval;
+      } else if (targetMob) {
+        this.hitMob(attacker.attackPower, targetMob);
+        attacker.attackCooldown = attacker.attackInterval;
       }
     }
 
-    // ── Spider attacks ──────────────────────────────────────────────────────
-    for (const spider of liveSpiders) {
-      spider.attackCooldown = Math.max(0, spider.attackCooldown - delta);
-      if (spider.attackCooldown > 0) {continue;}
+    // ── Mob attacks ─────────────────────────────────────────────────────────
+    for (const mob of liveMobs) {
+      mob.attackCooldown = Math.max(0, mob.attackCooldown - delta);
+      if (mob.attackCooldown > 0) {continue;}
 
       // Find the nearest character in range
       let nearestDist = Infinity;
@@ -88,7 +88,7 @@ export default class CombatSystem {
 
       for (const character of characters) {
         if (character.isDead) {continue;}
-        const d = chebyshev(spider.gridX, spider.gridY, character.gridX, character.gridY);
+        const d = chebyshev(mob.gridX, mob.gridY, character.gridX, character.gridY);
         if (d <= ATTACK_RANGE && d < nearestDist) {
           nearestDist = d;
           target = character;
@@ -96,8 +96,8 @@ export default class CombatSystem {
       }
 
       if (target) {
-        this.hitCharacter(spider.attackPower, target);
-        spider.attackCooldown = spider.attackInterval;
+        this.hitCharacter(mob.attackPower, target);
+        mob.attackCooldown = mob.attackInterval;
       }
     }
   }
@@ -116,14 +116,14 @@ export default class CombatSystem {
     }
   }
 
-  private hitSpider(damage: number, spider: EssenceSpider): void {
-    spider.health = Math.max(0, spider.health - damage);
-    this.flash(spider.sprite, 0xff6600, () => spider.isDead);
+  private hitMob(damage: number, mob: IMob): void {
+    mob.health = Math.max(0, mob.health - damage);
+    this.flash(mob.sprite, 0xff6600, () => mob.isDead);
 
-    if (spider.health <= 0 && !spider.isDead) {
-      spider.isDead = true;
+    if (mob.health <= 0 && !mob.isDead) {
+      mob.isDead = true;
       this.scene.time.delayedCall(HIT_FLASH_MS + 50, () => {
-        spider.destroy();
+        mob.destroy();
       });
     }
   }

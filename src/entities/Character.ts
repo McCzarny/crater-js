@@ -48,6 +48,8 @@ export default class Character implements ICharacter {
   health: number;
 
   // Combat settings
+  attackPower: number;
+  attackInterval: number;
   attackCooldown: number;
 
   // Patience settings
@@ -124,6 +126,8 @@ export default class Character implements ICharacter {
     this.health = this.maxHealth;
 
     // Combat settings
+    this.attackPower = raceConfig.attackPower;
+    this.attackInterval = raceConfig.attackInterval;
     this.attackCooldown = 0; // Ready to attack immediately on first contact
 
     // Patience settings
