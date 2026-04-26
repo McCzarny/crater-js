@@ -2,7 +2,7 @@ import { CONFIG } from '../config';
 import type TerrainSystem from './TerrainSystem';
 import type { ICharacter, ICharacterInventory } from '../types/game-types';
 import { getItemConfig } from '../config';
-import { getNextLadderCoordinate } from './LadderUtils';
+import { getNextLadderCoordinate, canPlaceLadderAt } from './LadderUtils';
 
 /**
  * Character type for inventory system
@@ -144,19 +144,38 @@ export default class CharacterInventory implements ICharacterInventory {
       return false;
     }
 
-    const ladderY = getNextLadderCoordinate(char.gridX, char.gridY, this.terrainSystem)?.y;
-    if (ladderY === null) {
+    const startPos = getNextLadderCoordinate(char.gridX, char.gridY, this.terrainSystem);
+    if (!startPos) {
       return false;
     }
 
-    const placed = this.terrainSystem.addLadder(char.gridX, ladderY, false);
-    if (!placed) {
+    const MAX_LADDER_HEIGHT = 5;
+    let currentY = startPos.y;
+    let placed = 0;
+
+    for (let i = 0; i < MAX_LADDER_HEIGHT; i++) {
+      if (!canPlaceLadderAt(char.gridX, currentY, this.terrainSystem)) {
+        break;
+      }
+      const success = this.terrainSystem.addLadder(char.gridX, currentY, false);
+      if (!success) {
+        break;
+      }
+      placed++;
+      console.log('Placed ladder at:', char.gridX, currentY);
+      const next = getNextLadderCoordinate(char.gridX, currentY, this.terrainSystem);
+      if (!next) {
+        break;
+      }
+      currentY = next.y;
+    }
+
+    if (placed === 0) {
       return false;
     }
 
     this.inventory[slotIndex] = null;
     this.scene.game.events.emit('inventoryChanged', this.inventory);
-    console.log('Placed ladder at:', char.gridX, ladderY);
     return true;
   }
 
