@@ -87,7 +87,51 @@ const BaseTerrainStage: GenerationStage = {
 };
 
 // ---------------------------------------------------------------------------
-// Stage 2: Caves
+// Stage 2: Slopes — impassable crater walls at the left and right edges
+// ---------------------------------------------------------------------------
+
+/**
+ * Width (in columns) of the slope on each side of the world.
+ * Characters can only auto-step 1 tile up, so a steepness of 2 tiles per
+ * column makes the slope impossible to climb from the playable area inward.
+ */
+const SLOPE_WIDTH = 8;
+/** Tiles of rise per column (must be > 1 to prevent auto-step-up). */
+const SLOPE_STEEPNESS = 2;
+
+const SlopesStage: GenerationStage = {
+  name: 'Slopes',
+  apply(ctx: GenerationContext): void {
+    for (let x = 0; x < SLOPE_WIDTH; x++) {
+      // Left side: slope top rises as x approaches 0
+      const leftTop = Math.max(
+        0,
+        CONFIG.SURFACE_HEIGHT - (SLOPE_WIDTH - x) * SLOPE_STEEPNESS,
+      );
+      for (let y = leftTop; y < CONFIG.SURFACE_HEIGHT; y++) {
+        ctx.blocks[y][x] = TileRegistry.createTile(TileType.SURFACE);
+      }
+
+      // Right side: mirror of the left slope
+      const rightX = CONFIG.WORLD_WIDTH - 1 - x;
+      const rightTop = Math.max(
+        0,
+        CONFIG.SURFACE_HEIGHT - (SLOPE_WIDTH - x) * SLOPE_STEEPNESS,
+      );
+      for (let y = rightTop; y < CONFIG.SURFACE_HEIGHT; y++) {
+        ctx.blocks[y][rightX] = TileRegistry.createTile(TileType.SURFACE);
+      }
+    }
+
+    console.log(
+      `SlopesStage: placed ${SLOPE_WIDTH}-column slopes on both sides ` +
+        `(steepness ${SLOPE_STEEPNESS}, unclimbable)`,
+    );
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Stage 3: Caves
 // ---------------------------------------------------------------------------
 
 /** Configuration for cave generation */
@@ -490,6 +534,7 @@ export default class WorldGenerator {
   constructor() {
     // Register default stages in order
     this.stages.push(BaseTerrainStage);
+    this.stages.push(SlopesStage);
     this.stages.push(createCaveStage());
     this.stages.push(BoulderStage);
     this.stages.push(SurfaceFeaturesStage);

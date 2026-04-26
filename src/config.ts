@@ -113,7 +113,7 @@ export const CONFIG: GameConfig = {
   PIXEL_SCALE: 1, // Pixel scale multiplier (1 = normal, 2 = 2x2 pixels, etc.)
 
   // World settings
-  WORLD_WIDTH: 200, // Width in blocks
+  WORLD_WIDTH: 50, // Width in blocks
   WORLD_HEIGHT: 150, // Height in blocks
   BLOCK_SIZE: 32, // Pixel size of each block
 
