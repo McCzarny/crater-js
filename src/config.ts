@@ -222,7 +222,7 @@ export const CONFIG: GameConfig = {
       patienceLimit: 100,
       healthLimit: 100,
       essenceLimit: 50,
-      attackPower: 10,    // Balanced warrior damage
+      attackPower: 10, // Balanced warrior damage
       attackInterval: 1500, // ms between attacks
     },
     fungus: {
@@ -235,7 +235,7 @@ export const CONFIG: GameConfig = {
       patienceLimit: 75,
       healthLimit: 120,
       essenceLimit: 40,
-      attackPower: 8,     // Slower but hardy
+      attackPower: 8, // Slower but hardy
       attackInterval: 2000, // ms between attacks
     },
     petal: {
@@ -248,7 +248,7 @@ export const CONFIG: GameConfig = {
       patienceLimit: 150,
       healthLimit: 80,
       essenceLimit: 60,
-      attackPower: 6,     // Fast but light strikes
+      attackPower: 6, // Fast but light strikes
       attackInterval: 1000, // ms between attacks
     },
   },

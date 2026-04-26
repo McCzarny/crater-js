@@ -104,20 +104,14 @@ const SlopesStage: GenerationStage = {
   apply(ctx: GenerationContext): void {
     for (let x = 0; x < SLOPE_WIDTH; x++) {
       // Left side: slope top rises as x approaches 0
-      const leftTop = Math.max(
-        0,
-        CONFIG.SURFACE_HEIGHT - (SLOPE_WIDTH - x) * SLOPE_STEEPNESS,
-      );
+      const leftTop = Math.max(0, CONFIG.SURFACE_HEIGHT - (SLOPE_WIDTH - x) * SLOPE_STEEPNESS);
       for (let y = leftTop; y < CONFIG.SURFACE_HEIGHT; y++) {
         ctx.blocks[y][x] = TileRegistry.createTile(TileType.SURFACE);
       }
 
       // Right side: mirror of the left slope
       const rightX = CONFIG.WORLD_WIDTH - 1 - x;
-      const rightTop = Math.max(
-        0,
-        CONFIG.SURFACE_HEIGHT - (SLOPE_WIDTH - x) * SLOPE_STEEPNESS,
-      );
+      const rightTop = Math.max(0, CONFIG.SURFACE_HEIGHT - (SLOPE_WIDTH - x) * SLOPE_STEEPNESS);
       for (let y = rightTop; y < CONFIG.SURFACE_HEIGHT; y++) {
         ctx.blocks[y][rightX] = TileRegistry.createTile(TileType.SURFACE);
       }

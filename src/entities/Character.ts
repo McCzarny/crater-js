@@ -156,7 +156,7 @@ export default class Character implements ICharacter {
     time: number,
     delta: number,
   ): void {
-    if (this.isDead) return;
+    if (this.isDead) {return;}
 
     // Update abilities
     this.abilities.update(time, delta);

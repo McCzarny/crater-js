@@ -38,11 +38,11 @@ export default class CombatSystem {
 
     // ── Character attacks ───────────────────────────────────────────────────
     for (const attacker of characters) {
-      if (attacker.isDead) continue;
+      if (attacker.isDead) {continue;}
 
       // Tick cooldown down
       attacker.attackCooldown = Math.max(0, attacker.attackCooldown - delta);
-      if (attacker.attackCooldown > 0) continue;
+      if (attacker.attackCooldown > 0) {continue;}
 
       // Find the nearest valid target (different-race character or spider)
       let nearestDist = Infinity;
@@ -50,7 +50,7 @@ export default class CombatSystem {
       let targetSpider: EssenceSpider | null = null;
 
       for (const defender of characters) {
-        if (defender === attacker || defender.isDead || defender.race === attacker.race) continue;
+        if (defender === attacker || defender.isDead || defender.race === attacker.race) {continue;}
         const d = chebyshev(attacker.gridX, attacker.gridY, defender.gridX, defender.gridY);
         if (d <= ATTACK_RANGE && d < nearestDist) {
           nearestDist = d;
@@ -80,14 +80,14 @@ export default class CombatSystem {
     // ── Spider attacks ──────────────────────────────────────────────────────
     for (const spider of liveSpiders) {
       spider.attackCooldown = Math.max(0, spider.attackCooldown - delta);
-      if (spider.attackCooldown > 0) continue;
+      if (spider.attackCooldown > 0) {continue;}
 
       // Find the nearest character in range
       let nearestDist = Infinity;
       let target: Character | null = null;
 
       for (const character of characters) {
-        if (character.isDead) continue;
+        if (character.isDead) {continue;}
         const d = chebyshev(spider.gridX, spider.gridY, character.gridX, character.gridY);
         if (d <= ATTACK_RANGE && d < nearestDist) {
           nearestDist = d;
@@ -112,6 +112,7 @@ export default class CombatSystem {
       target.isDead = true;
       target.stopAllActions();
       target.sprite.setAlpha(0.45);
+      this.dropCharacterLoot(target);
     }
   }
 
@@ -128,6 +129,40 @@ export default class CombatSystem {
   }
 
   /**
+   * Drop all inventory items and essence from a character onto the ground.
+   */
+  private dropCharacterLoot(target: Character): void {
+    const terrainSystem = target.terrainSystem;
+    if (!terrainSystem) {return;}
+
+    const x = target.gridX;
+    const y = target.gridY;
+
+    // Drop all inventory items
+    if (target.inventory) {
+      const inv = target.inventory.inventory;
+      for (let i = 0; i < inv.length; i++) {
+        const itemType = inv[i];
+        if (itemType) {
+          inv[i] = null;
+          terrainSystem.spawnItem(x, y, itemType);
+        }
+      }
+    }
+
+    // Drop essence as an item if the character has any
+    if (target.essence > 0) {
+      const essenceType = terrainSystem.itemManager.getEssenceTypeForAmount(target.essence);
+      terrainSystem.spawnItem(x, y, essenceType);
+      target.essence = 0;
+    }
+
+    // Notify UI of inventory and essence changes
+    this.scene.game.events.emit('inventoryChanged', target.inventory?.inventory ?? []);
+    this.scene.game.events.emit('essenceChanged', target.essence, target.maxEssence);
+  }
+
+  /**
    * Briefly tint a sprite a hit colour, then restore the correct resting tint
    * (grey for dead entities, cleared for living ones).
    */
@@ -136,11 +171,11 @@ export default class CombatSystem {
     color: number,
     isDead: () => boolean,
   ): void {
-    if (!sprite.active) return;
+    if (!sprite.active) {return;}
     sprite.setTint(color);
 
     this.scene.time.delayedCall(HIT_FLASH_MS, () => {
-      if (!sprite.active) return;
+      if (!sprite.active) {return;}
       if (isDead()) {
         sprite.setTint(0x666666);
       } else {
