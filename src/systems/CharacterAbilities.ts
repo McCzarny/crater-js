@@ -276,7 +276,6 @@ class ClimbingAbility extends Ability {
  * Seed Planting Ability - allows Order of the Seed to plant vines
  */
 class SeedPlantingAbility extends Ability {
-  vineSpeedMultiplier: number;
   growthInterval: number;
   staminaDrainPerSecond: number;
 
@@ -287,9 +286,8 @@ class SeedPlantingAbility extends Ability {
 
   constructor(character: Character) {
     super(character);
-    this.vineSpeedMultiplier = 0.7; // 70% of normal speed when on vines
-    this.growthInterval = 10000; // 10 seconds per vine growth
-    this.staminaDrainPerSecond = 10; // 10 stamina per second while vines are active
+    this.growthInterval = 10000;
+    this.staminaDrainPerSecond = 5;
 
     // Growth state
     this.isGrowing = false;

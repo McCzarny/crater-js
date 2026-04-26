@@ -145,8 +145,11 @@ export default class CharacterMovement {
       return false;
     }
 
+    // Check if target has a ladder
+    const targetHasLadder = this.terrainSystem.hasLadder(targetX, targetY);
+
     // For horizontal movement (not on ladders/climbing), delegate to canWalkTo
-    if (dy === 0 && !isClimbing && !isOnLadder) {
+    if (dy === 0 && !isClimbing && (!isOnLadder || !targetHasLadder)) {
       const dest = this.canWalkTo(currentTileX, currentTileY, targetX, targetY, dx, dy, 'manual');
       if (!dest) {
         return false;
@@ -195,9 +198,6 @@ export default class CharacterMovement {
     if (targetBlock && targetBlock.solid) {
       return false;
     }
-
-    // Check if target has a ladder
-    const targetHasLadder = this.terrainSystem.hasLadder(targetX, targetY);
 
     // Special handling for vertical movement
     // Skip ground check when: climbing OR on ladder AND moving to ladder
