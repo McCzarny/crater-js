@@ -235,7 +235,7 @@ export const CONFIG: GameConfig = {
       patienceLimit: 75,
       healthLimit: 120,
       essenceLimit: 40,
-      attackPower: 8, // Slower but hardy
+      attackPower: 15, // Slower but hardy
       attackInterval: 2000, // ms between attacks
     },
     petal: {
