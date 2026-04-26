@@ -47,6 +47,9 @@ export default class Character implements ICharacter {
   maxHealth: number;
   health: number;
 
+  // Combat settings
+  attackCooldown: number;
+
   // Patience settings
   patience: number;
   maxPatience: number;
@@ -120,6 +123,9 @@ export default class Character implements ICharacter {
     this.maxHealth = this.raceConfig.healthLimit;
     this.health = this.maxHealth;
 
+    // Combat settings
+    this.attackCooldown = 0; // Ready to attack immediately on first contact
+
     // Patience settings
     this.maxPatience = this.raceConfig.patienceLimit;
     this.patience = this.maxPatience;
@@ -150,6 +156,8 @@ export default class Character implements ICharacter {
     time: number,
     delta: number,
   ): void {
+    if (this.isDead) return;
+
     // Update abilities
     this.abilities.update(time, delta);
 

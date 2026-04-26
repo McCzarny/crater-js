@@ -23,6 +23,12 @@ const MOVE_INTERVAL_MS = 600;
 /** Starting and maximum health for the spider. */
 export const SPIDER_MAX_HEALTH = 50;
 
+/** Damage the spider deals per hit. */
+export const SPIDER_ATTACK_POWER = 12;
+
+/** Milliseconds between spider attacks. */
+export const SPIDER_ATTACK_INTERVAL = 1200;
+
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -49,6 +55,11 @@ export default class EssenceSpider {
   health: number;
   readonly maxHealth: number;
 
+  isDead: boolean;
+  readonly attackPower: number;
+  readonly attackInterval: number;
+  attackCooldown: number;
+
   sprite: Phaser.GameObjects.Image;
   cocoonSprite: Phaser.GameObjects.Image;
 
@@ -72,6 +83,10 @@ export default class EssenceSpider {
     this.cocoonY = cocoonY;
     this.maxHealth = SPIDER_MAX_HEALTH;
     this.health = SPIDER_MAX_HEALTH;
+    this.isDead = false;
+    this.attackPower = SPIDER_ATTACK_POWER;
+    this.attackInterval = SPIDER_ATTACK_INTERVAL;
+    this.attackCooldown = 0;
 
     const bs = CONFIG.BLOCK_SIZE;
 
@@ -96,6 +111,8 @@ export default class EssenceSpider {
    * Called every frame from GameScene / TerrainSystem.
    */
   update(characters: ICharacter[], _time: number, delta: number): void {
+    if (this.isDead) return;
+
     this.moveAccumulator += delta;
     if (this.moveAccumulator < MOVE_INTERVAL_MS) {
       return;

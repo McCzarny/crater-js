@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { CONFIG } from '../config';
 import TerrainSystem from '../systems/TerrainSystem';
 import BaseSystem from '../systems/BaseSystem';
+import CombatSystem from '../systems/CombatSystem';
 import Character from '../entities/Character';
 
 const WIND_TEXTURES = ['wind1', 'wind2', 'wind3', 'wind4'];
@@ -30,6 +31,7 @@ interface GameKeys {
 export default class GameScene extends Phaser.Scene {
   terrainSystem!: TerrainSystem;
   baseSystem!: BaseSystem;
+  combatSystem!: CombatSystem;
   characters!: Character[];
   activeCharacterIndex!: number;
   player!: Character;
@@ -59,6 +61,9 @@ export default class GameScene extends Phaser.Scene {
     // Make systems available to other objects
     this.registry.set('terrainSystem', this.terrainSystem);
     this.registry.set('baseSystem', this.baseSystem);
+
+    // Initialize combat system
+    this.combatSystem = new CombatSystem(this);
 
     // --- WIND EFFECT SYSTEM ---
     this.windSprites = [];
@@ -266,6 +271,11 @@ export default class GameScene extends Phaser.Scene {
     // Update Essence Spider AI
     if (this.terrainSystem) {
       this.terrainSystem.updateSpiders(this.characters, time, delta);
+    }
+
+    // Run combat: characters vs characters and spiders
+    if (this.combatSystem && this.terrainSystem) {
+      this.combatSystem.update(this.characters, this.terrainSystem.spiders, delta);
     }
 
     // --- WIND EFFECT UPDATE ---

@@ -7,10 +7,11 @@ type Character = ICharacter;
 // Frame indices in current_action spritesheet (top-to-bottom)
 const ACTION_FRAME = {
   idle: 0,
-  walking: 1,
-  mining: 2,
-  ability: 3,
-  searching: 4,
+  dead: 1,
+  walking: 2,
+  mining: 3,
+  ability: 4,
+  searching: 5,
 } as const;
 
 export default class CharacterIcons {
@@ -93,7 +94,7 @@ export default class CharacterIcons {
 
   private getActionFrame(char: Character): number {
     if (char.isDead) {
-      return ACTION_FRAME.idle;
+      return ACTION_FRAME.dead;
     }
     if (char.mining?.isMining || char.mining?.isAutoDigging) {
       return ACTION_FRAME.mining;

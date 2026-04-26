@@ -31,6 +31,10 @@ interface RaceConfig {
   patienceLimit: number;
   healthLimit: number;
   essenceLimit: number;
+  /** Damage dealt per hit. */
+  attackPower: number;
+  /** Milliseconds between attacks. */
+  attackInterval: number;
 }
 
 // Main configuration interface
@@ -218,6 +222,8 @@ export const CONFIG: GameConfig = {
       patienceLimit: 100,
       healthLimit: 100,
       essenceLimit: 50,
+      attackPower: 10,    // Balanced warrior damage
+      attackInterval: 1500, // ms between attacks
     },
     fungus: {
       name: 'Cult of the Spore',
@@ -229,6 +235,8 @@ export const CONFIG: GameConfig = {
       patienceLimit: 75,
       healthLimit: 120,
       essenceLimit: 40,
+      attackPower: 8,     // Slower but hardy
+      attackInterval: 2000, // ms between attacks
     },
     petal: {
       name: 'Order of the Seed',
@@ -240,6 +248,8 @@ export const CONFIG: GameConfig = {
       patienceLimit: 150,
       healthLimit: 80,
       essenceLimit: 60,
+      attackPower: 6,     // Fast but light strikes
+      attackInterval: 1000, // ms between attacks
     },
   },
 
