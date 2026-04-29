@@ -25,10 +25,9 @@ type ReactionHandler = (changedX: number, changedY: number) => void;
 export default class TerrainSystem {
   scene: Phaser.Scene;
   blocks: Tile[][];
-  blockSprites: Map<string, Phaser.GameObjects.Graphics | Phaser.GameObjects.Sprite>;
+  tilemapLayer!: Phaser.Tilemaps.TilemapLayer;
   ladders: Map<string, LadderData>;
   ladderSprites: Map<string, Phaser.GameObjects.Graphics | Phaser.GameObjects.Sprite>;
-  container: Phaser.GameObjects.Container;
   itemManager: ItemManager;
   reactionHandlers: ReactionHandler[];
   /** All active Essence Spiders in the world. */
@@ -37,14 +36,10 @@ export default class TerrainSystem {
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     this.blocks = [];
-    this.blockSprites = new Map();
 
     // Ladder (vine) tracking system
     this.ladders = new Map(); // key: 'x,y', value: { sprite, createdBy }
     this.ladderSprites = new Map();
-
-    // Create a container for all block sprites
-    this.container = scene.add.container(0, 0);
 
     // Initialize item manager
     this.itemManager = new ItemManager(scene, this);
@@ -100,6 +95,23 @@ export default class TerrainSystem {
    * Render the entire world
    */
   renderWorld(): void {
+    const map = this.scene.make.tilemap({
+      width: CONFIG.WORLD_WIDTH,
+      height: CONFIG.WORLD_HEIGHT,
+      tileWidth: CONFIG.BLOCK_SIZE,
+      tileHeight: CONFIG.BLOCK_SIZE,
+    });
+    const tileset = map.addTilesetImage(
+      'tiles_atlas',
+      'tiles_atlas',
+      CONFIG.BLOCK_SIZE,
+      CONFIG.BLOCK_SIZE,
+      0,
+      0,
+    );
+    this.tilemapLayer = map.createBlankLayer('terrain', tileset!, 0, 0)!;
+    this.tilemapLayer.setDepth(10);
+
     for (let y = 0; y < CONFIG.WORLD_HEIGHT; y++) {
       for (let x = 0; x < CONFIG.WORLD_WIDTH; x++) {
         this.renderBlock(x, y);
@@ -112,61 +124,19 @@ export default class TerrainSystem {
    */
   renderBlock(x: number, y: number): void {
     const block = this.blocks[y][x];
-    const key = `${x},${y}`;
 
-    // Remove existing sprite if any
-    if (this.blockSprites.has(key)) {
-      this.blockSprites.get(key)!.destroy();
-      this.blockSprites.delete(key);
-    }
-
-    // Don't render air blocks or blocks without color/textureVariants
-    if (!block.color && !(block.textureVariants && block.textureVariants.length)) {
+    const variantCount = block.numberOfVariants();
+    if (!variantCount) {
+      this.tilemapLayer.removeTileAt(x, y);
       return;
     }
 
-    const pixelX = x * CONFIG.BLOCK_SIZE;
-    const pixelY = y * CONFIG.BLOCK_SIZE;
-
-    let spriteOrGraphics: Phaser.GameObjects.Graphics | Phaser.GameObjects.Sprite;
-    // If tile has texture variants, pick one randomly (and cache it on the block instance)
-    if (block.textureVariants && block.textureVariants.length) {
-      if (!block.chosenTexture) {
-        const idx = Math.floor(Math.random() * block.textureVariants.length);
-        block.chosenTexture = block.textureVariants[idx];
-      }
-      const texKey = block.chosenTexture;
-      if (texKey && this.scene.textures.exists(texKey)) {
-        spriteOrGraphics = this.scene.add.sprite(
-          pixelX + CONFIG.BLOCK_SIZE / 2,
-          pixelY + CONFIG.BLOCK_SIZE / 2,
-          texKey,
-        );
-        spriteOrGraphics.setDisplaySize(CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
-        spriteOrGraphics.setDepth(10);
-      } else if (block.color) {
-        // Fallback to color if texture missing
-        spriteOrGraphics = this.scene.add.graphics();
-        spriteOrGraphics.fillStyle(block.color, 1);
-        spriteOrGraphics.fillRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
-        spriteOrGraphics.lineStyle(1, 0x000000, 0.2);
-        spriteOrGraphics.strokeRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
-        spriteOrGraphics.setPosition(pixelX, pixelY);
-      } else {
-        return; // No texture and no color fallback
-      }
-    } else {
-      // No texture variants: render as colored rectangle
-      spriteOrGraphics = this.scene.add.graphics();
-      spriteOrGraphics.fillStyle(block.color!, 1);
-      spriteOrGraphics.fillRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
-      spriteOrGraphics.lineStyle(1, 0x000000, 0.2);
-      spriteOrGraphics.strokeRect(0, 0, CONFIG.BLOCK_SIZE, CONFIG.BLOCK_SIZE);
-      spriteOrGraphics.setPosition(pixelX, pixelY);
+    if (block.variant === null) {
+      block.variant = Math.floor(Math.random() * variantCount);
     }
 
-    this.blockSprites.set(key, spriteOrGraphics);
-    this.container.add(spriteOrGraphics);
+    const atlasIndex = TileRegistry.getBaseAtlasIndex(block.type) + block.variant;
+    this.tilemapLayer.putTileAt(atlasIndex, x, y);
   }
 
   /**

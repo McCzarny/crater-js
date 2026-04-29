@@ -91,13 +91,7 @@ export default class BaseSystem {
         if (x >= 0 && x < CONFIG.WORLD_WIDTH && y >= 0 && y < CONFIG.WORLD_HEIGHT) {
           // Clear the block
           this.terrainSystem.blocks[y][x] = TileRegistry.createTile(TileType.AIR);
-
-          // Remove any existing sprite
-          const key = `${x},${y}`;
-          if (this.terrainSystem.blockSprites.has(key)) {
-            this.terrainSystem.blockSprites.get(key)!.destroy();
-            this.terrainSystem.blockSprites.delete(key);
-          }
+          this.terrainSystem.renderBlock(x, y);
         }
       }
     }

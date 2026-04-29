@@ -306,4 +306,4 @@ export function getBaseItemConfig(itemType: string): BaseItem | null {
 }
 
 // Export types for use in other files
-export type {  RaceConfig,     };
+export type { RaceConfig };

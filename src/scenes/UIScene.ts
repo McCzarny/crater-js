@@ -79,14 +79,19 @@ export default class UIScene extends Phaser.Scene {
     // Level complete overlay
     this.game.events.once('levelComplete', () => {
       this.add
-        .text(CONFIG.GAME_WIDTH / 2, CONFIG.GAME_HEIGHT / 2, 'LEVEL COMPLETE!\nUnity Pool filled!', {
-          fontSize: '32px',
-          color: '#ffff44',
-          fontFamily: 'monospace',
-          align: 'center',
-          backgroundColor: '#000000cc',
-          padding: { x: 16, y: 12 },
-        })
+        .text(
+          CONFIG.GAME_WIDTH / 2,
+          CONFIG.GAME_HEIGHT / 2,
+          'LEVEL COMPLETE!\nUnity Pool filled!',
+          {
+            fontSize: '32px',
+            color: '#ffff44',
+            fontFamily: 'monospace',
+            align: 'center',
+            backgroundColor: '#000000cc',
+            padding: { x: 16, y: 12 },
+          },
+        )
         .setOrigin(0.5)
         .setScrollFactor(0)
         .setDepth(500);

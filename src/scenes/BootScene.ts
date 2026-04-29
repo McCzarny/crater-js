@@ -37,8 +37,11 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('tribe-base', 'resources/structures/tribe_base.png');
     this.load.image('fungus-base', 'resources/structures/fungus_base.png');
     this.load.image('petal-base', 'resources/structures/petal_base.png');
-    // Environment tiles
-    this.load.image('boulder', 'resources/tiles/boulder.png');
+    // Tile atlas
+    this.load.spritesheet('tiles_atlas', 'resources/tiles/tiles_atlas.png', {
+      frameWidth: 32,
+      frameHeight: 32,
+    });
 
     // Wind effects
     this.load.image('wind1', 'resources/tile-decals/wind_1.png');
@@ -57,17 +60,6 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('essence_lump', 'resources/tile-decals/essence_lump.png');
     this.load.image('essence_chunk', 'resources/tile-decals/essence_chunk.png');
     this.load.image('essence_core', 'resources/tile-decals/essence_core.png');
-
-    // Tile textures
-    this.load.image('surface_1', 'resources/tiles/surface_1.png');
-    this.load.image('surface_2', 'resources/tiles/surface_2.png');
-    this.load.image('surface_3', 'resources/tiles/surface_3.png');
-    this.load.image('surface_4', 'resources/tiles/surface_4.png');
-
-    this.load.image('dirt_1', 'resources/tiles/dirt_1.png');
-    this.load.image('dirt_2', 'resources/tiles/dirt_2.png');
-    this.load.image('dirt_3', 'resources/tiles/dirt_3.png');
-    this.load.image('dirt_4', 'resources/tiles/dirt_4.png');
 
     // Mobs
     this.load.aseprite(

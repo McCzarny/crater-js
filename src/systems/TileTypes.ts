@@ -31,8 +31,8 @@ export class Tile {
   color: number | null;
   breakable: boolean;
   minedType: TileTypeValue | null;
-  textureVariants: string[] | null;
-  chosenTexture: string | null;
+  /** Chosen variant index (0-based within this tile's variants). Null until first render. */
+  variant: number | null;
 
   constructor(
     type: TileTypeValue,
@@ -40,32 +40,27 @@ export class Tile {
     color: number | null,
     breakable: boolean = true,
     minedType: TileTypeValue | null = null,
-    textureVariants: string[] | null = null,
   ) {
     this.type = type;
     this.solid = solid;
     this.color = color;
     this.breakable = breakable;
     this.minedType = minedType;
-    // textureVariants: array of texture keys (e.g. ['dirt_1','dirt_2']) or null
-    this.textureVariants = textureVariants;
-    // chosenTexture caches a selected variant for this tile instance
-    this.chosenTexture = null;
+    this.variant = null;
+  }
+
+  /** Number of visual variants available for this tile type. */
+  numberOfVariants(): number {
+    return TileRegistry.getVariantCount(this.type);
   }
 
   /**
    * Create a copy of this tile
    */
   clone(): Tile {
-    return new Tile(
-      this.type,
-      this.solid,
-      this.color,
-      this.breakable,
-      this.minedType,
-      // clone variants array if present
-      this.textureVariants ? Array.from(this.textureVariants) : null,
-    );
+    const t = new Tile(this.type, this.solid, this.color, this.breakable, this.minedType);
+    t.variant = this.variant;
+    return t;
   }
 
   /**
@@ -94,56 +89,44 @@ function darkenColor(color: number, factor: number = 0.6): number {
  */
 export class TileRegistry {
   private static tiles: Map<TileTypeValue, Tile> = new Map();
+  private static variantCounts: Map<TileTypeValue, number> = new Map();
+  private static baseAtlasIndices: Map<TileTypeValue, number> = new Map();
+  private static atlasOffset: number = 0;
 
   /**
    * Initialize all tile definitions
    */
   static initialize(): void {
+    this.tiles.clear();
+    this.variantCounts.clear();
+    this.baseAtlasIndices.clear();
+    this.atlasOffset = 0;
+
     // Air - not solid, not breakable
-    this.register(new Tile(TileType.AIR, false, null, false, null));
-
+    this.register(new Tile(TileType.AIR, false, null, false));
     // Surface - solid, not breakable
+    this.register(new Tile(TileType.SURFACE, true, 0x3a7d3a, false), 4);
+    // Dirt - solid, breakable
     this.register(
-      new Tile(TileType.SURFACE, true, 0x3a7d3a, false, null, [
-        'surface_1',
-        'surface_2',
-        'surface_3',
-        'surface_4',
-      ]),
+      new Tile(TileType.DIRT, true, CONFIG.LAYERS.DIRT.color, true, TileType.MINED_DIRT),
+      4,
     );
-
-    // Dirt - solid, breakable, has mined version (use variants)
+    // Mined Dirt
     this.register(
-      new Tile(TileType.DIRT, true, CONFIG.LAYERS.DIRT.color, true, TileType.MINED_DIRT, [
-        'dirt_1',
-        'dirt_2',
-        'dirt_3',
-        'dirt_4',
-      ]),
+      new Tile(TileType.MINED_DIRT, false, darkenColor(CONFIG.LAYERS.DIRT.color), false),
+      1,
     );
-
-    // Mined Dirt - not solid, not breakable (already mined)
+    // Stone
     this.register(
-      new Tile(TileType.MINED_DIRT, false, darkenColor(CONFIG.LAYERS.DIRT.color), false, null, [
-        'mined_dirt',
-      ]),
+      new Tile(TileType.STONE, true, CONFIG.LAYERS.STONE.color, true, TileType.MINED_STONE),
+      4,
     );
-
-    // Stone - solid, breakable, has mined version
+    // Mined Stone
     this.register(
-      new Tile(TileType.STONE, true, CONFIG.LAYERS.STONE.color, true, TileType.MINED_STONE, [
-        'stone',
-      ]),
+      new Tile(TileType.MINED_STONE, false, darkenColor(CONFIG.LAYERS.STONE.color), false),
+      1,
     );
-
-    // Mined Stone - not solid, not breakable
-    this.register(
-      new Tile(TileType.MINED_STONE, false, darkenColor(CONFIG.LAYERS.STONE.color), false, null, [
-        'mined_stone',
-      ]),
-    );
-
-    // Iron Stone - solid, breakable, has mined version
+    // Iron Stone
     this.register(
       new Tile(
         TileType.IRON_STONE,
@@ -151,23 +134,15 @@ export class TileRegistry {
         CONFIG.LAYERS.IRON.color,
         true,
         TileType.MINED_IRON_STONE,
-        ['iron_stone'],
       ),
+      4,
     );
-
-    // Mined Iron Stone - not solid, not breakable
+    // Mined Iron Stone
     this.register(
-      new Tile(
-        TileType.MINED_IRON_STONE,
-        false,
-        darkenColor(CONFIG.LAYERS.IRON.color),
-        false,
-        null,
-        ['mined_iron_stone'],
-      ),
+      new Tile(TileType.MINED_IRON_STONE, false, darkenColor(CONFIG.LAYERS.IRON.color), false),
+      1,
     );
-
-    // Deep Stone - solid, breakable, has mined version
+    // Deep Stone
     this.register(
       new Tile(
         TileType.DEEP_STONE,
@@ -175,23 +150,20 @@ export class TileRegistry {
         CONFIG.LAYERS.DEEP_STONE.color,
         true,
         TileType.MINED_DEEP_STONE,
-        ['deep_stone'],
       ),
+      4,
     );
-
-    // Mined Deep Stone - not solid, not breakable
+    // Mined Deep Stone
     this.register(
       new Tile(
         TileType.MINED_DEEP_STONE,
         false,
         darkenColor(CONFIG.LAYERS.DEEP_STONE.color),
         false,
-        null,
-        ['mined_deep_stone'],
       ),
+      1,
     );
-
-    // Rare Ore - solid, breakable, has mined version
+    // Rare Ore
     this.register(
       new Tile(
         TileType.RARE_ORE,
@@ -199,36 +171,39 @@ export class TileRegistry {
         CONFIG.LAYERS.RARE_ORE.color,
         true,
         TileType.MINED_RARE_ORE,
-        ['rare_ore'],
       ),
+      4,
     );
-
-    // Mined Rare Ore - not solid, not breakable
+    // Mined Rare Ore
     this.register(
-      new Tile(
-        TileType.MINED_RARE_ORE,
-        false,
-        darkenColor(CONFIG.LAYERS.RARE_ORE.color),
-        false,
-        null,
-        ['mined_rare_ore'],
-      ),
+      new Tile(TileType.MINED_RARE_ORE, false, darkenColor(CONFIG.LAYERS.RARE_ORE.color), false),
+      1,
     );
-
     // Boulder - solid, not breakable
-    this.register(new Tile(TileType.BOULDER, true, 0x616262, false, null, ['boulder']));
-
-    // NOTE: To add a texture for a tile, add the texture file to resources/tiles/ and reference its key here.
-    // The texture key should match the name used in BootScene preload (e.g., 'stone', 'dirt', etc.).
+    this.register(new Tile(TileType.BOULDER, true, 0x616262, false), 1);
 
     console.log('TileRegistry: Initialized with', this.tiles.size, 'tile types');
   }
 
   /**
-   * Register a tile type
+   * Register a tile type. Pass variantCount > 0 to allocate atlas frames for this tile;
+   * frames are assigned consecutively starting after the previous tile's frames.
    */
-  static register(tile: Tile): void {
+  static register(tile: Tile, variantCount: number = 0): void {
     this.tiles.set(tile.type, tile);
+    if (variantCount > 0) {
+      this.variantCounts.set(tile.type, variantCount);
+      this.baseAtlasIndices.set(tile.type, this.atlasOffset);
+      this.atlasOffset += variantCount;
+    }
+  }
+
+  static getVariantCount(type: TileTypeValue): number {
+    return this.variantCounts.get(type) ?? 0;
+  }
+
+  static getBaseAtlasIndex(type: TileTypeValue): number {
+    return this.baseAtlasIndices.get(type) ?? 0;
   }
 
   /**
