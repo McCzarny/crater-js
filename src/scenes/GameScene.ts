@@ -39,6 +39,8 @@ export default class GameScene extends Phaser.Scene {
   keys!: GameKeys;
   windSprites!: WindSprite[];
   globalEssence: number = 0;
+  upkeepTimer: number = 0;
+  levelComplete: boolean = false;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -48,6 +50,11 @@ export default class GameScene extends Phaser.Scene {
     // Notify UIScene to update character icons after all characters are created
     this.scene.get('UIScene').events.emit('updateCharacterIcons');
     console.log('GameScene: Initializing...');
+
+    // Initialize unity essence pool
+    this.globalEssence = CONFIG.UNITY_ESSENCE_INITIAL;
+    this.levelComplete = false;
+    this.upkeepTimer = 0;
 
     // Initialize systems
     this.terrainSystem = new TerrainSystem(this);
@@ -170,6 +177,11 @@ export default class GameScene extends Phaser.Scene {
         this.globalEssence += this.player.essence;
         this.player.essence = 0;
         this.game.events.emit('essenceTransferred', this.globalEssence);
+        this.game.events.emit('unityEssenceChanged', this.globalEssence, CONFIG.UNITY_ESSENCE_GOAL);
+        if (!this.levelComplete && this.globalEssence >= CONFIG.UNITY_ESSENCE_GOAL) {
+          this.levelComplete = true;
+          this.game.events.emit('levelComplete');
+        }
       }
     });
 
@@ -276,6 +288,37 @@ export default class GameScene extends Phaser.Scene {
     // Run combat: characters vs characters and mobs
     if (this.combatSystem && this.terrainSystem) {
       this.combatSystem.update(this.characters, this.terrainSystem.spiders, delta);
+    }
+
+    // --- UNITY ESSENCE UPKEEP (ticks every second) ---
+    if (!this.levelComplete) {
+      this.upkeepTimer += delta;
+      if (this.upkeepTimer >= 1000) {
+        this.upkeepTimer -= 1000;
+        const livingCharacters = this.characters.filter(c => !c.isDead);
+        const upkeep = livingCharacters.reduce((sum, c) => {
+          const raceConfig = CONFIG.RACES[c.race as keyof typeof CONFIG.RACES];
+          return sum + raceConfig.upkeepPerMinute / 60;
+        }, 0);
+        this.globalEssence = Math.max(0, this.globalEssence - upkeep);
+
+        if (this.globalEssence === 0) {
+          for (const character of livingCharacters) {
+            const raceConfig = CONFIG.RACES[character.race as keyof typeof CONFIG.RACES];
+            character.health = Math.max(0, character.health - raceConfig.upkeepDamagePerSecond);
+            if (character.health <= 0 && !character.isDead) {
+              character.isDead = true;
+              character.stopAllActions();
+              character.sprite.setAlpha(0.45);
+            }
+          }
+          if (this.characters.every(c => c.isDead)) {
+            this.game.events.emit('levelLost');
+          }
+        }
+
+        this.game.events.emit('unityEssenceChanged', this.globalEssence, CONFIG.UNITY_ESSENCE_GOAL);
+      }
     }
 
     // --- WIND EFFECT UPDATE ---

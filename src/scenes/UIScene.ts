@@ -51,7 +51,10 @@ export default class UIScene extends Phaser.Scene {
       }
     });
 
-    this.essenceUI = new EssenceUI(this, { points: 0 });
+    this.essenceUI = new EssenceUI(this, {
+      points: CONFIG.UNITY_ESSENCE_INITIAL,
+      goal: CONFIG.UNITY_ESSENCE_GOAL,
+    });
     this.essenceUI.create(CONFIG.GAME_WIDTH - 90, 24);
 
     this.baseUI = new BaseUI(this);
@@ -62,16 +65,48 @@ export default class UIScene extends Phaser.Scene {
     this.tradeUI.create(CONFIG.GAME_WIDTH / 2, CONFIG.GAME_HEIGHT / 2);
     this.tradeUI.setTooltipManager(this.tooltipManager);
 
-    // Update global essence display when essence is transferred to the base
+    // Update unity essence pool display
     this.game.events.on(
-      'essenceTransferred',
-      (globalEssence: number) => {
+      'unityEssenceChanged',
+      (currentEssence: number) => {
         if (this.essenceUI) {
-          this.essenceUI.setEssence(globalEssence);
+          this.essenceUI.setEssence(currentEssence);
         }
       },
       this,
     );
+
+    // Level complete overlay
+    this.game.events.once('levelComplete', () => {
+      this.add
+        .text(CONFIG.GAME_WIDTH / 2, CONFIG.GAME_HEIGHT / 2, 'LEVEL COMPLETE!\nUnity Pool filled!', {
+          fontSize: '32px',
+          color: '#ffff44',
+          fontFamily: 'monospace',
+          align: 'center',
+          backgroundColor: '#000000cc',
+          padding: { x: 16, y: 12 },
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(500);
+    });
+
+    // Level lost overlay
+    this.game.events.once('levelLost', () => {
+      this.add
+        .text(CONFIG.GAME_WIDTH / 2, CONFIG.GAME_HEIGHT / 2, 'LEVEL LOST!\nAll characters died.', {
+          fontSize: '32px',
+          color: '#ff4444',
+          fontFamily: 'monospace',
+          align: 'center',
+          backgroundColor: '#000000cc',
+          padding: { x: 16, y: 12 },
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(500);
+    });
 
     // Open trade window
     this.game.events.on(

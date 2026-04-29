@@ -35,6 +35,10 @@ interface RaceConfig {
   attackPower: number;
   /** Milliseconds between attacks. */
   attackInterval: number;
+  /** Essence drained from unity pool per minute while alive. */
+  upkeepPerMinute: number;
+  /** HP damage per second applied when the unity pool is empty. */
+  upkeepDamagePerSecond: number;
 }
 
 // Main configuration interface
@@ -80,6 +84,10 @@ interface GameConfig {
   };
 
   MAX_ESSENCE_DROP: number;
+
+  // Unity pool (level goal)
+  UNITY_ESSENCE_GOAL: number;
+  UNITY_ESSENCE_INITIAL: number;
 
   // Shop items
   ITEMS: {
@@ -199,6 +207,10 @@ export const CONFIG: GameConfig = {
   },
   MAX_ESSENCE_DROP: 100, // Max essence that can drop from a single block
 
+  // Unity pool (level goal)
+  UNITY_ESSENCE_GOAL: 200,
+  UNITY_ESSENCE_INITIAL: 50,
+
   // Shop items
   ITEMS: {
     LADDER: {
@@ -224,6 +236,8 @@ export const CONFIG: GameConfig = {
       essenceLimit: 50,
       attackPower: 10, // Balanced warrior damage
       attackInterval: 1500, // ms between attacks
+      upkeepPerMinute: 0.5,
+      upkeepDamagePerSecond: 5,
     },
     fungus: {
       name: 'Cult of the Spore',
@@ -237,6 +251,8 @@ export const CONFIG: GameConfig = {
       essenceLimit: 40,
       attackPower: 15, // Slower but hardy
       attackInterval: 2000, // ms between attacks
+      upkeepPerMinute: 1,
+      upkeepDamagePerSecond: 4,
     },
     petal: {
       name: 'Order of the Seed',
@@ -250,6 +266,8 @@ export const CONFIG: GameConfig = {
       essenceLimit: 60,
       attackPower: 6, // Fast but light strikes
       attackInterval: 1000, // ms between attacks
+      upkeepPerMinute: 0.25,
+      upkeepDamagePerSecond: 3,
     },
   },
 
