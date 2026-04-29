@@ -158,7 +158,7 @@ export interface ICharacter {
 /**
  * Bar element for HUD
  */
-export interface BarElement {
+interface BarElement {
   bg: Phaser.GameObjects.Rectangle;
   fg: Phaser.GameObjects.Rectangle;
   label: Phaser.GameObjects.Text;

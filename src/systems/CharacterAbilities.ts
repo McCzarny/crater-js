@@ -10,7 +10,7 @@ type Character = ICharacter;
 /**
  * Base Ability class - defines the interface for all character abilities
  */
-export class Ability {
+class Ability {
   character: Character;
   active: boolean;
   cooldownRemaining: number;

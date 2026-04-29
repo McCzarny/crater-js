@@ -21,7 +21,7 @@ interface GenerationContext {
 /**
  * A single stage in the world generation pipeline.
  */
-export interface GenerationStage {
+interface GenerationStage {
   name: string;
   apply(ctx: GenerationContext): void;
 }

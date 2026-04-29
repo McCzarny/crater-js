@@ -21,13 +21,13 @@ const HOME_RADIUS = 2;
 const MOVE_INTERVAL_MS = 600;
 
 /** Starting and maximum health for the spider. */
-export const SPIDER_MAX_HEALTH = 50;
+const SPIDER_MAX_HEALTH = 50;
 
 /** Damage the spider deals per hit. */
-export const SPIDER_ATTACK_POWER = 12;
+const SPIDER_ATTACK_POWER = 12;
 
 /** Milliseconds between spider attacks. */
-export const SPIDER_ATTACK_INTERVAL = 1200;
+const SPIDER_ATTACK_INTERVAL = 1200;
 
 // ────────────────────────────────────────────────────────────────────────────
 

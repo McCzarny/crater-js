@@ -288,4 +288,4 @@ export function getBaseItemConfig(itemType: string): BaseItem | null {
 }
 
 // Export types for use in other files
-export type { GameConfig, RaceConfig, ResourceConfig, EssenceConfig, LayerConfig, TradableConfig };
+export type {  RaceConfig,     };

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 
-export interface ButtonOptions {
+interface ButtonOptions {
   depth?: number;
   useHandCursor?: boolean;
   text?: string;
