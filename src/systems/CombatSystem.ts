@@ -38,11 +38,15 @@ export default class CombatSystem {
 
     // ── Character attacks ───────────────────────────────────────────────────
     for (const attacker of characters) {
-      if (attacker.isDead) {continue;}
+      if (attacker.isDead) {
+        continue;
+      }
 
       // Tick cooldown down
       attacker.attackCooldown = Math.max(0, attacker.attackCooldown - delta);
-      if (attacker.attackCooldown > 0) {continue;}
+      if (attacker.attackCooldown > 0) {
+        continue;
+      }
 
       // Find the nearest valid target (different-race character or mob)
       let nearestDist = Infinity;
@@ -50,7 +54,9 @@ export default class CombatSystem {
       let targetMob: IMob | null = null;
 
       for (const defender of characters) {
-        if (defender === attacker || defender.isDead || defender.race === attacker.race) {continue;}
+        if (defender === attacker || defender.isDead || defender.race === attacker.race) {
+          continue;
+        }
         const d = chebyshev(attacker.gridX, attacker.gridY, defender.gridX, defender.gridY);
         if (d <= ATTACK_RANGE && d < nearestDist) {
           nearestDist = d;
@@ -80,14 +86,18 @@ export default class CombatSystem {
     // ── Mob attacks ─────────────────────────────────────────────────────────
     for (const mob of liveMobs) {
       mob.attackCooldown = Math.max(0, mob.attackCooldown - delta);
-      if (mob.attackCooldown > 0) {continue;}
+      if (mob.attackCooldown > 0) {
+        continue;
+      }
 
       // Find the nearest character in range
       let nearestDist = Infinity;
       let target: Character | null = null;
 
       for (const character of characters) {
-        if (character.isDead) {continue;}
+        if (character.isDead) {
+          continue;
+        }
         const d = chebyshev(mob.gridX, mob.gridY, character.gridX, character.gridY);
         if (d <= ATTACK_RANGE && d < nearestDist) {
           nearestDist = d;
@@ -133,7 +143,9 @@ export default class CombatSystem {
    */
   private dropCharacterLoot(target: Character): void {
     const terrainSystem = target.terrainSystem;
-    if (!terrainSystem) {return;}
+    if (!terrainSystem) {
+      return;
+    }
 
     const x = target.gridX;
     const y = target.gridY;
@@ -171,11 +183,15 @@ export default class CombatSystem {
     color: number,
     isDead: () => boolean,
   ): void {
-    if (!sprite.active) {return;}
+    if (!sprite.active) {
+      return;
+    }
     sprite.setTint(color);
 
     this.scene.time.delayedCall(HIT_FLASH_MS, () => {
-      if (!sprite.active) {return;}
+      if (!sprite.active) {
+        return;
+      }
       if (isDead()) {
         sprite.setTint(0x666666);
       } else {

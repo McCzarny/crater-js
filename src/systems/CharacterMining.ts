@@ -79,34 +79,6 @@ export default class CharacterMining {
   }
 
   /**
-   * Start manual mining operation
-   */
-  startMining(): void {
-    const char = this.character;
-
-    const directions: Direction[] = [
-      { dx: 0, dy: 1 }, // Below
-      { dx: 1, dy: 0 }, // Right
-      { dx: -1, dy: 0 }, // Left
-      { dx: 0, dy: -1 }, // Above
-    ];
-
-    for (const dir of directions) {
-      const targetX = char.gridX + dir.dx;
-      const targetY = char.gridY + dir.dy;
-      const block = this.terrainSystem.getBlockAt(targetX, targetY);
-
-      if (block && block.solid && block.breakable) {
-        this.isMining = true;
-        this.miningStartTime = Date.now();
-        this.miningTarget = { gridX: targetX, gridY: targetY };
-        char.sprite.setTint(0xffaa00);
-        break;
-      }
-    }
-  }
-
-  /**
    * Continue mining the current block
    */
   continueMining(): void {

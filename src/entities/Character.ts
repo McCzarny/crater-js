@@ -160,7 +160,9 @@ export default class Character implements ICharacter {
     time: number,
     delta: number,
   ): void {
-    if (this.isDead) {return;}
+    if (this.isDead) {
+      return;
+    }
 
     // Update abilities
     this.abilities.update(time, delta);
@@ -374,20 +376,6 @@ export default class Character implements ICharacter {
     // Reset movement state
     this.movement.isMoving = false;
     this.movement.moveTarget = null;
-  }
-
-  /**
-   * Inflict damage to the character. If health <= 0, kill the character.
-   */
-  takeDamage(amount: number): void {
-    if (this.isDead) {
-      return;
-    }
-    this.health -= amount;
-    if (this.health <= 0) {
-      this.health = 0;
-      this.kill();
-    }
   }
 
   /**

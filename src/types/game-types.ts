@@ -156,15 +156,6 @@ export interface ICharacter {
 }
 
 /**
- * Icon element return type
- */
-export interface IconElement {
-  bg: Phaser.GameObjects.Rectangle;
-  image: Phaser.GameObjects.Sprite;
-  label?: Phaser.GameObjects.Text;
-}
-
-/**
  * Bar element for HUD
  */
 export interface BarElement {

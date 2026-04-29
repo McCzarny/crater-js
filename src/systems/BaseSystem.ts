@@ -37,13 +37,11 @@ export default class BaseSystem {
   scene: Phaser.Scene;
   terrainSystem: TerrainSystem;
   bases: Map<string, BaseData>;
-  baseSprites: Phaser.GameObjects.Sprite[];
 
   constructor(scene: Phaser.Scene, terrainSystem: TerrainSystem) {
     this.scene = scene;
     this.terrainSystem = terrainSystem;
     this.bases = new Map();
-    this.baseSprites = [];
 
     // Calculate base positions and place them
     this.placeAllBases();
@@ -156,8 +154,6 @@ export default class BaseSystem {
     // Set depth so bases appear above terrain but below characters
     sprite.setDepth(100);
 
-    this.baseSprites.push(sprite);
-
     return sprite;
   }
 
@@ -200,12 +196,5 @@ export default class BaseSystem {
       }
     }
     return null;
-  }
-
-  /**
-   * Get all bases
-   */
-  getAllBases(): Map<string, BaseData> {
-    return this.bases;
   }
 }

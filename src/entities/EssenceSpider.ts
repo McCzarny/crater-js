@@ -111,7 +111,9 @@ export default class EssenceSpider implements IMob {
    * Called every frame from GameScene / TerrainSystem.
    */
   update(characters: ICharacter[], _time: number, delta: number): void {
-    if (this.isDead) {return;}
+    if (this.isDead) {
+      return;
+    }
 
     this.moveAccumulator += delta;
     if (this.moveAccumulator < MOVE_INTERVAL_MS) {
