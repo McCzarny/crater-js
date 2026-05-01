@@ -93,6 +93,14 @@ class Ability {
   }
 
   /**
+   * Whether this ability should be deactivated when the character starts moving.
+   * Override to return false for abilities that persist during movement (e.g. climbing).
+   */
+  stopsOnMovement(): boolean {
+    return true;
+  }
+
+  /**
    * Update ability state (called each frame)
    */
   update(_time: number, _delta: number): void {
@@ -257,6 +265,10 @@ class ClimbingAbility extends Ability {
     // When climbing, allow movement in any direction (up, down, left, right)
     // Check will be handled in CharacterMovement to ensure target is empty
     return true;
+  }
+
+  stopsOnMovement(): boolean {
+    return false; // Climbing persists during movement
   }
 
   update(_time: number, delta: number): void {
@@ -511,6 +523,13 @@ export default class CharacterAbilities {
    */
   deactivateAll(): void {
     this.abilities.forEach(ability => ability.deactivate());
+  }
+
+  /**
+   * Deactivate only abilities that stop on movement (stopsOnMovement() === true)
+   */
+  deactivateOnMovement(): void {
+    this.abilities.filter(ability => ability.stopsOnMovement()).forEach(ability => ability.deactivate());
   }
 
   /**

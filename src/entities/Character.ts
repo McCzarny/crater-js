@@ -152,6 +152,33 @@ export default class Character implements ICharacter {
   }
 
   /**
+   * Stop current action and move in a direction. Used by HUD buttons.
+   * Does not apply the key-repeat cooldown — only guards against mid-animation double-moves.
+   * Abilities with stopsOnMovement() === false (e.g. climbing) are preserved.
+   */
+  moveInDirection(dx: number, dy: number): boolean {
+    if (this.movement.isMoving) {
+      return false;
+    }
+    this.stopActionsForMovement();
+    return this.movement.tryMove(dx, dy, false);
+  }
+
+  /**
+   * Stop actions that should not persist when the character moves.
+   * Abilities whose stopsOnMovement() returns false (e.g. climbing) are preserved.
+   */
+  stopActionsForMovement(): void {
+    this.abilities.deactivateOnMovement();
+    this.mining.stopAutoDig();
+    this.inventory.stopSearch();
+    this.mining.stopMining();
+    if (!this.abilities.anyAbilityActive()) {
+      this.sprite.clearTint();
+    }
+  }
+
+  /**
    * Update character state
    */
   update(
@@ -227,24 +254,12 @@ export default class Character implements ICharacter {
       return;
     }
 
-    // Stop active actions when trying to move manually (except climbing)
+    // Stop active actions when trying to move manually (except abilities that persist on movement)
     if (
       cursors &&
       (cursors.left.isDown || cursors.right.isDown || cursors.up.isDown || cursors.down.isDown)
     ) {
-      // TODO: Stop all abilities except climbing
-      // Stop seed planting on any movement
-      if (this.abilities.isPlantingSeeds) {
-        this.abilities.deactivateAll();
-      }
-
-      // Don't stop climbing when moving - it's intended to be used during movement
-      this.mining.stopAutoDig();
-      this.inventory.stopSearch();
-      this.mining.stopMining();
-      if (!this.abilities.isClimbing && !this.abilities.isPlantingSeeds) {
-        this.sprite.clearTint();
-      }
+      this.stopActionsForMovement();
     }
 
     // Search mode takes highest priority

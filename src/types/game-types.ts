@@ -48,6 +48,7 @@ export interface IAbility {
   movementSpeedMultiplier(): number;
   canMove(dx: number, dy: number): boolean;
   shouldPreventFalling(): boolean;
+  stopsOnMovement(): boolean;
   update(time: number, delta: number): void;
   progress(): number;
 }
@@ -56,12 +57,12 @@ export interface IAbility {
  * Character Inventory interface (UI-facing)
  */
 export interface ICharacterInventory {
-  tryPickup?: () => boolean;
+  tryPickup: () => boolean;
   placeLadder: (slotIndex: number) => boolean;
   useItem: (slotIndex: number) => boolean;
-  isSearching?: boolean;
-  stopSearch?: () => void;
-  startSearch?: () => void;
+  isSearching: boolean;
+  stopSearch: () => void;
+  startSearch: () => void;
   inventory: (string | null)[];
 }
 
@@ -69,9 +70,9 @@ export interface ICharacterInventory {
  * Character Mining interface (UI-facing)
  */
 export interface ICharacterMining {
-  startAutoDig?: (direction: { dx: number; dy: number }) => void;
-  isMining?: boolean;
-  isAutoDigging?: boolean;
+  startAutoDig: (direction: { dx: number; dy: number }) => void;
+  isMining: boolean;
+  isAutoDigging: boolean;
 }
 
 /**
@@ -88,6 +89,7 @@ export interface ICharacterMovement {
 export interface ICharacterAbilities {
   getAbilities: () => IAbility[];
   anyAbilityActive: () => boolean;
+  deactivateOnMovement: () => void;
 }
 
 /**
@@ -127,7 +129,9 @@ export interface ICharacter {
   maxEssence: number;
 
   // Actions
-  stopAllActions?: () => void;
+  stopAllActions: () => void;
+  stopActionsForMovement: () => void;
+  moveInDirection: (dx: number, dy: number) => boolean;
 
   // Sprite
   sprite?: Phaser.GameObjects.Sprite & ICharacterSprite;
@@ -153,15 +157,6 @@ export interface ICharacter {
       mode: 'manual' | 'automatic',
     ) => { tileX: number; tileY: number } | null;
   };
-}
-
-/**
- * Bar element for HUD
- */
-interface BarElement {
-  bg: Phaser.GameObjects.Rectangle;
-  fg: Phaser.GameObjects.Rectangle;
-  label: Phaser.GameObjects.Text;
 }
 
 export interface BaseItem {

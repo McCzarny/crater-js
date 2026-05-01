@@ -183,86 +183,58 @@ export default class HUD {
 
             switch (actionName) {
               case 'MoveUp':
-                if (player.stopAllActions) {
-                  player.stopAllActions();
-                }
-                if (player.movement && player.movement.tryMove) {
-                  player.movement.tryMove(0, 1, false);
-                }
+                player.moveInDirection(0, -1);
                 break;
               case 'MoveLeft':
-                if (player.stopAllActions) {
-                  player.stopAllActions();
-                }
-                if (player.movement && player.movement.tryMove) {
-                  player.movement.tryMove(-1, 0, false);
-                }
+                player.moveInDirection(-1, 0);
+                break;
+              case 'MoveDown':
+                player.moveInDirection(0, 1);
                 break;
               case 'MoveRight':
-                if (player.stopAllActions) {
-                  player.stopAllActions();
-                }
-                if (player.movement && player.movement.tryMove) {
-                  player.movement.tryMove(1, 0, false);
-                }
+                player.moveInDirection(1, 0);
                 break;
               case 'DigLeft':
-                if (player.stopAllActions) {
-                  player.stopAllActions();
-                }
+                player.stopAllActions();
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: -1, dy: 0 });
                 }
                 break;
               case 'DigDown':
-                if (player.stopAllActions) {
-                  player.stopAllActions();
-                }
+                player.stopAllActions();
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: 0, dy: 1 });
                 }
                 break;
               case 'DigRight':
-                if (player.stopAllActions) {
-                  player.stopAllActions();
-                }
+                player.stopAllActions();
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: 1, dy: 0 });
                 }
                 break;
               case 'Stop':
-                if (player.stopAllActions) {
-                  player.stopAllActions();
-                }
+                player.stopAllActions();
                 break;
               case 'PickUp':
-                if (player.stopAllActions) {
-                  player.stopAllActions();
-                }
+                player.stopAllActions();
                 if (player.inventory && player.inventory.tryPickup) {
                   player.inventory.tryPickup();
                 }
                 break;
               case 'DigLeftDown':
-                if (player.stopAllActions) {
-                  player.stopAllActions();
-                }
+                player.stopAllActions();
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: -1, dy: 1 });
                 }
                 break;
               case 'DigRightDown':
-                if (player.stopAllActions) {
-                  player.stopAllActions();
-                }
+                player.stopAllActions();
                 if (player.mining && player.mining.startAutoDig) {
                   player.mining.startAutoDig({ dx: 1, dy: 1 });
                 }
                 break;
               case 'Search':
-                if (player.stopAllActions) {
-                  player.stopAllActions();
-                }
+                player.stopAllActions();
                 if (player.inventory) {
                   if (player.inventory.isSearching) {
                     if (player.inventory.stopSearch) {
