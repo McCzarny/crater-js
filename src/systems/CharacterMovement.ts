@@ -223,6 +223,10 @@ export default class CharacterMovement {
       y: targetY * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
     };
 
+    if (char.sprite && dx !== 0) {
+      char.sprite.setFlipX(dx < 0);
+    }
+
     // Calculate movement speed
     let baseSpeed = isSprinting ? char.moveSpeed * char.sprintMultiplier : char.moveSpeed;
 
