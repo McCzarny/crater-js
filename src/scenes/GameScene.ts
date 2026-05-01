@@ -107,6 +107,7 @@ export default class GameScene extends Phaser.Scene {
     // Set first character as active
     this.activeCharacterIndex = 0;
     this.player = this.characters[this.activeCharacterIndex];
+    this.terrainSystem.characters = this.characters;
 
     // Set up camera
     this.cameras.main.setBounds(

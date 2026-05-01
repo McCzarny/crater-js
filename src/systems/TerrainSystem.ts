@@ -32,6 +32,8 @@ export default class TerrainSystem {
   reactionHandlers: ReactionHandler[];
   /** All active Essence Spiders in the world. */
   spiders: EssenceSpider[] = [];
+  /** All player characters in the world. Set by GameScene after creation. */
+  characters: ICharacter[] = [];
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -222,14 +224,24 @@ export default class TerrainSystem {
     if (aboveBlock.type === TileRegistry.getTile(BOULDER_KEY).type && !targetBlock.solid) {
       const fallFromY = aboveY;
       let landingY = fallFromY;
+      const BOULDER_DAMAGE = 1000;
+      const hitCharacters: ICharacter[] = [];
 
-      // Search downward for landing position
+      // Search downward for landing position, stopping at solid blocks or characters
       while (landingY + 1 < CONFIG.WORLD_HEIGHT) {
-        const below = this.getBlockAt(changedX, landingY + 1);
-        if (!below || !below.solid) {
-          landingY++;
-        } else {
+        const nextY = landingY + 1;
+        const below = this.getBlockAt(changedX, nextY);
+        if (below && below.solid) {
           break;
+        }
+        // Check if a character occupies the next tile
+        const charAtNext = this.characters.find(
+          c => !c.isDead && c.gridX === changedX && c.gridY === nextY,
+        );
+        landingY = nextY;
+        if (charAtNext) {
+          hitCharacters.push(charAtNext);
+          break; // Boulder stops on the character
         }
       }
 
@@ -248,6 +260,14 @@ export default class TerrainSystem {
 
       // Destroy all items at the landing tile
       this.itemManager.removeAllItemsAt(changedX, landingY);
+
+      // Damage characters hit by the boulder
+      for (const character of hitCharacters) {
+        character.health = Math.max(0, character.health - BOULDER_DAMAGE);
+        if (character.health <= 0) {
+          character.kill();
+        }
+      }
 
       // Re-render the column area affected (from original above down to landing)
       for (let y = fallFromY; y <= landingY; y++) {

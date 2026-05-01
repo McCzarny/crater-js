@@ -132,6 +132,7 @@ export interface ICharacter {
   stopAllActions: () => void;
   stopActionsForMovement: () => void;
   moveInDirection: (dx: number, dy: number) => boolean;
+  kill: () => void;
 
   // Sprite
   sprite?: Phaser.GameObjects.Sprite & ICharacterSprite;
