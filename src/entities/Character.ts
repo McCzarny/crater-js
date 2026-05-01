@@ -148,7 +148,7 @@ export default class Character implements ICharacter {
     this.mining.stopMining();
     this.abilities.deactivateAll();
     this.sprite.clearTint();
-    this.movement.stopMovement();
+    this.movement.snapToGrid();
   }
 
   /**
