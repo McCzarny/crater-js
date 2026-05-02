@@ -349,7 +349,7 @@ export default class Character implements ICharacter {
 
     if (moveRequest && moveRequest.shouldMove) {
       const moveDx = moveRequest.targetX - this.gridX;
-      if (this.sprite && moveDx !== 0) {
+      if (moveDx !== 0) {
         this.sprite.setFlipX(moveDx < 0);
       }
       this.movement.isMoving = true;
@@ -369,7 +369,7 @@ export default class Character implements ICharacter {
 
     if (moveRequest && moveRequest.shouldMove) {
       const moveDx = moveRequest.targetX - this.gridX;
-      if (this.sprite && moveDx !== 0) {
+      if (moveDx !== 0) {
         this.sprite.setFlipX(moveDx < 0);
       }
       this.movement.isMoving = true;
@@ -402,13 +402,11 @@ export default class Character implements ICharacter {
     }
     this.isDead = true;
     this.stopAllActions();
-    if (this.sprite) {
-      this.sprite.setTint(0x222222);
-      this.sprite.setAlpha(0.5);
-      // Prevent clicking dead characters
-      if (this.sprite.input && this.sprite.disableInteractive) {
-        this.sprite.disableInteractive();
-      }
+    this.sprite.setTint(0x222222);
+    this.sprite.setAlpha(0.5);
+    // Prevent clicking dead characters
+    if (this.sprite.input && this.sprite.disableInteractive) {
+      this.sprite.disableInteractive();
     }
     // Optionally: play death animation, sound, etc.
   }

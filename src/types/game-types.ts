@@ -79,8 +79,8 @@ export interface ICharacterMining {
  * Character Movement interface (UI-facing)
  */
 export interface ICharacterMovement {
-  tryMove?: (dx: number, dy: number, isSprinting: boolean) => void;
-  isMoving?: boolean;
+  tryMove: (dx: number, dy: number, isSprinting: boolean) => void;
+  isMoving: boolean;
 }
 
 /**
@@ -96,7 +96,7 @@ export interface ICharacterAbilities {
  * Character Sprite interface (UI-facing)
  */
 export interface ICharacterSprite {
-  clearTint?: () => void;
+  clearTint: () => void;
 }
 
 /**
@@ -105,18 +105,18 @@ export interface ICharacterSprite {
  * Entity-level fields (e.g. scene, gridX) are optional so UI code doesn't need them.
  */
 export interface ICharacter {
-  isDead?: boolean;
+  isDead: boolean;
   race: string;
 
-  // Entity / system properties (optional for UI consumers)
-  scene?: Phaser.Scene;
-  terrainSystem?: TerrainSystem;
-  gridX?: number;
-  gridY?: number;
-  moveSpeed?: number;
-  sprintMultiplier?: number;
-  digInterval?: number;
-  fastDigInterval?: number;
+  // Entity / system properties
+  scene: Phaser.Scene;
+  terrainSystem: TerrainSystem;
+  gridX: number;
+  gridY: number;
+  moveSpeed: number;
+  sprintMultiplier: number;
+  digInterval: number;
+  fastDigInterval: number;
 
   // Stats
   health: number;
@@ -135,7 +135,7 @@ export interface ICharacter {
   kill: () => void;
 
   // Sprite
-  sprite?: Phaser.GameObjects.Sprite & ICharacterSprite;
+  sprite: Phaser.GameObjects.Sprite & ICharacterSprite;
 
   // Subsystems
   abilities: ICharacterAbilities & {
@@ -144,9 +144,9 @@ export interface ICharacter {
     getMovementSpeedMultiplier?: () => number;
     shouldPreventFalling?: () => boolean;
   };
-  inventory?: ICharacterInventory;
-  mining?: ICharacterMining;
-  movement?: ICharacterMovement & {
+  inventory: ICharacterInventory;
+  mining: ICharacterMining;
+  movement: ICharacterMovement & {
     tryMove: (dx: number, dy: number, isSprinting: boolean) => boolean;
     canWalkTo: (
       fromX: number,

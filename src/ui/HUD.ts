@@ -196,61 +196,38 @@ export default class HUD {
                 break;
               case 'DigLeft':
                 player.stopAllActions();
-                if (player.mining && player.mining.startAutoDig) {
-                  player.mining.startAutoDig({ dx: -1, dy: 0 });
-                }
+                player.mining.startAutoDig({ dx: -1, dy: 0 });
                 break;
               case 'DigDown':
                 player.stopAllActions();
-                if (player.mining && player.mining.startAutoDig) {
-                  player.mining.startAutoDig({ dx: 0, dy: 1 });
-                }
+                player.mining.startAutoDig({ dx: 0, dy: 1 });
                 break;
               case 'DigRight':
                 player.stopAllActions();
-                if (player.mining && player.mining.startAutoDig) {
-                  player.mining.startAutoDig({ dx: 1, dy: 0 });
-                }
+                player.mining.startAutoDig({ dx: 1, dy: 0 });
                 break;
               case 'Stop':
                 player.stopAllActions();
                 break;
               case 'PickUp':
                 player.stopAllActions();
-                if (player.inventory && player.inventory.tryPickup) {
-                  player.inventory.tryPickup();
-                }
+                player.inventory.tryPickup();
                 break;
               case 'DigLeftDown':
                 player.stopAllActions();
-                if (player.mining && player.mining.startAutoDig) {
-                  player.mining.startAutoDig({ dx: -1, dy: 1 });
-                }
+                player.mining.startAutoDig({ dx: -1, dy: 1 });
                 break;
               case 'DigRightDown':
                 player.stopAllActions();
-                if (player.mining && player.mining.startAutoDig) {
-                  player.mining.startAutoDig({ dx: 1, dy: 1 });
-                }
+                player.mining.startAutoDig({ dx: 1, dy: 1 });
                 break;
               case 'Search':
                 player.stopAllActions();
-                if (player.inventory) {
-                  if (player.inventory.isSearching) {
-                    if (player.inventory.stopSearch) {
-                      player.inventory.stopSearch();
-                    }
-                    if (player.sprite && player.sprite.clearTint) {
-                      player.sprite.clearTint();
-                    }
-                  } else {
-                    if (player.stopAllActions) {
-                      player.stopAllActions();
-                    }
-                    if (player.inventory.startSearch) {
-                      player.inventory.startSearch();
-                    }
-                  }
+                if (player.inventory.isSearching) {
+                  player.inventory.stopSearch();
+                  player.sprite.clearTint();
+                } else {
+                  player.inventory.startSearch();
                 }
                 break;
               default:

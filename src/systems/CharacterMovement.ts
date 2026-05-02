@@ -165,7 +165,7 @@ export default class CharacterMovement {
         y: dest.tileY * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
       };
 
-      if (char.sprite && dx !== 0) {
+      if (dx !== 0) {
         char.sprite.setFlipX(dx < 0);
       }
 
@@ -223,7 +223,7 @@ export default class CharacterMovement {
       y: targetY * CONFIG.BLOCK_SIZE + CONFIG.BLOCK_SIZE / 2,
     };
 
-    if (char.sprite && dx !== 0) {
+    if (dx !== 0) {
       char.sprite.setFlipX(dx < 0);
     }
 

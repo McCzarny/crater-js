@@ -529,7 +529,9 @@ export default class CharacterAbilities {
    * Deactivate only abilities that stop on movement (stopsOnMovement() === true)
    */
   deactivateOnMovement(): void {
-    this.abilities.filter(ability => ability.stopsOnMovement()).forEach(ability => ability.deactivate());
+    this.abilities
+      .filter(ability => ability.stopsOnMovement())
+      .forEach(ability => ability.deactivate());
   }
 
   /**

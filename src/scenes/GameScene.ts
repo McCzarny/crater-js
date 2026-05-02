@@ -160,16 +160,12 @@ export default class GameScene extends Phaser.Scene {
 
     // Listen for drop item events from UIScene
     this.events.on('dropItem', (slotIndex: number) => {
-      if (this.player && this.player.inventory) {
-        this.player.inventory.dropItem(slotIndex);
-      }
+      this.player.inventory.dropItem(slotIndex);
     });
 
     // Use an inventory item (e.g. place a ladder) from UIScene
     this.events.on('useItem', (slotIndex: number) => {
-      if (this.player) {
-        this.player.inventory.useItem(slotIndex);
-      }
+      this.player.inventory.useItem(slotIndex);
     });
 
     // Transfer all essence from active character to global pool
@@ -193,9 +189,6 @@ export default class GameScene extends Phaser.Scene {
 
     // Sell an inventory item for essence
     this.events.on('sellItem', (slotIndex: number) => {
-      if (!this.player || !this.player.inventory) {
-        return;
-      }
       const inventory = this.player.inventory.inventory;
       const itemType = inventory[slotIndex];
       if (!itemType) {
@@ -217,9 +210,6 @@ export default class GameScene extends Phaser.Scene {
 
     // Buy an item from the trader
     this.events.on('buyItem', (itemKey: string) => {
-      if (!this.player || !this.player.inventory) {
-        return;
-      }
       const itemConfig = CONFIG.ITEMS[itemKey as keyof typeof CONFIG.ITEMS];
       if (!itemConfig) {
         return;
