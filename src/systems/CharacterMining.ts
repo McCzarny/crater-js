@@ -113,6 +113,7 @@ export default class CharacterMining {
 
     if (elapsed >= required) {
       this.terrainSystem.mineBlockAt(this.miningTarget.gridX, this.miningTarget.gridY);
+      this.character.traits?.onTileMined(this.character);
       this.stopMining();
     }
   }
@@ -330,6 +331,7 @@ export default class CharacterMining {
     // Mine the block
     console.log('Auto-dig mining at:', targetX, targetY, 'block type:', block.type);
     this.terrainSystem.mineBlockAt(targetX, targetY);
+    this.character.traits?.onTileMined(this.character);
     this.hideMiningIndicator();
     this.lastDigTime = time;
 

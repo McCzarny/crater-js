@@ -4,6 +4,7 @@ import CharacterMovement from '../systems/CharacterMovement';
 import CharacterMining from '../systems/CharacterMining';
 import CharacterInventory from '../systems/CharacterInventory';
 import CharacterAbilities from '../systems/CharacterAbilities';
+import CharacterTraits from '../systems/CharacterTraits';
 import type TerrainSystem from '../systems/TerrainSystem';
 import { ICharacter } from '../types/game-types';
 
@@ -36,6 +37,7 @@ export default class Character implements ICharacter {
   mining: CharacterMining;
   inventory: CharacterInventory;
   abilities: CharacterAbilities;
+  traits: CharacterTraits;
 
   // Stamina settings
   maxStamina: number;
@@ -99,12 +101,12 @@ export default class Character implements ICharacter {
       this.scene.events.emit('switchCharacter', idx);
     });
 
-    // Movement settings - apply race multiplier
+    // Movement settings - apply race multiplier (traits will apply their multiplier after init)
     this.baseSpeed = CONFIG.CHAR_SPEED;
     this.moveSpeed = this.baseSpeed * raceConfig.movementSpeedMultiplier;
     this.sprintMultiplier = 2;
 
-    // Mining settings - apply race multiplier
+    // Mining settings - apply race multiplier (traits will apply their multiplier after init)
     this.baseMiningTime = CONFIG.MINING_TIME;
     this.digInterval = this.baseMiningTime / raceConfig.miningSpeedMultiplier;
     this.fastDigInterval = 500 / raceConfig.miningSpeedMultiplier;
@@ -115,15 +117,43 @@ export default class Character implements ICharacter {
     this.inventory = new CharacterInventory(this);
     this.abilities = new CharacterAbilities(this);
 
+    // Assign random traits for this character
+    this.traits = new CharacterTraits(race);
+
     // Stamina settings
     this.maxStamina = this.raceConfig.staminaLimit;
     this.stamina = this.maxStamina;
-    this.staminaDrainPerSecond = 1;
+    this.staminaDrainPerSecond = 1 * this.traits.staminaDrainMultiplier();
     this.staminaRegenPerSecond = 10;
 
     // Health settings
-    this.maxHealth = this.raceConfig.healthLimit;
+    this.maxHealth = Math.round(this.raceConfig.healthLimit * this.traits.maxHealthMultiplier());
     this.health = this.maxHealth;
+
+    // Apply movement speed trait multiplier
+    this.moveSpeed =
+      this.baseSpeed * raceConfig.movementSpeedMultiplier * this.traits.speedMultiplier();
+
+    // Apply mining speed trait multiplier
+    this.digInterval =
+      this.baseMiningTime / raceConfig.miningSpeedMultiplier / this.traits.miningSpeedMultiplier();
+    this.fastDigInterval =
+      500 / raceConfig.miningSpeedMultiplier / this.traits.miningSpeedMultiplier();
+
+    // Apply agile/clumsy climbing speed to the climbing ability (if present)
+    const climbingSpeedMod = this.traits.climbingSpeedMultiplier();
+    if (climbingSpeedMod !== 1.0) {
+      for (const ability of this.abilities.abilities) {
+        if (
+          'climbingSpeedMultiplier' in ability &&
+          typeof (ability as { climbingSpeedMultiplier: number }).climbingSpeedMultiplier ===
+            'number'
+        ) {
+          (ability as { climbingSpeedMultiplier: number }).climbingSpeedMultiplier *=
+            climbingSpeedMod;
+        }
+      }
+    }
 
     // Combat settings
     this.attackPower = raceConfig.attackPower;
@@ -137,6 +167,10 @@ export default class Character implements ICharacter {
     // Essence settings
     this.maxEssence = this.raceConfig.essenceLimit;
     this.essence = 0;
+
+    if (this.traits.traits.length > 0) {
+      console.log(`Character (${race}) traits:`, this.traits.traits.map(t => t.name).join(', '));
+    }
   }
 
   /**
@@ -193,6 +227,9 @@ export default class Character implements ICharacter {
 
     // Update abilities
     this.abilities.update(time, delta);
+
+    // Update traits (per-frame effects, e.g. Photosynthesis)
+    this.traits.update(delta, this);
 
     // Update visual feedback for abilities
     if (this.abilities.isClimbing) {

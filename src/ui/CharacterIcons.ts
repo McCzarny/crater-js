@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { makeIcon, IconReturn } from './ui-commons';
 import type { ICharacter } from '../types/game-types';
+import type TooltipManager from './TooltipManager';
 
 type Character = ICharacter;
 
@@ -20,7 +21,9 @@ export default class CharacterIcons {
   icons: IconReturn[];
   borders: Phaser.GameObjects.Rectangle[];
   actionIndicators: Phaser.GameObjects.Sprite[];
+  traitIcons: Phaser.GameObjects.GameObject[];
   activeIndex: number;
+  tooltipManager?: TooltipManager;
 
   constructor(scene: Phaser.Scene, options: Record<string, unknown> = {}) {
     this.scene = scene;
@@ -28,12 +31,17 @@ export default class CharacterIcons {
     this.icons = [];
     this.borders = [];
     this.actionIndicators = [];
+    this.traitIcons = [];
     this.activeIndex = 0;
 
     this.scene.scene.get('GameScene').events.on('switchCharacter', (index: number) => {
       this.activeIndex = index;
       this.borders.forEach((b, i) => b.setVisible(i === index));
     });
+  }
+
+  setTooltipManager(tooltipManager: TooltipManager): void {
+    this.tooltipManager = tooltipManager;
   }
 
   /**
@@ -44,7 +52,7 @@ export default class CharacterIcons {
    * @param spacing - Spacing between icons
    */
   update(characters: Character[], x: number = 30, startY: number = 30, spacing: number = 60): void {
-    // Remove old icons, borders and action indicators
+    // Remove old icons, borders, action indicators, and trait icons
     this.icons.forEach(ic => {
       ic.bg.destroy();
       if (ic.label) {
@@ -53,9 +61,13 @@ export default class CharacterIcons {
     });
     this.borders.forEach(b => b.destroy());
     this.actionIndicators.forEach(s => s.destroy());
+    this.traitIcons.forEach(o =>
+      (o as Phaser.GameObjects.GameObject & { destroy(): void }).destroy(),
+    );
     this.icons = [];
     this.borders = [];
     this.actionIndicators = [];
+    this.traitIcons = [];
 
     for (let i = 0; i < characters.length; i++) {
       const char = characters[i];
@@ -89,6 +101,43 @@ export default class CharacterIcons {
       this.icons.push(icon);
       this.borders.push(border);
       this.actionIndicators.push(indicator);
+
+      // Trait icons: small squares to the right of the character icon.
+      // Up to TRAITS_PER_COL per column, additional columns grow rightward.
+      const traits = char.traits?.traits ?? [];
+      const traitIconSize = 16;
+      const traitGap = 2;
+      const traitStep = traitIconSize + traitGap;
+      const TRAITS_PER_COL = 3;
+      const traitStartX = x + 36;
+      const traitStartY = y - 16; // align to top of the icon area
+      traits.forEach((trait, ti) => {
+        const col = Math.floor(ti / TRAITS_PER_COL);
+        const row = ti % TRAITS_PER_COL;
+        const tx = traitStartX + col * traitStep;
+        const ty = traitStartY + row * traitStep;
+        const square = this.scene.add
+          .rectangle(tx, ty, traitIconSize, traitIconSize, 0x446688, 1)
+          .setScrollFactor(0)
+          .setDepth(202)
+          .setInteractive({ useHandCursor: false });
+        const letter = this.scene.add
+          .text(tx, ty, trait.name[0].toUpperCase(), {
+            fontSize: '10px',
+            color: '#ffffff',
+            fontFamily: 'monospace',
+          })
+          .setOrigin(0.5)
+          .setScrollFactor(0)
+          .setDepth(203);
+        if (this.tooltipManager) {
+          this.tooltipManager.registerTooltip(square, {
+            title: trait.name,
+            description: [trait.description],
+          });
+        }
+        this.traitIcons.push(square, letter);
+      });
     }
   }
 
@@ -138,8 +187,12 @@ export default class CharacterIcons {
     });
     this.borders.forEach(b => b.destroy());
     this.actionIndicators.forEach(s => s.destroy());
+    this.traitIcons.forEach(o =>
+      (o as Phaser.GameObjects.GameObject & { destroy(): void }).destroy(),
+    );
     this.icons = [];
     this.borders = [];
     this.actionIndicators = [];
+    this.traitIcons = [];
   }
 }

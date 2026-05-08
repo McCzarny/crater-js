@@ -22,6 +22,8 @@ function chebyshev(ax: number, ay: number, bx: number, by: number): number {
  */
 export default class CombatSystem {
   private scene: Phaser.Scene;
+  private currentCharacters: Character[] = [];
+  private currentMobs: IMob[] = [];
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -34,6 +36,8 @@ export default class CombatSystem {
    * @param delta       Frame time in milliseconds.
    */
   update(characters: Character[], mobs: IMob[], delta: number): void {
+    this.currentCharacters = characters;
+    this.currentMobs = mobs;
     const liveMobs = mobs.filter(m => !m.isDead);
 
     // ── Character attacks ───────────────────────────────────────────────────
@@ -75,7 +79,7 @@ export default class CombatSystem {
       }
 
       if (targetChar) {
-        this.hitCharacter(attacker.attackPower, targetChar);
+        this.hitCharacter(attacker.attackPower, targetChar, attacker);
         attacker.attackCooldown = attacker.attackInterval;
       } else if (targetMob) {
         this.hitMob(attacker.attackPower, targetMob);
@@ -114,15 +118,33 @@ export default class CombatSystem {
 
   // ── Damage helpers ─────────────────────────────────────────────────────────
 
-  private hitCharacter(damage: number, target: Character): void {
-    target.health = Math.max(0, target.health - damage);
+  private hitCharacter(damage: number, target: Character, source?: Character): void {
+    const finalDamage = Math.round(damage * (target.traits.damageTakenMultiplier() ?? 1));
+    target.health = Math.max(0, target.health - finalDamage);
     this.flash(target.sprite, 0xff2222, () => target.isDead);
+
+    // Thorny: reflect damage back to the attacker
+    if (source && !source.isDead) {
+      const reflected = target.traits.onMeleeHit() ?? 0;
+      if (reflected > 0) {
+        source.health = Math.max(0, source.health - reflected);
+        this.flash(source.sprite, 0xff2222, () => source.isDead);
+        if (source.health <= 0 && !source.isDead) {
+          source.isDead = true;
+          source.stopAllActions();
+          source.sprite.setAlpha(0.45);
+          this.dropCharacterLoot(source);
+          source.traits.onDeath(source, this.scene, this.currentCharacters, this.currentMobs);
+        }
+      }
+    }
 
     if (target.health <= 0 && !target.isDead) {
       target.isDead = true;
       target.stopAllActions();
       target.sprite.setAlpha(0.45);
       this.dropCharacterLoot(target);
+      target.traits.onDeath(target, this.scene, this.currentCharacters, this.currentMobs);
     }
   }
 

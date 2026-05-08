@@ -214,7 +214,10 @@ export default class GameScene extends Phaser.Scene {
       if (!itemConfig) {
         return;
       }
-      if (this.player.essence < itemConfig.baseValue) {
+      const cost = Math.floor(
+        itemConfig.baseValue * (this.player.traits?.essenceCostMultiplier() ?? 1),
+      );
+      if (this.player.essence < cost) {
         return;
       }
       const inventory = this.player.inventory.inventory;
@@ -222,7 +225,7 @@ export default class GameScene extends Phaser.Scene {
       if (emptySlot === -1) {
         return;
       }
-      this.player.essence -= itemConfig.baseValue;
+      this.player.essence -= cost;
       inventory[emptySlot] = itemKey;
       this.game.events.emit('inventoryChanged', [...inventory]);
       this.game.events.emit('essenceChanged', this.player.essence, this.player.maxEssence);

@@ -5,6 +5,7 @@
 
 import type Phaser from 'phaser';
 import type TerrainSystem from '../systems/TerrainSystem';
+import type CharacterTraits from '../systems/CharacterTraits';
 
 /**
  * Common interface for any entity that participates in melee combat.
@@ -160,6 +161,7 @@ export interface ICharacter {
       mode: 'manual' | 'automatic',
     ) => { tileX: number; tileY: number } | null;
   };
+  traits: CharacterTraits;
 }
 
 export interface BaseItem {

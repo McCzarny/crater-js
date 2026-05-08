@@ -42,6 +42,7 @@ export default class UIScene extends Phaser.Scene {
 
     // Compose modular UI components (mocks/dummies)
     this.characterIcons = new CharacterIcons(this);
+    this.characterIcons.setTooltipManager(this.tooltipManager);
 
     // Wait for GameScene to be ready, then update icons with actual characters
     this.events.once('updateCharacterIcons', () => {
