@@ -50,6 +50,7 @@ export default class CharacterMining {
   // Auto-dig state
   isAutoDigging: boolean;
   autoDigDirection: Direction | null;
+  effectiveDigDirection: Direction | null;
   lastDigTime: number;
   needsInitialDigTime: boolean;
 
@@ -70,6 +71,7 @@ export default class CharacterMining {
     // Auto-dig state
     this.isAutoDigging = false;
     this.autoDigDirection = null;
+    this.effectiveDigDirection = null;
     this.lastDigTime = 0;
     this.needsInitialDigTime = false;
 
@@ -173,6 +175,7 @@ export default class CharacterMining {
     console.log('Stopping auto-dig');
     this.isAutoDigging = false;
     this.autoDigDirection = null;
+    this.effectiveDigDirection = null;
     this.isMining = false;
     this.hideMiningIndicator();
   }
@@ -244,6 +247,8 @@ export default class CharacterMining {
         }
       }
     }
+
+    this.effectiveDigDirection = dirToUse;
 
     const targetX = char.gridX + dirToUse.dx;
     const targetY = char.gridY + dirToUse.dy;

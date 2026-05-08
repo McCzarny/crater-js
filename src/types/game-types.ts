@@ -73,6 +73,8 @@ export interface ICharacterMining {
   startAutoDig: (direction: { dx: number; dy: number }) => void;
   isMining: boolean;
   isAutoDigging: boolean;
+  autoDigDirection: { dx: number; dy: number } | null;
+  effectiveDigDirection: { dx: number; dy: number } | null;
 }
 
 /**
