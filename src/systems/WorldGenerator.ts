@@ -412,6 +412,65 @@ const SurfaceFeaturesStage: GenerationStage = {
 };
 
 // ---------------------------------------------------------------------------
+// Stage 4b: Surface Openings — additional shafts from surface to underground
+// ---------------------------------------------------------------------------
+
+/** Number of extra openings to carve (in addition to the center starting hole). */
+const SURFACE_OPENING_COUNT = 4;
+/** Depth in tiles below the surface tile each shaft extends. */
+const SURFACE_OPENING_MIN_DEPTH = 1;
+const SURFACE_OPENING_MAX_DEPTH = 2;
+/** Minimum horizontal distance between any two openings (and from slopes). */
+const SURFACE_OPENING_MIN_SEP = 5;
+
+const SurfaceOpeningsStage: GenerationStage = {
+  name: 'SurfaceOpenings',
+  apply(ctx: GenerationContext): void {
+    const centerX = Math.floor(CONFIG.WORLD_WIDTH / 2);
+    const surfaceY = CONFIG.SURFACE_HEIGHT;
+
+    // Stay inside the playable area (clear of slopes and world edges)
+    const playableLeft = SLOPE_WIDTH + 2;
+    const playableRight = CONFIG.WORLD_WIDTH - SLOPE_WIDTH - 2;
+
+    // Track placed X positions; seed with the center hole so openings keep clear of it
+    const placedX: number[] = [centerX - 1, centerX, centerX + 1];
+    let placed = 0;
+
+    for (let attempt = 0; attempt < 200 && placed < SURFACE_OPENING_COUNT; attempt++) {
+      const x = playableLeft + Math.floor(Math.random() * (playableRight - playableLeft + 1));
+
+      if (placedX.some(px => Math.abs(px - x) < SURFACE_OPENING_MIN_SEP)) {
+        continue;
+      }
+
+      const depth =
+        SURFACE_OPENING_MIN_DEPTH +
+        Math.floor(Math.random() * (SURFACE_OPENING_MAX_DEPTH - SURFACE_OPENING_MIN_DEPTH + 1));
+
+      // Carve the surface tile
+      ctx.blocks[surfaceY][x] = TileRegistry.createTile(TileType.MINED_DIRT);
+
+      // Carve underground tiles below the surface
+      for (let dy = 1; dy <= depth; dy++) {
+        const y = surfaceY + dy;
+        if (y < CONFIG.WORLD_HEIGHT) {
+          const tile = ctx.blocks[y][x];
+          if (tile.solid && tile.breakable) {
+            ctx.blocks[y][x] = TileRegistry.createTile(minedVariant(tile.type));
+          }
+        }
+      }
+
+      placedX.push(x);
+      placed++;
+    }
+
+    console.log(`SurfaceOpeningsStage: placed ${placed} additional openings`);
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Stage 5: Essence Spider dens
 // ---------------------------------------------------------------------------
 
@@ -532,6 +591,7 @@ export default class WorldGenerator {
     this.stages.push(createCaveStage());
     this.stages.push(BoulderStage);
     this.stages.push(SurfaceFeaturesStage);
+    this.stages.push(SurfaceOpeningsStage);
     this.stages.push(SpiderSpawnStage);
   }
 
