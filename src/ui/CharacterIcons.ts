@@ -116,27 +116,22 @@ export default class CharacterIcons {
         const row = ti % TRAITS_PER_COL;
         const tx = traitStartX + col * traitStep;
         const ty = traitStartY + row * traitStep;
-        const square = this.scene.add
+        const bg = this.scene.add
           .rectangle(tx, ty, traitIconSize, traitIconSize, 0x446688, 1)
           .setScrollFactor(0)
           .setDepth(202)
           .setInteractive({ useHandCursor: false });
-        const letter = this.scene.add
-          .text(tx, ty, trait.name[0].toUpperCase(), {
-            fontSize: '10px',
-            color: '#ffffff',
-            fontFamily: 'monospace',
-          })
-          .setOrigin(0.5)
+        const icon = this.scene.add
+          .image(tx, ty, 'traits', trait.id)
           .setScrollFactor(0)
           .setDepth(203);
         if (this.tooltipManager) {
-          this.tooltipManager.registerTooltip(square, {
+          this.tooltipManager.registerTooltip(bg, {
             title: trait.name,
             description: [trait.description],
           });
         }
-        this.traitIcons.push(square, letter);
+        this.traitIcons.push(bg, icon);
       });
     }
   }
