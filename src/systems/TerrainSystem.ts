@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
-import WorldGenerator from './WorldGenerator';
+import RegionGenerator from './RegionGenerator';
 import ItemManager from './ItemManager';
 import { TileRegistry, type Tile } from './TileTypes';
 import EssenceSpider from '../entities/EssenceSpider';
@@ -20,7 +20,7 @@ type ReactionHandler = (changedX: number, changedY: number) => void;
 
 /**
  * TerrainSystem - manages world terrain, rendering, and modification
- * Now uses composition with WorldGenerator and ItemManager for better separation of concerns
+ * Now uses composition with RegionGenerator and ItemManager for better separation of concerns
  */
 export default class TerrainSystem {
   scene: Phaser.Scene;
@@ -59,9 +59,9 @@ export default class TerrainSystem {
   /**
    * Generate the game world
    */
-  generateWorld(): void {
-    // Use WorldGenerator pipeline to create the block data
-    const generator = new WorldGenerator();
+  generateRegion(): void {
+    // Use RegionGenerator pipeline to create the block data
+    const generator = new RegionGenerator();
     const ctx = generator.generate();
     this.blocks = ctx.blocks;
 

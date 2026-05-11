@@ -567,11 +567,11 @@ const SpiderSpawnStage: GenerationStage = {
 };
 
 // ---------------------------------------------------------------------------
-// WorldGenerator - orchestrates the pipeline
+// RegionGenerator - orchestrates the pipeline
 // ---------------------------------------------------------------------------
 
 /**
- * WorldGenerator - staged world generation pipeline.
+ * RegionGenerator - staged world generation pipeline.
  *
  * Default stages (Minecraft-inspired order):
  *  1. Base Terrain  - fill the grid with layer-appropriate tiles
@@ -581,7 +581,7 @@ const SpiderSpawnStage: GenerationStage = {
  *
  * Additional stages can be inserted via `addStage` / `addStageAfter`.
  */
-export default class WorldGenerator {
+export default class RegionGenerator {
   private stages: GenerationStage[] = [];
 
   constructor() {
@@ -618,7 +618,7 @@ export default class WorldGenerator {
    * Run all stages and return the generation context.
    */
   generate(): GenerationContext {
-    console.log('WorldGenerator: starting generation pipeline...');
+    console.log('RegionGenerator: starting generation pipeline...');
 
     const ctx: GenerationContext = {
       blocks: [],
@@ -628,11 +628,11 @@ export default class WorldGenerator {
     };
 
     for (const stage of this.stages) {
-      console.log(`WorldGenerator: running stage "${stage.name}"`);
+      console.log(`RegionGenerator: running stage "${stage.name}"`);
       stage.apply(ctx);
     }
 
-    console.log('WorldGenerator: generation complete.');
+    console.log('RegionGenerator: generation complete.');
     return ctx;
   }
 
@@ -640,8 +640,8 @@ export default class WorldGenerator {
    * Static helper that keeps the old one-call API.
    * Returns blocks only (legacy callers that don't need the full context).
    */
-  static generateWorld(): Tile[][] {
-    const gen = new WorldGenerator();
+  static generateRegion(): Tile[][] {
+    const gen = new RegionGenerator();
     return gen.generate().blocks;
   }
 }

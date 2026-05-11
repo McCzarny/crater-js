@@ -60,7 +60,7 @@ export default class GameScene extends Phaser.Scene {
     this.terrainSystem = new TerrainSystem(this);
 
     // Create the world
-    this.terrainSystem.generateWorld();
+    this.terrainSystem.generateRegion();
 
     // Initialize base system (places bases on the surface)
     this.baseSystem = new BaseSystem(this, this.terrainSystem);
