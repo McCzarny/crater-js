@@ -414,6 +414,8 @@ export default class CharacterMovement {
       this.playAnim(`${char.race}_walk`);
     } else if (char.mining.isAutoDigging && char.mining.effectiveDigDirection?.dx !== 0) {
       this.playAnim(`${char.race}_mine_h`);
+    } else if (char.mining.isAutoDigging && char.mining.effectiveDigDirection?.dy !== 0) {
+      this.playAnim(`${char.race}_mine_d`);
     } else {
       this.playAnim(`${char.race}_idle`, true);
     }
