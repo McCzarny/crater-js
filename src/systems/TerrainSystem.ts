@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
-import RegionGenerator from './RegionGenerator';
+import RegionGenerator, { randomizeModifiers } from './RegionGenerator';
+import { selectRegionModifiers, type RegionModifier } from './RegionModifiers';
 import ItemManager from './ItemManager';
 import { TileRegistry, type Tile } from './TileTypes';
 import EssenceSpider from '../entities/EssenceSpider';
@@ -34,6 +35,8 @@ export default class TerrainSystem {
   spiders: EssenceSpider[] = [];
   /** All player characters in the world. Set by GameScene after creation. */
   characters: ICharacter[] = [];
+  /** Special modifiers active for this region. Read by GameScene for gameplay effects. */
+  activeRegionModifiers: RegionModifier[] = [];
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -61,7 +64,9 @@ export default class TerrainSystem {
    */
   generateRegion(): void {
     // Use RegionGenerator pipeline to create the block data
-    const generator = new RegionGenerator();
+    const specialMods = selectRegionModifiers();
+    this.activeRegionModifiers = specialMods;
+    const generator = new RegionGenerator(randomizeModifiers(), specialMods);
     const ctx = generator.generate();
     this.blocks = ctx.blocks;
 
@@ -81,6 +86,14 @@ export default class TerrainSystem {
       );
     }
     console.log(`TerrainSystem: spawned ${this.spiders.length} essence spiders`);
+
+    // Place ladders queued by the Ruins stage
+    for (const pos of ctx.pendingLadders) {
+      this.addLadder(pos.gridX, pos.gridY, false);
+    }
+    if (ctx.pendingLadders.length > 0) {
+      console.log(`TerrainSystem: placed ${ctx.pendingLadders.length} ruins ladders`);
+    }
   }
 
   /**

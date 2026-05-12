@@ -1,5 +1,6 @@
 import { CONFIG } from '../config';
 import { TileType, TileRegistry, type Tile, type TileTypeValue } from './TileTypes';
+import type { RegionModifier } from './RegionModifiers';
 
 /**
  * Shared context passed between generation stages.
@@ -16,6 +17,8 @@ interface GenerationContext {
    * Added by the SpiderSpawn stage.
    */
   pendingSpiders: { spiderX: number; spiderY: number; cocoonX: number; cocoonY: number }[];
+  /** Grid positions where ladders should be placed after rendering. Added by the Ruins stage. */
+  pendingLadders: { gridX: number; gridY: number }[];
 }
 
 /**
@@ -24,6 +27,47 @@ interface GenerationContext {
 interface GenerationStage {
   name: string;
   apply(ctx: GenerationContext): void;
+}
+
+// ---------------------------------------------------------------------------
+// Numeric Region Modifiers
+// ---------------------------------------------------------------------------
+
+export interface NumericModifiers {
+  /** World grid width in tiles. */
+  worldWidth: number;
+  /** World grid height in tiles. */
+  worldHeight: number;
+  /** Number of cave placement attempts. */
+  caveAttempts: number;
+  /** Multiplier applied to per-layer boulder spawn chances (1 = default). */
+  boulderMultiplier: number;
+  /** Multiplier applied to cave loot spawn chance (1 = default). */
+  resourceMultiplier: number;
+  /** Target number of Essence Spider dens. */
+  mobCount: number;
+  /** Number of extra surface openings (in addition to the starting hole). */
+  surfaceOpenings: number;
+}
+
+/**
+ * Returns a randomly generated set of numeric region modifiers.
+ * Call once per level start to vary the generated region.
+ */
+export function randomizeModifiers(): NumericModifiers {
+  const worldWidth = 50 + Math.floor(Math.random() * 36); // 50–85
+  const worldHeight = 120 + Math.floor(Math.random() * 81); // 120–200
+  const worldSizeFactor = (worldWidth * worldHeight) / (50 * 150); // relative to default size
+  const maxOpenings = Math.max(1, Math.floor(worldWidth / 10));
+  return {
+    worldWidth,
+    worldHeight,
+    caveAttempts: Math.floor((30 + Math.floor(Math.random() * 61)) * worldSizeFactor), // 30–90
+    boulderMultiplier: Math.random() * 2.0, // 0.0–2.0
+    resourceMultiplier: 0.5 + Math.random() * 1.5, // 0.5–2.0
+    mobCount: Math.floor((3 + Math.floor(Math.random() * 8)) * worldSizeFactor), // 3–10
+    surfaceOpenings: 1 + Math.floor(Math.random() * maxOpenings), // 1–maxOpenings
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -358,39 +402,41 @@ function getBoulderChance(depth: number): number {
   return 0;
 }
 
-const BoulderStage: GenerationStage = {
-  name: 'Boulders',
-  apply(ctx: GenerationContext): void {
-    let placed = 0;
+function createBoulderStage(multiplier: number = 1): GenerationStage {
+  return {
+    name: 'Boulders',
+    apply(ctx: GenerationContext): void {
+      let placed = 0;
 
-    for (let y = CONFIG.SURFACE_HEIGHT + 1; y < CONFIG.WORLD_HEIGHT - 1; y++) {
-      const depth = y - CONFIG.SURFACE_HEIGHT;
-      const chance = getBoulderChance(depth);
-      if (chance <= 0) {
-        continue;
-      }
-
-      for (let x = 0; x < CONFIG.WORLD_WIDTH; x++) {
-        const tile = ctx.blocks[y][x];
-        const tileBelow = ctx.blocks[y + 1][x];
-
-        // Boulder can only replace a solid tile with a solid tile below
-        if (!tile.solid || !tileBelow.solid) {
+      for (let y = CONFIG.SURFACE_HEIGHT + 1; y < CONFIG.WORLD_HEIGHT - 1; y++) {
+        const depth = y - CONFIG.SURFACE_HEIGHT;
+        const chance = getBoulderChance(depth) * multiplier;
+        if (chance <= 0) {
           continue;
         }
 
-        if (Math.random() < chance) {
-          const boulder = TileRegistry.createTile(TileType.BOULDER);
-          boulder.minedType = tile.minedType;
-          ctx.blocks[y][x] = boulder;
-          placed++;
+        for (let x = 0; x < CONFIG.WORLD_WIDTH; x++) {
+          const tile = ctx.blocks[y][x];
+          const tileBelow = ctx.blocks[y + 1][x];
+
+          // Boulder can only replace a solid tile with a solid tile below
+          if (!tile.solid || !tileBelow.solid) {
+            continue;
+          }
+
+          if (Math.random() < chance) {
+            const boulder = TileRegistry.createTile(TileType.BOULDER);
+            boulder.minedType = tile.minedType;
+            ctx.blocks[y][x] = boulder;
+            placed++;
+          }
         }
       }
-    }
 
-    console.log(`BoulderStage: placed ${placed} boulders`);
-  },
-};
+      console.log(`BoulderStage: placed ${placed} boulders`);
+    },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Stage 4: Surface Features (starting hole)
@@ -423,52 +469,54 @@ const SURFACE_OPENING_MAX_DEPTH = 2;
 /** Minimum horizontal distance between any two openings (and from slopes). */
 const SURFACE_OPENING_MIN_SEP = 5;
 
-const SurfaceOpeningsStage: GenerationStage = {
-  name: 'SurfaceOpenings',
-  apply(ctx: GenerationContext): void {
-    const centerX = Math.floor(CONFIG.WORLD_WIDTH / 2);
-    const surfaceY = CONFIG.SURFACE_HEIGHT;
+function createSurfaceOpeningsStage(count: number): GenerationStage {
+  return {
+    name: 'SurfaceOpenings',
+    apply(ctx: GenerationContext): void {
+      const centerX = Math.floor(CONFIG.WORLD_WIDTH / 2);
+      const surfaceY = CONFIG.SURFACE_HEIGHT;
 
-    // Stay inside the playable area (clear of slopes and world edges)
-    const playableLeft = SLOPE_WIDTH + 2;
-    const playableRight = CONFIG.WORLD_WIDTH - SLOPE_WIDTH - 2;
+      // Stay inside the playable area (clear of slopes and world edges)
+      const playableLeft = SLOPE_WIDTH + 2;
+      const playableRight = CONFIG.WORLD_WIDTH - SLOPE_WIDTH - 2;
 
-    // Track placed X positions; seed with the center hole so openings keep clear of it
-    const placedX: number[] = [centerX - 1, centerX, centerX + 1];
-    let placed = 0;
+      // Track placed X positions; seed with the center hole so openings keep clear of it
+      const placedX: number[] = [centerX - 1, centerX, centerX + 1];
+      let placed = 0;
 
-    for (let attempt = 0; attempt < 200 && placed < SURFACE_OPENING_COUNT; attempt++) {
-      const x = playableLeft + Math.floor(Math.random() * (playableRight - playableLeft + 1));
+      for (let attempt = 0; attempt < 200 && placed < count; attempt++) {
+        const x = playableLeft + Math.floor(Math.random() * (playableRight - playableLeft + 1));
 
-      if (placedX.some(px => Math.abs(px - x) < SURFACE_OPENING_MIN_SEP)) {
-        continue;
-      }
+        if (placedX.some(px => Math.abs(px - x) < SURFACE_OPENING_MIN_SEP)) {
+          continue;
+        }
 
-      const depth =
-        SURFACE_OPENING_MIN_DEPTH +
-        Math.floor(Math.random() * (SURFACE_OPENING_MAX_DEPTH - SURFACE_OPENING_MIN_DEPTH + 1));
+        const depth =
+          SURFACE_OPENING_MIN_DEPTH +
+          Math.floor(Math.random() * (SURFACE_OPENING_MAX_DEPTH - SURFACE_OPENING_MIN_DEPTH + 1));
 
-      // Carve the surface tile
-      ctx.blocks[surfaceY][x] = TileRegistry.createTile(TileType.MINED_DIRT);
+        // Carve the surface tile
+        ctx.blocks[surfaceY][x] = TileRegistry.createTile(TileType.MINED_DIRT);
 
-      // Carve underground tiles below the surface
-      for (let dy = 1; dy <= depth; dy++) {
-        const y = surfaceY + dy;
-        if (y < CONFIG.WORLD_HEIGHT) {
-          const tile = ctx.blocks[y][x];
-          if (tile.solid && tile.breakable) {
-            ctx.blocks[y][x] = TileRegistry.createTile(minedVariant(tile.type));
+        // Carve underground tiles below the surface
+        for (let dy = 1; dy <= depth; dy++) {
+          const y = surfaceY + dy;
+          if (y < CONFIG.WORLD_HEIGHT) {
+            const tile = ctx.blocks[y][x];
+            if (tile.solid && tile.breakable) {
+              ctx.blocks[y][x] = TileRegistry.createTile(minedVariant(tile.type));
+            }
           }
         }
+
+        placedX.push(x);
+        placed++;
       }
 
-      placedX.push(x);
-      placed++;
-    }
-
-    console.log(`SurfaceOpeningsStage: placed ${placed} additional openings`);
-  },
-};
+      console.log(`SurfaceOpeningsStage: placed ${placed} additional openings`);
+    },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Stage 5: Essence Spider dens
@@ -493,78 +541,273 @@ const SPIDER_DEN_MIN_SEPARATION = 30;
  */
 const SPIDER_DEN_MIN_DEPTH_BELOW_SURFACE = CONFIG.LAYERS.STONE.start; // 15
 
-const SpiderSpawnStage: GenerationStage = {
-  name: 'SpiderSpawn',
-  apply(ctx: GenerationContext): void {
-    /** Tracks placed den centres for the separation constraint. */
-    const denPositions: { x: number; y: number }[] = [];
+function createSpiderSpawnStage(count: number): GenerationStage {
+  return {
+    name: 'SpiderSpawn',
+    apply(ctx: GenerationContext): void {
+      /** Tracks placed den centres for the separation constraint. */
+      const denPositions: { x: number; y: number }[] = [];
 
-    const minY = CONFIG.SURFACE_HEIGHT + SPIDER_DEN_MIN_DEPTH_BELOW_SURFACE;
-    const maxY = CONFIG.WORLD_HEIGHT - 5;
+      const minY = CONFIG.SURFACE_HEIGHT + SPIDER_DEN_MIN_DEPTH_BELOW_SURFACE;
+      const maxY = CONFIG.WORLD_HEIGHT - 5;
 
-    for (let attempt = 0; attempt < 200 && denPositions.length < SPIDER_COUNT_TARGET; attempt++) {
-      const cx = 3 + Math.floor(Math.random() * (CONFIG.WORLD_WIDTH - 6));
-      const cy = minY + Math.floor(Math.random() * (maxY - minY));
+      for (let attempt = 0; attempt < 200 && denPositions.length < count; attempt++) {
+        const cx = 3 + Math.floor(Math.random() * (CONFIG.WORLD_WIDTH - 6));
+        const cy = minY + Math.floor(Math.random() * (maxY - minY));
 
-      // Keep dens away from each other
-      if (!isFarEnough(cx, cy, denPositions, SPIDER_DEN_MIN_SEPARATION)) {
-        continue;
+        // Keep dens away from each other
+        if (!isFarEnough(cx, cy, denPositions, SPIDER_DEN_MIN_SEPARATION)) {
+          continue;
+        }
+        // Keep dens slightly separated from regular cave centres too (avoids
+        // overlapping with player-accessible caves right at the entrance)
+        if (!isFarEnough(cx, cy, ctx.cavePositions, 8)) {
+          continue;
+        }
+
+        const size =
+          SPIDER_DEN_MIN_SIZE +
+          Math.floor(Math.random() * (SPIDER_DEN_MAX_SIZE - SPIDER_DEN_MIN_SIZE + 1));
+        const carved = carveCave(ctx, cx, cy, size);
+
+        // A den needs enough space for both spider and cocoon
+        if (carved.length < SPIDER_DEN_MIN_SIZE) {
+          continue;
+        }
+
+        // Collect floor tiles: carved tiles that have a solid tile directly below
+        const floorTiles = carved.filter(p => {
+          const below = ctx.blocks[p.y + 1]?.[p.x];
+          return below !== undefined && below.solid;
+        });
+
+        if (floorTiles.length < 2) {
+          continue; // Need at least two floor positions for cocoon + spider
+        }
+
+        // Place cocoon at the middle floor tile (most central feel)
+        const midIdx = Math.floor(floorTiles.length / 2);
+        const cocoonPos = floorTiles[midIdx];
+
+        // Place spider on a different floor tile, preferably adjacent
+        const spiderPos =
+          floorTiles.find(
+            p =>
+              (p.x !== cocoonPos.x || p.y !== cocoonPos.y) &&
+              Math.abs(p.x - cocoonPos.x) <= 3 &&
+              Math.abs(p.y - cocoonPos.y) <= 1,
+          ) ??
+          floorTiles.find(p => p.x !== cocoonPos.x || p.y !== cocoonPos.y) ??
+          floorTiles[0];
+
+        denPositions.push({ x: cx, y: cy });
+        ctx.cavePositions.push({ x: cx, y: cy }); // Register as a cave too
+
+        ctx.pendingSpiders.push({
+          spiderX: spiderPos.x,
+          spiderY: spiderPos.y,
+          cocoonX: cocoonPos.x,
+          cocoonY: cocoonPos.y,
+        });
       }
-      // Keep dens slightly separated from regular cave centres too (avoids
-      // overlapping with player-accessible caves right at the entrance)
-      if (!isFarEnough(cx, cy, ctx.cavePositions, 8)) {
-        continue;
+
+      console.log(`SpiderSpawnStage: placed ${denPositions.length} spider dens`);
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Stage 6: Old Camp — surface items left by a previous expedition
+// ---------------------------------------------------------------------------
+
+/** Item pool for the old camp: ladders most likely, minerals rare. */
+const OLD_CAMP_ITEM_POOL: { type: string; weight: number }[] = [
+  { type: 'LADDER', weight: 5 },
+  { type: 'COAL', weight: 3 },
+  { type: 'EMERALD', weight: 1 },
+];
+
+function createOldCampStage(): GenerationStage {
+  return {
+    name: 'OldCamp',
+    apply(ctx: GenerationContext): void {
+      const playableLeft = SLOPE_WIDTH + 3;
+      const playableRight = CONFIG.WORLD_WIDTH - SLOPE_WIDTH - 3;
+      const surfaceY = CONFIG.SURFACE_HEIGHT;
+
+      const campX = playableLeft + Math.floor(Math.random() * (playableRight - playableLeft + 1));
+      const campWidth = 2 + Math.floor(Math.random() * 2); // 2–3 tiles wide
+
+      // Scatter items across the cleared area
+      const itemCount = 3 + Math.floor(Math.random() * 4); // 3–6 items
+      for (let i = 0; i < itemCount; i++) {
+        const x = campX + Math.floor(Math.random() * campWidth);
+        if (x >= 0 && x < CONFIG.WORLD_WIDTH) {
+          ctx.pendingItems.push({
+            gridX: x,
+            gridY: surfaceY - 1,
+            type: pickWeighted(OLD_CAMP_ITEM_POOL),
+          });
+        }
       }
 
-      const size =
-        SPIDER_DEN_MIN_SIZE +
-        Math.floor(Math.random() * (SPIDER_DEN_MAX_SIZE - SPIDER_DEN_MIN_SIZE + 1));
-      const carved = carveCave(ctx, cx, cy, size);
+      console.log(
+        `OldCampStage: placed camp at x=${campX}, width=${campWidth}, items=${itemCount}`,
+      );
+    },
+  };
+}
 
-      // A den needs enough space for both spider and cocoon
-      if (carved.length < SPIDER_DEN_MIN_SIZE) {
-        continue;
+// ---------------------------------------------------------------------------
+// Stage 7: Buried Cache — precious minerals hidden in the deepest cave
+// ---------------------------------------------------------------------------
+
+/** High-value item pool for the buried cache. */
+const BURIED_CACHE_POOL: { type: string; weight: number }[] = [
+  { type: 'DIAMOND', weight: 4 },
+  { type: 'AMETHYST', weight: 3 },
+  { type: 'EMERALD', weight: 2 },
+];
+
+function createBuriedCacheStage(): GenerationStage {
+  return {
+    name: 'BuriedCache',
+    apply(ctx: GenerationContext): void {
+      if (ctx.cavePositions.length === 0) {
+        return;
       }
 
-      // Collect floor tiles: carved tiles that have a solid tile directly below
-      const floorTiles = carved.filter(p => {
-        const below = ctx.blocks[p.y + 1]?.[p.x];
-        return below !== undefined && below.solid;
-      });
+      // Find the deepest cave as the cache location
+      const deepest = ctx.cavePositions.reduce((best, p) => (p.y > best.y ? p : best));
 
-      if (floorTiles.length < 2) {
-        continue; // Need at least two floor positions for cocoon + spider
+      const itemCount = 5 + Math.floor(Math.random() * 4); // 5–8 items
+      let placed = 0;
+
+      // Scan around the deepest cave for valid floor tiles (non-solid with solid support below)
+      for (let dy = -8; dy <= 8 && placed < itemCount; dy++) {
+        for (let dx = -8; dx <= 8 && placed < itemCount; dx++) {
+          const x = deepest.x + dx;
+          const y = deepest.y + dy;
+          if (
+            x < 1 ||
+            x >= CONFIG.WORLD_WIDTH - 1 ||
+            y < CONFIG.SURFACE_HEIGHT + 1 ||
+            y >= CONFIG.WORLD_HEIGHT - 1
+          ) {
+            continue;
+          }
+          const tile = ctx.blocks[y]?.[x];
+          const tileBelow = ctx.blocks[y + 1]?.[x];
+          if (tile && !tile.solid && tileBelow && tileBelow.solid && Math.random() < 0.35) {
+            ctx.pendingItems.push({ gridX: x, gridY: y, type: pickWeighted(BURIED_CACHE_POOL) });
+            placed++;
+          }
+        }
       }
 
-      // Place cocoon at the middle floor tile (most central feel)
-      const midIdx = Math.floor(floorTiles.length / 2);
-      const cocoonPos = floorTiles[midIdx];
+      console.log(
+        `BuriedCacheStage: placed ${placed} items near deepest cave (${deepest.x}, ${deepest.y})`,
+      );
+    },
+  };
+}
 
-      // Place spider on a different floor tile, preferably adjacent
-      const spiderPos =
-        floorTiles.find(
-          p =>
-            (p.x !== cocoonPos.x || p.y !== cocoonPos.y) &&
-            Math.abs(p.x - cocoonPos.x) <= 3 &&
-            Math.abs(p.y - cocoonPos.y) <= 1,
-        ) ??
-        floorTiles.find(p => p.x !== cocoonPos.x || p.y !== cocoonPos.y) ??
-        floorTiles[0];
+// ---------------------------------------------------------------------------
+// Stage 8: Ruins — pre-placed shafts with ladders
+// ---------------------------------------------------------------------------
 
-      denPositions.push({ x: cx, y: cy });
-      ctx.cavePositions.push({ x: cx, y: cy }); // Register as a cave too
+const RUINS_SHAFT_COUNT = 4;
+const RUINS_SHAFT_MIN_DEPTH_BELOW_SURFACE = 3;
+const RUINS_SHAFT_MIN_LENGTH = 5;
+const RUINS_SHAFT_MAX_LENGTH = 14;
+/** Minimum tiles between tunnel branch origins along a shaft. */
+const RUINS_TUNNEL_SPACING = 3;
+const RUINS_TUNNEL_MIN_LENGTH = 3;
+const RUINS_TUNNEL_MAX_LENGTH = 8;
 
-      ctx.pendingSpiders.push({
-        spiderX: spiderPos.x,
-        spiderY: spiderPos.y,
-        cocoonX: cocoonPos.x,
-        cocoonY: cocoonPos.y,
-      });
+/** Carve a horizontal tunnel from (x, y) in the given direction for `length` tiles. */
+function carveHorizontalTunnel(
+  ctx: GenerationContext,
+  x: number,
+  y: number,
+  direction: -1 | 1,
+  length: number,
+): void {
+  for (let dx = 1; dx <= length; dx++) {
+    const tx = x + dx * direction;
+    if (tx < 1 || tx >= CONFIG.WORLD_WIDTH - 1) {
+      break;
     }
+    const tile = ctx.blocks[y][tx];
+    if (tile && tile.solid && tile.breakable) {
+      ctx.blocks[y][tx] = TileRegistry.createTile(minedVariant(tile.type));
+    }
+  }
+}
 
-    console.log(`SpiderSpawnStage: placed ${denPositions.length} spider dens`);
-  },
-};
+function createRuinsStage(): GenerationStage {
+  return {
+    name: 'Ruins',
+    apply(ctx: GenerationContext): void {
+      const playableLeft = SLOPE_WIDTH + 3;
+      const playableRight = CONFIG.WORLD_WIDTH - SLOPE_WIDTH - 3;
+      const placedX: number[] = [];
+      let placed = 0;
+
+      for (let attempt = 0; attempt < 100 && placed < RUINS_SHAFT_COUNT; attempt++) {
+        const x = playableLeft + Math.floor(Math.random() * (playableRight - playableLeft + 1));
+        if (placedX.some(px => Math.abs(px - x) < 2)) {
+          continue;
+        }
+        const startY =
+          CONFIG.SURFACE_HEIGHT +
+          RUINS_SHAFT_MIN_DEPTH_BELOW_SURFACE +
+          Math.floor(Math.random() * 10);
+        const length =
+          RUINS_SHAFT_MIN_LENGTH +
+          Math.floor(Math.random() * (RUINS_SHAFT_MAX_LENGTH - RUINS_SHAFT_MIN_LENGTH + 1));
+
+        let lastTunnelDy = -RUINS_TUNNEL_SPACING; // allow a tunnel at the very start
+
+        for (let dy = 0; dy < length; dy++) {
+          const y = startY + dy;
+          if (y >= CONFIG.WORLD_HEIGHT - 1) {
+            break;
+          }
+
+          // Carve shaft tile
+          const tile = ctx.blocks[y][x];
+          if (tile.solid && tile.breakable) {
+            ctx.blocks[y][x] = TileRegistry.createTile(minedVariant(tile.type));
+          }
+          ctx.pendingLadders.push({ gridX: x, gridY: y });
+
+          // Maybe branch a horizontal tunnel at this depth
+          if (dy - lastTunnelDy >= RUINS_TUNNEL_SPACING && Math.random() < 0.4) {
+            lastTunnelDy = dy;
+            const tunnelLength =
+              RUINS_TUNNEL_MIN_LENGTH +
+              Math.floor(Math.random() * (RUINS_TUNNEL_MAX_LENGTH - RUINS_TUNNEL_MIN_LENGTH + 1));
+            // Randomly branch left, right, or both
+            const roll = Math.random();
+            if (roll < 0.4) {
+              carveHorizontalTunnel(ctx, x, y, -1, tunnelLength);
+            } else if (roll < 0.8) {
+              carveHorizontalTunnel(ctx, x, y, 1, tunnelLength);
+            } else {
+              carveHorizontalTunnel(ctx, x, y, -1, tunnelLength);
+              carveHorizontalTunnel(ctx, x, y, 1, tunnelLength);
+            }
+          }
+        }
+        placedX.push(x);
+        placed++;
+      }
+
+      console.log(`RuinsStage: placed ${placed} shafts`);
+    },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // RegionGenerator - orchestrates the pipeline
@@ -584,15 +827,65 @@ const SpiderSpawnStage: GenerationStage = {
 export default class RegionGenerator {
   private stages: GenerationStage[] = [];
 
-  constructor() {
+  constructor(modifiers?: NumericModifiers, specials: RegionModifier[] = []) {
+    const mods: NumericModifiers = modifiers ?? {
+      worldWidth: CONFIG.WORLD_WIDTH,
+      worldHeight: CONFIG.WORLD_HEIGHT,
+      caveAttempts: CAVE_DEFAULTS.attempts,
+      boulderMultiplier: 1,
+      resourceMultiplier: 1,
+      mobCount: SPIDER_COUNT_TARGET,
+      surfaceOpenings: SURFACE_OPENING_COUNT,
+    };
+
+    const hasSpecial = (id: string) => specials.some(m => m.id === id);
+
+    // mob count adjustments — order matters: boosts first, then hard zero
+    if (hasSpecial('massive_caves')) {
+      mods.mobCount = Math.ceil(mods.mobCount * 1.5);
+    }
+    if (hasSpecial('infested')) {
+      mods.mobCount = Math.ceil(mods.mobCount * 4.0);
+    }
+    if (hasSpecial('no_mobs')) {
+      mods.mobCount = 0;
+    }
+    if (hasSpecial('boulder_field')) {
+      mods.boulderMultiplier = Math.max(mods.boulderMultiplier, 4.0);
+    }
+
+    // Apply world dimensions to CONFIG so all systems (TerrainSystem, GameScene, etc.) use the correct size.
+    CONFIG.WORLD_WIDTH = mods.worldWidth;
+    CONFIG.WORLD_HEIGHT = mods.worldHeight;
+
+    const specialIds = specials.map(m => m.id).join(', ') || 'none';
+    console.log(
+      `RegionGenerator: modifiers — worldWidth=${mods.worldWidth}, worldHeight=${mods.worldHeight}, caveAttempts=${mods.caveAttempts}, boulderMultiplier=${mods.boulderMultiplier.toFixed(2)}, resourceMultiplier=${mods.resourceMultiplier.toFixed(2)}, mobCount=${mods.mobCount}, surfaceOpenings=${mods.surfaceOpenings}, specials=[${specialIds}]`,
+    );
+
     // Register default stages in order
     this.stages.push(BaseTerrainStage);
     this.stages.push(SlopesStage);
-    this.stages.push(createCaveStage());
-    this.stages.push(BoulderStage);
+    this.stages.push(
+      createCaveStage({
+        attempts: mods.caveAttempts,
+        lootChance: CAVE_DEFAULTS.lootChance * mods.resourceMultiplier,
+        ...(hasSpecial('massive_caves') ? { minSize: 12, maxSize: 30 } : {}),
+      }),
+    );
     this.stages.push(SurfaceFeaturesStage);
-    this.stages.push(SurfaceOpeningsStage);
-    this.stages.push(SpiderSpawnStage);
+    this.stages.push(createSurfaceOpeningsStage(mods.surfaceOpenings));
+    this.stages.push(createSpiderSpawnStage(mods.mobCount));
+    if (hasSpecial('buried_cache')) {
+      this.stages.push(createBuriedCacheStage());
+    }
+    if (hasSpecial('ruins')) {
+      this.stages.push(createRuinsStage());
+    }
+    if (hasSpecial('old_camp')) {
+      this.stages.push(createOldCampStage());
+    }
+    this.stages.push(createBoulderStage(mods.boulderMultiplier));
   }
 
   /**
@@ -625,6 +918,7 @@ export default class RegionGenerator {
       cavePositions: [],
       pendingItems: [],
       pendingSpiders: [],
+      pendingLadders: [],
     };
 
     for (const stage of this.stages) {

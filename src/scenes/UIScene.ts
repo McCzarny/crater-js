@@ -4,10 +4,12 @@ import BaseUI from '../ui/BaseUI';
 import CharacterIcons from '../ui/CharacterIcons';
 import EssenceUI from '../ui/EssenceUI';
 import HUD from '../ui/HUD';
+import RegionModifiersUI from '../ui/RegionModifiersUI';
 import TooltipManager from '../ui/TooltipManager';
 import TradeUI from '../ui/TradeUI';
 import GameScene from './GameScene';
 import type Character from '../entities/Character';
+import type { RegionModifier } from '../systems/RegionModifiers';
 
 interface AbilityButtonElements {
   btn: Phaser.GameObjects.Rectangle;
@@ -21,6 +23,7 @@ interface AbilityButtonElements {
 export default class UIScene extends Phaser.Scene {
   characterIcons!: CharacterIcons;
   essenceUI!: EssenceUI;
+  regionModifiersUI!: RegionModifiersUI;
   baseUI!: BaseUI;
   tradeUI!: TradeUI;
   hud!: HUD;
@@ -57,6 +60,18 @@ export default class UIScene extends Phaser.Scene {
       goal: CONFIG.UNITY_ESSENCE_GOAL,
     });
     this.essenceUI.create(CONFIG.GAME_WIDTH - 90, 24);
+
+    this.regionModifiersUI = new RegionModifiersUI(this);
+    // GameScene may have already run (and set the registry) before UIScene initializes.
+    // Check registry first; fall back to the event for the opposite ordering.
+    const existingMods = this.registry.get('activeRegionModifiers') as RegionModifier[] | undefined;
+    if (existingMods) {
+      this.regionModifiersUI.show(CONFIG.GAME_WIDTH - 90, 80, existingMods, this.tooltipManager);
+    } else {
+      this.game.events.once('regionModifiersReady', (modifiers: RegionModifier[]) => {
+        this.regionModifiersUI.show(CONFIG.GAME_WIDTH - 90, 80, modifiers, this.tooltipManager);
+      });
+    }
 
     this.baseUI = new BaseUI(this);
     this.baseUI.create(CONFIG.GAME_WIDTH / 2, 40);

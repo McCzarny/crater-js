@@ -62,6 +62,10 @@ export default class GameScene extends Phaser.Scene {
     // Create the world
     this.terrainSystem.generateRegion();
 
+    // Notify UIScene of active special modifiers so it can render the icons    // Also store in the shared registry so UIScene can read them even if it initializes after this event fires.
+    this.registry.set('activeRegionModifiers', this.terrainSystem.activeRegionModifiers);
+    this.game.events.emit('regionModifiersReady', this.terrainSystem.activeRegionModifiers);
+
     // Initialize base system (places bases on the surface)
     this.baseSystem = new BaseSystem(this, this.terrainSystem);
 
@@ -290,10 +294,16 @@ export default class GameScene extends Phaser.Scene {
       if (this.upkeepTimer >= 1000) {
         this.upkeepTimer -= 1000;
         const livingCharacters = this.characters.filter(c => !c.isDead);
-        const upkeep = livingCharacters.reduce((sum, c) => {
-          const raceConfig = CONFIG.RACES[c.race as keyof typeof CONFIG.RACES];
-          return sum + raceConfig.upkeepPerMinute / 60;
-        }, 0);
+        const essenceDrainMultiplier = this.terrainSystem.activeRegionModifiers.some(
+          m => m.id === 'essence_drain',
+        )
+          ? 1.2
+          : 1;
+        const upkeep =
+          livingCharacters.reduce((sum, c) => {
+            const raceConfig = CONFIG.RACES[c.race as keyof typeof CONFIG.RACES];
+            return sum + raceConfig.upkeepPerMinute / 60;
+          }, 0) * essenceDrainMultiplier;
         this.globalEssence = Math.max(0, this.globalEssence - upkeep);
 
         if (this.globalEssence === 0) {
