@@ -847,7 +847,7 @@ export default class RegionGenerator {
     if (hasSpecial('infested')) {
       mods.mobCount = Math.ceil(mods.mobCount * 4.0);
     }
-    if (hasSpecial('no_mobs')) {
+    if (hasSpecial('uninhabited')) {
       mods.mobCount = 0;
     }
     if (hasSpecial('boulder_field')) {

@@ -14,8 +14,8 @@ export const SPECIAL_MODIFIER_POOL: readonly RegionModifiers[] = [
     cancels: [],
   },
   {
-    id: 'no_mobs',
-    name: 'No Mobs',
+    id: 'uninhabited',
+    name: 'Uninhabited',
     description: 'No living beings were seen in this region.',
     cancels: ['infested'],
   },
@@ -41,7 +41,7 @@ export const SPECIAL_MODIFIER_POOL: readonly RegionModifiers[] = [
     id: 'infested',
     name: 'Infested',
     description: 'The region is swarming with Essence Spiders. Far more dens than usual.',
-    cancels: ['no_mobs'],
+    cancels: ['uninhabited'],
   },
   {
     id: 'boulder_field',
