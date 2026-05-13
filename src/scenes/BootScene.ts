@@ -70,6 +70,8 @@ export default class BootScene extends Phaser.Scene {
 
     this.load.image('spider_cocoon', 'resources/mobs/spider_cocoon.png');
 
+    this.load.aseprite('worm_sheet', 'resources/mobs/worm.png', 'resources/mobs/worm.json');
+
     // UI
     this.load.image('hud', 'resources/ui/hud.png');
     this.load.image('hud_icon', 'resources/ui/hud_icon.png');
@@ -78,10 +80,11 @@ export default class BootScene extends Phaser.Scene {
 
     this.load.image('hud_trait_icon', 'resources/ui/hud_trait_icon.png');
     this.load.atlas('traits', 'resources/ui/traits.png', 'resources/ui/traits.json');
-    this.load.spritesheet('region_modifiers', 'resources/ui/region_modifiers.png', {
-      frameWidth: 16,
-      frameHeight: 16,
-    });
+    this.load.atlas(
+      'region_modifiers',
+      'resources/ui/region_modifiers.png',
+      'resources/ui/region_modifiers.json',
+    );
 
     this.load.image('hud_standard_action_MoveLeft', 'resources/ui/move_left.png');
     this.load.image('hud_standard_action_MoveRight', 'resources/ui/move_right.png');
@@ -126,6 +129,7 @@ export default class BootScene extends Phaser.Scene {
     this.anims.createFromAseprite('fungus_character_sheet');
     this.anims.createFromAseprite('petal_character_sheet');
     this.anims.createFromAseprite('essence_spider_sheet');
+    this.anims.createFromAseprite('worm_sheet');
 
     this.scene.start('GameScene');
     this.scene.launch('UIScene');

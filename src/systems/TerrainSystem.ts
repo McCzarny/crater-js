@@ -3,8 +3,9 @@ import { CONFIG } from '../config';
 import RegionGenerator, { randomizeModifiers } from './RegionGenerator';
 import { selectRegionModifiers, type RegionModifier } from './RegionModifiers';
 import ItemManager from './ItemManager';
-import { TileRegistry, type Tile } from './TileTypes';
+import { TileRegistry, TileType, type Tile } from './TileTypes';
 import EssenceSpider from '../entities/EssenceSpider';
+import WormMob from '../entities/WormMob';
 import type { ICharacter } from '../types/game-types';
 
 /**
@@ -33,6 +34,8 @@ export default class TerrainSystem {
   reactionHandlers: ReactionHandler[];
   /** All active Essence Spiders in the world. */
   spiders: EssenceSpider[] = [];
+  /** All active Worm mobs in the world. */
+  worms: WormMob[] = [];
   /** All player characters in the world. Set by GameScene after creation. */
   characters: ICharacter[] = [];
   /** Special modifiers active for this region. Read by GameScene for gameplay effects. */
@@ -87,6 +90,20 @@ export default class TerrainSystem {
     }
     console.log(`TerrainSystem: spawned ${this.spiders.length} essence spiders`);
 
+    // Instantiate Worm mobs from the generation stage
+    this.worms = [];
+    for (const w of ctx.pendingWorms) {
+      // If the "writhing" special modifier is active, the first worm is a giant variant.
+      const giant =
+        this.worms.length === 0 && this.activeRegionModifiers.some(mod => mod.id === 'writhing');
+      const worm = new WormMob(this.scene, this, w.x, w.y, giant);
+      this.worms.push(worm);
+      // Re-clear segment tiles now that the worm is registered as CREATURE-solid,
+      // so any boulder that fell onto a segment during construction is removed.
+      worm.settle();
+    }
+    console.log(`TerrainSystem: spawned ${this.worms.length} worms`);
+
     // Place ladders queued by the Ruins stage
     for (const pos of ctx.pendingLadders) {
       this.addLadder(pos.gridX, pos.gridY, false);
@@ -103,6 +120,15 @@ export default class TerrainSystem {
   updateSpiders(characters: ICharacter[], time: number, delta: number): void {
     for (const spider of this.spiders) {
       spider.update(characters, time, delta);
+    }
+  }
+
+  /**
+   * Advance worm AI. Call once per frame from GameScene.
+   */
+  updateWorms(characters: ICharacter[], time: number, delta: number): void {
+    for (const worm of this.worms) {
+      worm.update(characters, time, delta);
     }
   }
 
@@ -155,14 +181,28 @@ export default class TerrainSystem {
   }
 
   /**
-   * Get the block at the given grid position
+   * Get the block at the given grid position.
+   * Returns a CREATURE tile when any creature occupies the cell, so all callers
+   * automatically treat creatures as solid without needing explicit creature checks.
    */
   getBlockAt(gridX: number, gridY: number): Tile | null {
     if (gridX < 0 || gridX >= CONFIG.WORLD_WIDTH || gridY < 0 || gridY >= CONFIG.WORLD_HEIGHT) {
       return null;
     }
-
+    if (this.isOccupiedByCreature(gridX, gridY)) {
+      return TileRegistry.getTile(TileType.CREATURE);
+    }
     return this.blocks[gridY][gridX];
+  }
+
+  // Check if a tile is occupied by any creature that should be treated as solid.
+  private isOccupiedByCreature(gridX: number, gridY: number): boolean {
+    for (const worm of this.worms) {
+      if (!worm.isDead && worm.occupiesAt(gridX, gridY)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**

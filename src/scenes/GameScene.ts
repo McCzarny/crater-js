@@ -283,9 +283,18 @@ export default class GameScene extends Phaser.Scene {
       this.terrainSystem.updateSpiders(this.characters, time, delta);
     }
 
+    // Update Worm AI
+    if (this.terrainSystem) {
+      this.terrainSystem.updateWorms(this.characters, time, delta);
+    }
+
     // Run combat: characters vs characters and mobs
     if (this.combatSystem && this.terrainSystem) {
-      this.combatSystem.update(this.characters, this.terrainSystem.spiders, delta);
+      this.combatSystem.update(
+        this.characters,
+        [...this.terrainSystem.spiders, ...this.terrainSystem.worms],
+        delta,
+      );
     }
 
     // --- UNITY ESSENCE UPKEEP (ticks every second) ---

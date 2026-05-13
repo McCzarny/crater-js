@@ -6,18 +6,6 @@ import type TooltipManager from './TooltipManager';
 const ICON_SIZE = 26;
 const ICON_GAP = 5;
 
-/** Frame indices in the region_modifiers spritesheet, matching pool order. */
-const MODIFIER_ICON_FRAMES: Record<string, number> = {
-  massive_caves: 0,
-  uninhabited: 1,
-  essence_drain: 2,
-  ruins: 3,
-  old_camp: 4,
-  infested: 5,
-  boulder_field: 6,
-  buried_cache: 7,
-};
-
 export default class RegionModifiersUI {
   private scene: Phaser.Scene;
   private objects: Phaser.GameObjects.GameObject[] = [];
@@ -53,9 +41,8 @@ export default class RegionModifiersUI {
         .setOrigin(0.5);
       this.objects.push(bg);
 
-      const frame = MODIFIER_ICON_FRAMES[mod.id] ?? 0;
       const icon = this.scene.add
-        .image(iconX, y, 'region_modifiers', frame)
+        .image(iconX, y, 'region_modifiers', mod.id)
         .setDisplaySize(ICON_SIZE, ICON_SIZE)
         .setOrigin(0.5)
         .setScrollFactor(0)

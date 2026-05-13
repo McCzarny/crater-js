@@ -19,6 +19,8 @@ interface GenerationContext {
   pendingSpiders: { spiderX: number; spiderY: number; cocoonX: number; cocoonY: number }[];
   /** Grid positions where ladders should be placed after rendering. Added by the Ruins stage. */
   pendingLadders: { gridX: number; gridY: number }[];
+  /** Head positions for Worm mobs to instantiate after the world is rendered. */
+  pendingWorms: { x: number; y: number }[];
 }
 
 /**
@@ -45,7 +47,9 @@ export interface NumericModifiers {
   /** Multiplier applied to cave loot spawn chance (1 = default). */
   resourceMultiplier: number;
   /** Target number of Essence Spider dens. */
-  mobCount: number;
+  spiderCount: number;
+  /** Target number of Worm mobs. */
+  wormCount: number;
   /** Number of extra surface openings (in addition to the starting hole). */
   surfaceOpenings: number;
 }
@@ -65,7 +69,8 @@ export function randomizeModifiers(): NumericModifiers {
     caveAttempts: Math.floor((30 + Math.floor(Math.random() * 61)) * worldSizeFactor), // 30–90
     boulderMultiplier: Math.random() * 2.0, // 0.0–2.0
     resourceMultiplier: 0.5 + Math.random() * 1.5, // 0.5–2.0
-    mobCount: Math.floor((3 + Math.floor(Math.random() * 8)) * worldSizeFactor), // 3–10
+    spiderCount: Math.floor((3 + Math.floor(Math.random() * 8)) * worldSizeFactor), // 3–10
+    wormCount: 1 + Math.floor(Math.random() * 3), // 1–3
     surfaceOpenings: 1 + Math.floor(Math.random() * maxOpenings), // 1–maxOpenings
   };
 }
@@ -617,6 +622,43 @@ function createSpiderSpawnStage(count: number): GenerationStage {
 }
 
 // ---------------------------------------------------------------------------
+// Stage 6b: Worm Spawn — places burrowing worm mobs underground
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimum separation between worm spawn points (tiles, Euclidean).
+ */
+const WORM_MIN_SEPARATION = 15;
+
+function createWormSpawnStage(count: number): GenerationStage {
+  return {
+    name: 'WormSpawn',
+    apply(ctx: GenerationContext): void {
+      const minY = CONFIG.SURFACE_HEIGHT + 10;
+      const maxY = CONFIG.WORLD_HEIGHT - 10;
+      const minX = SLOPE_WIDTH + 5;
+      const maxX = CONFIG.WORLD_WIDTH - SLOPE_WIDTH - 5;
+
+      const positions: { x: number; y: number }[] = [];
+
+      for (let attempt = 0; attempt < 150 && positions.length < count; attempt++) {
+        const x = minX + Math.floor(Math.random() * (maxX - minX));
+        const y = minY + Math.floor(Math.random() * (maxY - minY));
+
+        if (!isFarEnough(x, y, positions, WORM_MIN_SEPARATION)) {
+          continue;
+        }
+
+        positions.push({ x, y });
+        ctx.pendingWorms.push({ x, y });
+      }
+
+      console.log(`WormSpawnStage: placed ${positions.length} worms`);
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Stage 6: Old Camp — surface items left by a previous expedition
 // ---------------------------------------------------------------------------
 
@@ -834,7 +876,8 @@ export default class RegionGenerator {
       caveAttempts: CAVE_DEFAULTS.attempts,
       boulderMultiplier: 1,
       resourceMultiplier: 1,
-      mobCount: SPIDER_COUNT_TARGET,
+      spiderCount: SPIDER_COUNT_TARGET,
+      wormCount: 1,
       surfaceOpenings: SURFACE_OPENING_COUNT,
     };
 
@@ -842,13 +885,17 @@ export default class RegionGenerator {
 
     // mob count adjustments — order matters: boosts first, then hard zero
     if (hasSpecial('massive_caves')) {
-      mods.mobCount = Math.ceil(mods.mobCount * 1.5);
+      mods.spiderCount = Math.ceil(mods.spiderCount * 1.5);
     }
     if (hasSpecial('infested')) {
-      mods.mobCount = Math.ceil(mods.mobCount * 4.0);
+      mods.spiderCount = Math.ceil(mods.spiderCount * 4.0);
+    }
+    if (hasSpecial('writhing')) {
+      mods.wormCount = Math.ceil(mods.wormCount * 3.0);
     }
     if (hasSpecial('uninhabited')) {
-      mods.mobCount = 0;
+      mods.spiderCount = 0;
+      mods.wormCount = 0;
     }
     if (hasSpecial('boulder_field')) {
       mods.boulderMultiplier = Math.max(mods.boulderMultiplier, 4.0);
@@ -860,7 +907,7 @@ export default class RegionGenerator {
 
     const specialIds = specials.map(m => m.id).join(', ') || 'none';
     console.log(
-      `RegionGenerator: modifiers — worldWidth=${mods.worldWidth}, worldHeight=${mods.worldHeight}, caveAttempts=${mods.caveAttempts}, boulderMultiplier=${mods.boulderMultiplier.toFixed(2)}, resourceMultiplier=${mods.resourceMultiplier.toFixed(2)}, mobCount=${mods.mobCount}, surfaceOpenings=${mods.surfaceOpenings}, specials=[${specialIds}]`,
+      `RegionGenerator: modifiers — worldWidth=${mods.worldWidth}, worldHeight=${mods.worldHeight}, caveAttempts=${mods.caveAttempts}, boulderMultiplier=${mods.boulderMultiplier.toFixed(2)}, resourceMultiplier=${mods.resourceMultiplier.toFixed(2)}, spiderCount=${mods.spiderCount}, surfaceOpenings=${mods.surfaceOpenings}, specials=[${specialIds}]`,
     );
 
     // Register default stages in order
@@ -875,7 +922,8 @@ export default class RegionGenerator {
     );
     this.stages.push(SurfaceFeaturesStage);
     this.stages.push(createSurfaceOpeningsStage(mods.surfaceOpenings));
-    this.stages.push(createSpiderSpawnStage(mods.mobCount));
+    this.stages.push(createSpiderSpawnStage(mods.spiderCount));
+    this.stages.push(createWormSpawnStage(mods.wormCount));
     if (hasSpecial('buried_cache')) {
       this.stages.push(createBuriedCacheStage());
     }
@@ -919,6 +967,7 @@ export default class RegionGenerator {
       pendingItems: [],
       pendingSpiders: [],
       pendingLadders: [],
+      pendingWorms: [],
     };
 
     for (const stage of this.stages) {

@@ -94,18 +94,23 @@ export default class CombatSystem {
         continue;
       }
 
-      // Find the nearest character in range
+      // Find the nearest character in range (check all positions the mob occupies)
+      const mobPositions = mob.getAttackPositions
+        ? mob.getAttackPositions()
+        : [{ x: mob.gridX, y: mob.gridY }];
       let nearestDist = Infinity;
       let target: Character | null = null;
 
-      for (const character of characters) {
-        if (character.isDead) {
-          continue;
-        }
-        const d = chebyshev(mob.gridX, mob.gridY, character.gridX, character.gridY);
-        if (d <= ATTACK_RANGE && d < nearestDist) {
-          nearestDist = d;
-          target = character;
+      for (const pos of mobPositions) {
+        for (const character of characters) {
+          if (character.isDead) {
+            continue;
+          }
+          const d = chebyshev(pos.x, pos.y, character.gridX, character.gridY);
+          if (d <= ATTACK_RANGE && d < nearestDist) {
+            nearestDist = d;
+            target = character;
+          }
         }
       }
 

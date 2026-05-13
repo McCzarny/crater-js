@@ -30,6 +30,11 @@ export interface ICombatant {
  */
 export interface IMob extends ICombatant {
   destroy(): void;
+  /**
+   * Returns all grid positions that the mob occupies for melee-attack purposes.
+   * If omitted, the combat system falls back to { gridX, gridY }.
+   */
+  getAttackPositions?(): ReadonlyArray<{ x: number; y: number }>;
 }
 
 /**

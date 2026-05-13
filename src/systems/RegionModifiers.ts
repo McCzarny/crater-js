@@ -1,4 +1,4 @@
-export interface RegionModifiers {
+export interface RegionModifier {
   id: string;
   name: string;
   description: string;
@@ -6,7 +6,7 @@ export interface RegionModifiers {
   cancels: string[];
 }
 
-export const SPECIAL_MODIFIER_POOL: readonly RegionModifiers[] = [
+export const SPECIAL_MODIFIER_POOL: readonly RegionModifier[] = [
   {
     id: 'massive_caves',
     name: 'Massive Caves',
@@ -44,6 +44,12 @@ export const SPECIAL_MODIFIER_POOL: readonly RegionModifiers[] = [
     cancels: ['uninhabited'],
   },
   {
+    id: 'writhing',
+    name: 'Writhing',
+    description: 'The region is home for writhing masses of creatures.',
+    cancels: ['uninhabited'],
+  },
+  {
     id: 'boulder_field',
     name: 'Boulder Field',
     description: 'The underground is choked with boulders, making passage difficult.',
@@ -61,12 +67,12 @@ export const SPECIAL_MODIFIER_POOL: readonly RegionModifiers[] = [
  * Randomly selects 0–maxCount modifiers from the pool, respecting cancellation rules.
  */
 export function selectRegionModifiers(
-  pool: readonly RegionModifiers[] = SPECIAL_MODIFIER_POOL,
+  pool: readonly RegionModifier[] = SPECIAL_MODIFIER_POOL,
   maxCount: number = 4,
-): RegionModifiers[] {
+): RegionModifier[] {
   const shuffled = [...pool].sort(() => Math.random() - 0.5);
   const targetCount = Math.floor(Math.random() * (maxCount + 1)); // 0–maxCount
-  const selected: RegionModifiers[] = [];
+  const selected: RegionModifier[] = [];
   const cancelledIds = new Set<string>();
 
   for (const modifier of shuffled) {

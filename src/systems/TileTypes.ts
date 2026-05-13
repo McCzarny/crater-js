@@ -17,6 +17,7 @@ export const TileType = {
   RARE_ORE: 'rareOre',
   MINED_RARE_ORE: 'minedRareOre',
   BOULDER: 'boulder',
+  CREATURE: 'creature',
 } as const;
 
 // Type for tile type values
@@ -181,6 +182,9 @@ export class TileRegistry {
     );
     // Boulder - solid, not breakable
     this.register(new Tile(TileType.BOULDER, true, 0x616262, false), 1);
+    // Creature - solid, not breakable; used as a virtual tile returned by getBlockAt when
+    // a mob body occupies a cell. Never stored in blocks[][] or rendered.
+    this.register(new Tile(TileType.CREATURE, true, null, false));
 
     console.log('TileRegistry: Initialized with', this.tiles.size, 'tile types');
   }
