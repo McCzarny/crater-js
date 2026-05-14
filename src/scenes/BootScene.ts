@@ -72,6 +72,12 @@ export default class BootScene extends Phaser.Scene {
 
     this.load.aseprite('worm_sheet', 'resources/mobs/worm.png', 'resources/mobs/worm.json');
 
+    this.load.aseprite(
+      'stone_beetle_sheet',
+      'resources/mobs/stone_beetle.png',
+      'resources/mobs/stone_beetle.json',
+    );
+
     // UI
     this.load.image('hud', 'resources/ui/hud.png');
     this.load.image('hud_icon', 'resources/ui/hud_icon.png');
@@ -130,6 +136,7 @@ export default class BootScene extends Phaser.Scene {
     this.anims.createFromAseprite('petal_character_sheet');
     this.anims.createFromAseprite('essence_spider_sheet');
     this.anims.createFromAseprite('worm_sheet');
+    this.anims.createFromAseprite('stone_beetle_sheet');
 
     this.scene.start('GameScene');
     this.scene.launch('UIScene');

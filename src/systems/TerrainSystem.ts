@@ -6,6 +6,7 @@ import ItemManager from './ItemManager';
 import { TileRegistry, TileType, type Tile } from './TileTypes';
 import EssenceSpider from '../entities/EssenceSpider';
 import WormMob from '../entities/WormMob';
+import StoneBeetle from '../entities/StoneBeetle';
 import type { ICharacter } from '../types/game-types';
 
 /**
@@ -36,6 +37,8 @@ export default class TerrainSystem {
   spiders: EssenceSpider[] = [];
   /** All active Worm mobs in the world. */
   worms: WormMob[] = [];
+  /** All active Stone Beetles in the world. */
+  stoneBeetles: StoneBeetle[] = [];
   /** All player characters in the world. Set by GameScene after creation. */
   characters: ICharacter[] = [];
   /** Special modifiers active for this region. Read by GameScene for gameplay effects. */
@@ -60,6 +63,8 @@ export default class TerrainSystem {
     this.reactionHandlers = [];
     // Register built-in boulder reaction
     this.reactionHandlers.push(this._boulderReaction.bind(this));
+    // Register stone beetle larva transform reaction
+    this.reactionHandlers.push(this._stoneBeetleLarvaReaction.bind(this));
   }
 
   /**
@@ -104,6 +109,18 @@ export default class TerrainSystem {
     }
     console.log(`TerrainSystem: spawned ${this.worms.length} worms`);
 
+    // Instantiate Stone Beetles from the generation stage
+    this.stoneBeetles = [];
+    for (const b of ctx.pendingBeetles) {
+      this.stoneBeetles.push(new StoneBeetle(this.scene, this, b.x, b.y));
+    }
+    // Perform initial larva-transform check (a beetle may have spawned adjacent
+    // to a cave carved after the beetle stage ran).
+    for (const beetle of this.stoneBeetles) {
+      beetle.checkTransform();
+    }
+    console.log(`TerrainSystem: spawned ${this.stoneBeetles.length} stone beetles`);
+
     // Place ladders queued by the Ruins stage
     for (const pos of ctx.pendingLadders) {
       this.addLadder(pos.gridX, pos.gridY, false);
@@ -129,6 +146,31 @@ export default class TerrainSystem {
   updateWorms(characters: ICharacter[], time: number, delta: number): void {
     for (const worm of this.worms) {
       worm.update(characters, time, delta);
+    }
+  }
+
+  /**
+   * Advance stone beetle AI. Call once per frame from GameScene.
+   */
+  updateStoneBeetles(characters: ICharacter[], time: number, delta: number): void {
+    for (const beetle of this.stoneBeetles) {
+      beetle.update(characters, time, delta);
+    }
+  }
+
+  /**
+   * Reaction handler: when a tile changes, check if any adjacent larva beetle
+   * should transform to adult form.
+   */
+  _stoneBeetleLarvaReaction(changedX: number, changedY: number): void {
+    for (const beetle of this.stoneBeetles) {
+      if (!beetle.isDead && beetle.isLarva) {
+        const dx = Math.abs(beetle.gridX - changedX);
+        const dy = Math.abs(beetle.gridY - changedY);
+        if (dx + dy === 1) {
+          beetle.checkTransform();
+        }
+      }
     }
   }
 
@@ -205,12 +247,27 @@ export default class TerrainSystem {
     return false;
   }
 
+  /** Returns true if a living larva beetle occupies this cell. */
+  isOccupiedByLarva(gridX: number, gridY: number): boolean {
+    for (const beetle of this.stoneBeetles) {
+      if (!beetle.isDead && beetle.isLarva && beetle.gridX === gridX && beetle.gridY === gridY) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /**
    * Mine/remove a block at the given grid position
    */
   mineBlockAt(gridX: number, gridY: number): boolean | null {
     // Check bounds
     if (gridX < 0 || gridX >= CONFIG.WORLD_WIDTH || gridY < 0 || gridY >= CONFIG.WORLD_HEIGHT) {
+      return null;
+    }
+
+    // Larva beetles are indestructible — block mining of their cell
+    if (this.isOccupiedByLarva(gridX, gridY)) {
       return null;
     }
 
@@ -279,8 +336,9 @@ export default class TerrainSystem {
       let landingY = fallFromY;
       const BOULDER_DAMAGE = 1000;
       const hitCharacters: ICharacter[] = [];
+      const hitBeetles: StoneBeetle[] = [];
 
-      // Search downward for landing position, stopping at solid blocks or characters
+      // Search downward for landing position, stopping at solid blocks, characters, or beetles
       while (landingY + 1 < CONFIG.WORLD_HEIGHT) {
         const nextY = landingY + 1;
         const below = this.getBlockAt(changedX, nextY);
@@ -291,10 +349,18 @@ export default class TerrainSystem {
         const charAtNext = this.characters.find(
           c => !c.isDead && c.gridX === changedX && c.gridY === nextY,
         );
+        // Check if an adult beetle occupies the next tile
+        const beetleAtNext = this.stoneBeetles.find(
+          b => !b.isDead && !b.isLarva && b.gridX === changedX && b.gridY === nextY,
+        );
         landingY = nextY;
         if (charAtNext) {
           hitCharacters.push(charAtNext);
           break; // Boulder stops on the character
+        }
+        if (beetleAtNext) {
+          hitBeetles.push(beetleAtNext);
+          break; // Boulder stops on the beetle
         }
       }
 
@@ -319,6 +385,17 @@ export default class TerrainSystem {
         character.health = Math.max(0, character.health - BOULDER_DAMAGE);
         if (character.health <= 0) {
           character.kill();
+        }
+      }
+
+      // Damage beetles hit by the boulder
+      for (const beetle of hitBeetles) {
+        beetle.health = Math.max(0, beetle.health - BOULDER_DAMAGE);
+        if (beetle.health <= 0 && !beetle.isDead) {
+          beetle.isDead = true;
+          this.scene.time.delayedCall(200, () => {
+            beetle.destroy();
+          });
         }
       }
 

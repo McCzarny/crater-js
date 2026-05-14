@@ -66,6 +66,7 @@ export default class EssenceSpider implements IMob {
   private readonly terrainSystem: TerrainSystem;
   /** Accumulated time since the last step (ms). */
   private moveAccumulator: number = 0;
+  private currentAnimKey: string = 'spider_idle';
 
   constructor(
     scene: Phaser.Scene,
@@ -133,6 +134,7 @@ export default class EssenceSpider implements IMob {
         this.stepToward(this.cocoonX, this.cocoonY, /* respectLeash */ false);
       }
     }
+    this.updateAnimation();
   }
 
   destroy(): void {
@@ -238,5 +240,15 @@ export default class EssenceSpider implements IMob {
     const dx = ax - bx;
     const dy = ay - by;
     return dx * dx + dy * dy;
+  }
+
+  private updateAnimation(): void {
+    const below = this.terrainSystem.getBlockAt(this.gridX, this.gridY + 1);
+    const airborne = !below || !below.solid;
+    const key = airborne ? 'spider_climb' : 'spider_idle';
+    if (key !== this.currentAnimKey) {
+      this.currentAnimKey = key;
+      (this.sprite as unknown as Phaser.GameObjects.Sprite).play({ key, repeat: -1 });
+    }
   }
 }

@@ -21,6 +21,8 @@ interface GenerationContext {
   pendingLadders: { gridX: number; gridY: number }[];
   /** Head positions for Worm mobs to instantiate after the world is rendered. */
   pendingWorms: { x: number; y: number }[];
+  /** Grid positions for Stone Beetle larvae to instantiate after the world is rendered. */
+  pendingBeetles: { x: number; y: number }[];
 }
 
 /**
@@ -50,6 +52,8 @@ export interface NumericModifiers {
   spiderCount: number;
   /** Target number of Worm mobs. */
   wormCount: number;
+  /** Target number of Stone Beetle larvae. */
+  beetleCount: number;
   /** Number of extra surface openings (in addition to the starting hole). */
   surfaceOpenings: number;
 }
@@ -71,6 +75,7 @@ export function randomizeModifiers(): NumericModifiers {
     resourceMultiplier: 0.5 + Math.random() * 1.5, // 0.5–2.0
     spiderCount: Math.floor((3 + Math.floor(Math.random() * 8)) * worldSizeFactor), // 3–10
     wormCount: 1 + Math.floor(Math.random() * 3), // 1–3
+    beetleCount: Math.floor((5 + Math.floor(Math.random() * 11)) * worldSizeFactor), // 5–15
     surfaceOpenings: 1 + Math.floor(Math.random() * maxOpenings), // 1–maxOpenings
   };
 }
@@ -659,6 +664,64 @@ function createWormSpawnStage(count: number): GenerationStage {
 }
 
 // ---------------------------------------------------------------------------
+// Stage 6c: Stone Beetle Spawn — larvae embedded in solid underground tiles
+// ---------------------------------------------------------------------------
+
+/** Minimum separation between stone beetle spawn points (tiles, Euclidean). */
+const BEETLE_MIN_SEPARATION = 8;
+
+function createStoneBeetleSpawnStage(count: number): GenerationStage {
+  return {
+    name: 'StoneBeetleSpawn',
+    apply(ctx: GenerationContext): void {
+      const minY = CONFIG.SURFACE_HEIGHT + 4;
+      const maxY = CONFIG.WORLD_HEIGHT - 4;
+      const minX = SLOPE_WIDTH + 3;
+      const maxX = CONFIG.WORLD_WIDTH - SLOPE_WIDTH - 3;
+
+      const positions: { x: number; y: number }[] = [];
+
+      for (let attempt = 0; attempt < 300 && positions.length < count; attempt++) {
+        const x = minX + Math.floor(Math.random() * (maxX - minX));
+        const y = minY + Math.floor(Math.random() * (maxY - minY));
+
+        if (!isFarEnough(x, y, positions, BEETLE_MIN_SEPARATION)) {
+          continue;
+        }
+
+        const tile = ctx.blocks[y][x];
+        // Only place larvae in solid, breakable, non-boulder tiles
+        if (!tile.solid || !tile.breakable) {
+          continue;
+        }
+
+        // Ensure all 4 cardinal neighbours are solid so the beetle starts as a larva
+        const dirs = [
+          { dx: 1, dy: 0 },
+          { dx: -1, dy: 0 },
+          { dx: 0, dy: 1 },
+          { dx: 0, dy: -1 },
+        ];
+        const allSolid = dirs.every(({ dx, dy }) => {
+          const nx = x + dx;
+          const ny = y + dy;
+          const neighbour = ctx.blocks[ny]?.[nx];
+          return neighbour !== undefined && neighbour.solid;
+        });
+        if (!allSolid) {
+          continue;
+        }
+
+        positions.push({ x, y });
+        ctx.pendingBeetles.push({ x, y });
+      }
+
+      console.log(`StoneBeetleSpawnStage: placed ${positions.length} stone beetles`);
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Stage 6: Old Camp — surface items left by a previous expedition
 // ---------------------------------------------------------------------------
 
@@ -878,6 +941,7 @@ export default class RegionGenerator {
       resourceMultiplier: 1,
       spiderCount: SPIDER_COUNT_TARGET,
       wormCount: 1,
+      beetleCount: 8,
       surfaceOpenings: SURFACE_OPENING_COUNT,
     };
 
@@ -896,6 +960,7 @@ export default class RegionGenerator {
     if (hasSpecial('uninhabited')) {
       mods.spiderCount = 0;
       mods.wormCount = 0;
+      mods.beetleCount = 0;
     }
     if (hasSpecial('boulder_field')) {
       mods.boulderMultiplier = Math.max(mods.boulderMultiplier, 4.0);
@@ -934,6 +999,8 @@ export default class RegionGenerator {
       this.stages.push(createOldCampStage());
     }
     this.stages.push(createBoulderStage(mods.boulderMultiplier));
+    // Beetle spawn runs after boulders so we can reliably exclude boulder tiles
+    this.stages.push(createStoneBeetleSpawnStage(mods.beetleCount));
   }
 
   /**
@@ -968,6 +1035,7 @@ export default class RegionGenerator {
       pendingSpiders: [],
       pendingLadders: [],
       pendingWorms: [],
+      pendingBeetles: [],
     };
 
     for (const stage of this.stages) {

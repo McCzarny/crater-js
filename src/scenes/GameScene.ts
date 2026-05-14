@@ -288,11 +288,21 @@ export default class GameScene extends Phaser.Scene {
       this.terrainSystem.updateWorms(this.characters, time, delta);
     }
 
+    // Update Stone Beetle AI
+    if (this.terrainSystem) {
+      this.terrainSystem.updateStoneBeetles(this.characters, time, delta);
+    }
+
     // Run combat: characters vs characters and mobs
     if (this.combatSystem && this.terrainSystem) {
       this.combatSystem.update(
         this.characters,
-        [...this.terrainSystem.spiders, ...this.terrainSystem.worms],
+        [
+          ...this.terrainSystem.spiders,
+          ...this.terrainSystem.worms,
+          // Larvae are indestructible — only expose adult beetles to combat
+          ...this.terrainSystem.stoneBeetles.filter(b => !b.isLarva),
+        ],
         delta,
       );
     }
